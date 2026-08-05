@@ -8,15 +8,18 @@ describe("Docfilly", () => {
   });
 
   it("creates a form and renders markdown with initial values", () => {
-    const view = createDocfilly([
-      "#!docfilly",
-      "title | タイトル = Docfilly",
-      "environment = [dev, *prod]",
-      "enabled = [x]",
-      "---",
-      "# [[title]]",
-      "Environment: **[[environment]]** / Enabled: [[enabled]]",
-    ].join("\n"), "md");
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "title | タイトル = Docfilly",
+        "environment = [dev, *prod]",
+        "enabled = [x]",
+        "---",
+        "# [[title]]",
+        "Environment: **[[environment]]** / Enabled: [[enabled]]",
+      ].join("\n"),
+      "md",
+    );
 
     document.body.append(view.element);
 
@@ -26,11 +29,13 @@ describe("Docfilly", () => {
     expect(view.outputSource).toContain("# Docfilly");
     expect(view.output.innerHTML).toContain("<h1>Docfilly</h1>");
     expect(view.output.innerHTML).toContain("<strong>prod</strong>");
-    expect(view.values).toEqual(new Map([
-      ["title", "Docfilly"],
-      ["environment", "prod"],
-      ["enabled", "true"],
-    ]));
+    expect(view.values).toEqual(
+      new Map([
+        ["title", "Docfilly"],
+        ["environment", "prod"],
+        ["enabled", "true"],
+      ]),
+    );
   });
 
   it("updates output after a form input changes", () => {
@@ -65,13 +70,16 @@ describe("Docfilly", () => {
   });
 
   it("escapes variable HTML and sanitizes markdown HTML", () => {
-    const view = createDocfilly([
-      "#!docfilly",
-      "value = <img src=x onerror=alert(1)>",
-      "---",
-      "[[value]]",
-      "<script>alert(1)</script>",
-    ].join("\n"), "md");
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "value = <img src=x onerror=alert(1)>",
+        "---",
+        "[[value]]",
+        "<script>alert(1)</script>",
+      ].join("\n"),
+      "md",
+    );
 
     expect(view.output.querySelector("img")).toBeNull();
     expect(view.output.innerHTML).toContain("&lt;img src=x onerror=alert(1)&gt;");

@@ -60,10 +60,7 @@ document.body.append(view.element);
 第2引数へ`"text"`を指定します。
 
 ```ts
-const view = createDocfilly(
-  "#!docfilly\nname = Alice\n---\nHello, [[name]]!",
-  "text",
-);
+const view = createDocfilly("#!docfilly\nname = Alice\n---\nHello, [[name]]!", "text");
 
 document.body.append(view.element);
 ```

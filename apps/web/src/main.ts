@@ -82,7 +82,7 @@ function detectSourceType(file: File): DocfillySourceType {
   return extension === "md" || extension === "markdown" ? "md" : "text";
 }
 
-fileInput.addEventListener("change", async () => {
+async function handleFileChange(): Promise<void> {
   const file = fileInput.files?.[0];
   if (!file) return;
 
@@ -95,6 +95,10 @@ fileInput.addEventListener("change", async () => {
   } finally {
     fileInput.value = "";
   }
+}
+
+fileInput.addEventListener("change", () => {
+  void handleFileChange();
 });
 
 showDocument(sampleSource, "md", "サンプル.md");
