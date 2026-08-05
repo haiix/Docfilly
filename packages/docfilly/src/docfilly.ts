@@ -72,9 +72,10 @@ export class Docfilly {
       const control = controls.namedItem(variable.name);
       if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) continue;
 
-      const value = control instanceof HTMLInputElement && control.type === "checkbox"
-        ? String(control.checked)
-        : control.value;
+      const value =
+        control instanceof HTMLInputElement && control.type === "checkbox"
+          ? String(control.checked)
+          : control.value;
       values.set(variable.name, value);
     }
 
@@ -105,9 +106,11 @@ export class Docfilly {
       this.output.textContent = this._outputSource;
     }
 
-    this.element.dispatchEvent(new CustomEvent("docfilly:render", {
-      detail: { outputSource: this._outputSource },
-    }));
+    this.element.dispatchEvent(
+      new CustomEvent("docfilly:render", {
+        detail: { outputSource: this._outputSource },
+      }),
+    );
     return this._outputSource;
   }
 

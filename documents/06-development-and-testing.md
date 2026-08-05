@@ -29,6 +29,18 @@ pnpm typecheck
 全workspaceのTypeScript型チェックを実行します。
 
 ```sh
+pnpm lint
+```
+
+ESLintでJavaScript／TypeScriptの問題を検査します。自動修正可能な問題には`pnpm lint:fix`を使用できます。
+
+```sh
+pnpm format
+```
+
+Prettierで対応ファイルを整形します。変更せずに整形状態だけを確認する場合は`pnpm format:check`を使用します。
+
+```sh
 pnpm test
 ```
 
@@ -102,6 +114,8 @@ jsdomを使うことで、ブラウザを起動せずにフォーム要素、イ
 ## 変更時の確認手順
 
 ```sh
+pnpm lint
+pnpm format:check
 pnpm test
 pnpm typecheck
 pnpm build

@@ -1,8 +1,4 @@
-import type {
-  DocfillyDiagnostic,
-  DocfillyVariable,
-  ParsedDocfillySource,
-} from "./types";
+import type { DocfillyDiagnostic, DocfillyVariable, ParsedDocfillySource } from "./types";
 
 interface SplitSource {
   isDocfilly: boolean;
@@ -41,7 +37,8 @@ function splitAtDelimiterLine(source: string): SplitSource {
       diagnostic: {
         code: "missing-delimiter",
         severity: "warning",
-        message: "区切り行（---）が見つからなかったため、識別子より後の内容を本文として表示しました。",
+        message:
+          "区切り行（---）が見つからなかったため、識別子より後の内容を本文として表示しました。",
       },
     };
   }
@@ -104,17 +101,23 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   }
 
   if (value.startsWith("[") && value.endsWith("]")) {
-    const candidates = value.slice(1, -1).split(",").map((item) => item.trim());
+    const candidates = value
+      .slice(1, -1)
+      .split(",")
+      .map((item) => item.trim());
     const entries = candidates
       .map((item) => ({ raw: item, value: item.replace(/^\*/, "").trim() }))
       .filter((item) => item.value.length > 0);
-    const diagnostic = entries.length === candidates.length ? undefined : {
-      code: "invalid-dropdown" as const,
-      severity: "warning" as const,
-      message: `${lineNumber}行目の空の選択肢を読み飛ばしました。`,
-      line: lineNumber,
-      source: row,
-    };
+    const diagnostic =
+      entries.length === candidates.length
+        ? undefined
+        : {
+            code: "invalid-dropdown" as const,
+            severity: "warning" as const,
+            message: `${lineNumber}行目の空の選択肢を読み飛ばしました。`,
+            line: lineNumber,
+            source: row,
+          };
 
     if (entries.length === 0) {
       return {
