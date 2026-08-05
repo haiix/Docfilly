@@ -61,7 +61,8 @@ dist/
 - テストランナー: Vitest
 - DOM実装: jsdom
 - 設定: `packages/docfilly/vitest.config.ts`
-- テスト: `packages/docfilly/src/index.test.ts`
+- 解析テスト: `packages/docfilly/tests/parser.test.ts`
+- DOM表示テスト: `packages/docfilly/tests/docfilly.test.ts`
 
 jsdomを使うことで、ブラウザを起動せずにフォーム要素、イベント、Markdown出力を検証しています。
 
