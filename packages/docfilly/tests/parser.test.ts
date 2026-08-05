@@ -3,15 +3,17 @@ import { parseDocfillySource } from "../src";
 
 describe("parseDocfillySource", () => {
   it("parses text, dropdown, and checkbox definitions", () => {
-    const parsed = parseDocfillySource([
-      "#!docfilly",
-      "# comment",
-      "project | プロジェクト名 = Docfilly",
-      "environment | 実行環境 = [development, *staging, production]",
-      "enabled | 有効 = [x]",
-      "---",
-      "# [[project]]",
-    ].join("\n"));
+    const parsed = parseDocfillySource(
+      [
+        "#!docfilly",
+        "# comment",
+        "project | プロジェクト名 = Docfilly",
+        "environment | 実行環境 = [development, *staging, production]",
+        "enabled | 有効 = [x]",
+        "---",
+        "# [[project]]",
+      ].join("\n"),
+    );
 
     expect(parsed.variables).toEqual([
       {
@@ -59,7 +61,9 @@ describe("parseDocfillySource", () => {
   });
 
   it("accepts Japanese variable names and a delimiter with surrounding spaces", () => {
-    const parsed = parseDocfillySource("  #!DOCFILLY  \nタイトル = はじめての文書\n  ---  \n# [[タイトル]]");
+    const parsed = parseDocfillySource(
+      "  #!DOCFILLY  \nタイトル = はじめての文書\n  ---  \n# [[タイトル]]",
+    );
 
     expect(parsed.variables[0]).toMatchObject({ name: "タイトル", initialValue: "はじめての文書" });
     expect(parsed.isDocfilly).toBe(true);
@@ -96,15 +100,17 @@ describe("parseDocfillySource", () => {
   });
 
   it("skips malformed definitions and continues parsing", () => {
-    const parsed = parseDocfillySource([
-      "#!docfilly",
-      "name = Alice",
-      "この行にはイコールがありません",
-      "invalid-name = ignored",
-      "name = Bob",
-      "---",
-      "Hello [[name]]",
-    ].join("\n"));
+    const parsed = parseDocfillySource(
+      [
+        "#!docfilly",
+        "name = Alice",
+        "この行にはイコールがありません",
+        "invalid-name = ignored",
+        "name = Bob",
+        "---",
+        "Hello [[name]]",
+      ].join("\n"),
+    );
 
     expect(parsed.variables).toHaveLength(1);
     expect(parsed.variables[0]).toMatchObject({ name: "name", initialValue: "Alice" });
