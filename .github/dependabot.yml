@@ -9,7 +9,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    target-branch: develop
+    target-branch: main
 
     groups:
       typescript:
@@ -26,7 +26,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    target-branch: develop
+    target-branch: main
     groups:
       actions-dependencies:
         patterns:
