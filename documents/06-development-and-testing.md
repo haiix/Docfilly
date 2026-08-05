@@ -123,6 +123,21 @@ pnpm build
 
 フォーマット仕様や公開APIを変更した場合は、テストと合わせて`documents/`内の該当ドキュメントも更新してください。
 
+## CI
+
+GitHub Actionsの`.github/workflows/ci.yml`は、`main`へのpush、すべてのPull Request、手動実行で起動します。
+
+CIではNode.js 24と`package.json`で固定したpnpmを使用し、次の処理を順番に実行します。
+
+1. `pnpm install --frozen-lockfile`
+2. `pnpm lint`
+3. `pnpm format:check`
+4. `pnpm test`
+5. `pnpm typecheck`
+6. `pnpm build`
+
+同じブランチで新しい実行が開始された場合、古い実行はキャンセルされます。
+
 ## テスト追加の方針
 
 - 構文解析だけで確認できる内容は`parseDocfillySource`を直接テストする
