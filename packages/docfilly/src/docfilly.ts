@@ -19,7 +19,9 @@ export class Docfilly {
   readonly sourceType: DocfillySourceType;
 
   private readonly template: string;
+  private readonly templateLineOffset: number;
   private readonly debounceMs: number;
+  private readonly parseDiagnostics: readonly DocfillyDiagnostic[];
   private readonly diagnosticList: DocfillyDiagnostic[];
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private _outputSource = "";
@@ -28,8 +30,10 @@ export class Docfilly {
     const parsed = parseDocfillySource(source);
     this.isDocfilly = parsed.isDocfilly;
     this.variables = parsed.variables;
-    this.diagnosticList = [...parsed.diagnostics];
+    this.parseDiagnostics = parsed.diagnostics;
+    this.diagnosticList = [...this.parseDiagnostics];
     this.template = parsed.template;
+    this.templateLineOffset = parsed.templateLineOffset;
     this.sourceType = sourceType;
     this.debounceMs = options.debounceMs ?? 200;
 
@@ -84,7 +88,16 @@ export class Docfilly {
 
   render(): string {
     const values = this.values;
-    this._outputSource = interpolate(this.template, values);
+    this.diagnosticList.splice(0, this.diagnosticList.length, ...this.parseDiagnostics);
+    this._outputSource = interpolate(
+      this.template,
+      values,
+      undefined,
+      (diagnostic) => {
+        this.diagnosticList.push(diagnostic);
+      },
+      this.templateLineOffset,
+    );
 
     if (this.sourceType === "md") {
       try {

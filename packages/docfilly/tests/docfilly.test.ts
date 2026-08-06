@@ -57,6 +57,72 @@ describe("Docfilly", () => {
     const view = createDocfilly("#!docfilly\nname = Alice\n---\n[[name]] / [[missing]]", "text");
 
     expect(view.outputSource).toBe("Alice / [[missing]]");
+    expect(view.diagnostics).toMatchObject([{ code: "undefined-variable", line: 4 }]);
+  });
+
+  it("applies all case filters and composes them from left to right", () => {
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "name = Project APIClient-name",
+        "---",
+        "[[name | upper]]",
+        "[[name|lower]]",
+        "[[name | snake]]",
+        "[[name | kebab]]",
+        "[[name | pascal]]",
+        "[[name | camel]]",
+        "[[name | snake | upper]]",
+      ].join("\n"),
+      "text",
+    );
+
+    expect(view.outputSource).toBe(
+      [
+        "PROJECT APICLIENT-NAME",
+        "project apiclient-name",
+        "project_api_client_name",
+        "project-api-client-name",
+        "ProjectApiClientName",
+        "projectApiClientName",
+        "PROJECT_API_CLIENT_NAME",
+      ].join("\n"),
+    );
+    expect(view.diagnostics).toEqual([]);
+  });
+
+  it("supports case filters in markdown without bypassing HTML escaping", () => {
+    const view = createDocfilly(
+      "#!docfilly\nvalue = <script>alertTest</script>\n---\n[[value | upper]]",
+      "md",
+    );
+
+    expect(view.outputSource).toBe("<SCRIPT>ALERTTEST</SCRIPT>");
+    expect(view.output.querySelector("script")).toBeNull();
+    expect(view.output.textContent?.trim()).toBe("<SCRIPT>ALERTTEST</SCRIPT>");
+  });
+
+  it("preserves placeholders and reports unknown filters and invalid syntax", () => {
+    const view = createDocfilly(
+      "#!docfilly\nname = Alice\n---\n[[name | reverse]]\n[[name | ]]\n[[bad-name | upper]]",
+      "text",
+    );
+
+    expect(view.outputSource).toBe("[[name | reverse]]\n[[name | ]]\n[[bad-name | upper]]");
+    expect(view.diagnostics.map((item) => item.code)).toEqual([
+      "unknown-filter",
+      "invalid-placeholder",
+      "invalid-placeholder",
+    ]);
+    expect(view.diagnostics.map((item) => item.line)).toEqual([4, 5, 6]);
+  });
+
+  it("replaces template diagnostics instead of accumulating them on rerender", () => {
+    const view = createDocfilly("#!docfilly\nname = Alice\n---\n[[missing | upper]]", "text");
+
+    expect(view.diagnostics).toHaveLength(1);
+    view.render();
+    expect(view.diagnostics).toHaveLength(1);
   });
 
   it("shows an ordinary document without a form when definitions are absent", () => {

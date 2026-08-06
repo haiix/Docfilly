@@ -5,6 +5,7 @@ interface SplitSource {
   definitions: string;
   template: string;
   definitionLineOffset: number;
+  templateLineOffset: number;
   diagnostic?: DocfillyDiagnostic;
 }
 
@@ -23,6 +24,7 @@ function splitAtDelimiterLine(source: string): SplitSource {
       definitions: "",
       template: lines.join("\n"),
       definitionLineOffset: 1,
+      templateLineOffset: 0,
     };
   }
 
@@ -34,6 +36,7 @@ function splitAtDelimiterLine(source: string): SplitSource {
       definitions: "",
       template: lines.slice(1).join("\n"),
       definitionLineOffset: 2,
+      templateLineOffset: 1,
       diagnostic: {
         code: "missing-delimiter",
         severity: "warning",
@@ -48,6 +51,7 @@ function splitAtDelimiterLine(source: string): SplitSource {
     definitions: lines.slice(1, delimiterIndex).join("\n"),
     template: lines.slice(delimiterIndex + 1).join("\n"),
     definitionLineOffset: 2,
+    templateLineOffset: delimiterIndex + 1,
   };
 }
 
@@ -179,5 +183,11 @@ export function parseDocfillySource(source: string): ParsedDocfillySource {
     variables.push(variable);
   });
 
-  return { isDocfilly: split.isDocfilly, variables, template: split.template, diagnostics };
+  return {
+    isDocfilly: split.isDocfilly,
+    variables,
+    template: split.template,
+    templateLineOffset: split.templateLineOffset,
+    diagnostics,
+  };
 }

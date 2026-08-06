@@ -201,9 +201,12 @@ interface ParsedDocfillySource {
   isDocfilly: boolean;
   variables: readonly DocfillyVariable[];
   template: string;
+  templateLineOffset: number;
   diagnostics: readonly DocfillyDiagnostic[];
 }
 ```
+
+`templateLineOffset`は、`template`の1行目より前に元文書内で存在した行数です。テンプレートから生成される診断の行番号を元文書の行番号へ対応させるために利用できます。
 
 ### `DocfillyDiagnostic`
 
@@ -214,6 +217,9 @@ type DocfillyDiagnosticCode =
   | "invalid-variable-name"
   | "duplicate-variable"
   | "invalid-dropdown"
+  | "undefined-variable"
+  | "unknown-filter"
+  | "invalid-placeholder"
   | "markdown-render-fallback";
 
 interface DocfillyDiagnostic {
