@@ -38,6 +38,7 @@ describe("parseDocfillySource", () => {
     ]);
     expect(parsed.isDocfilly).toBe(true);
     expect(parsed.template).toBe("# [[project]]");
+    expect(parsed.templateLineOffset).toBe(6);
     expect(parsed.diagnostics).toEqual([]);
   });
 
@@ -78,6 +79,7 @@ describe("parseDocfillySource", () => {
     expect(parsed.isDocfilly).toBe(false);
     expect(parsed.variables).toEqual([]);
     expect(parsed.template).toBe(source);
+    expect(parsed.templateLineOffset).toBe(0);
     expect(parsed.diagnostics).toEqual([]);
   });
 
