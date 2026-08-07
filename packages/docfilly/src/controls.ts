@@ -2,11 +2,22 @@ import type { DocfillyVariable } from "./types";
 
 let controlId = 0;
 
+/**
+ * Generates a unique DOM identifier for a form control.
+ *
+ * @returns The next control identifier.
+ */
 function nextControlId(): string {
   controlId += 1;
   return `docfilly-control-${controlId}`;
 }
 
+/**
+ * Creates a labeled form control for a Docfilly variable.
+ *
+ * @param variable - The variable definition used to configure the control.
+ * @returns A field container with the appropriate input element.
+ */
 export function createControl(variable: DocfillyVariable): HTMLDivElement {
   const group = document.createElement("div");
   group.className = `docfilly__field docfilly__field--${variable.type}`;

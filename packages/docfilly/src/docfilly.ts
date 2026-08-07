@@ -10,6 +10,9 @@ import type {
   DocfillyVariable,
 } from "./types";
 
+/**
+ * Renders an interactive form and document preview from Docfilly source.
+ */
 export class Docfilly {
   readonly element: HTMLDivElement;
   readonly form: HTMLFormElement;
@@ -26,6 +29,13 @@ export class Docfilly {
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
   private _outputSource = "";
 
+  /**
+   * Creates a Docfilly document view.
+   *
+   * @param source - The complete document source.
+   * @param sourceType - The source format used for rendering.
+   * @param options - Optional rendering behavior.
+   */
   constructor(source: string, sourceType: DocfillySourceType, options: DocfillyOptions = {}) {
     const parsed = parseDocfillySource(source);
     this.isDocfilly = parsed.isDocfilly;
@@ -60,14 +70,29 @@ export class Docfilly {
     this.render();
   }
 
+  /**
+   * Gets the most recently interpolated source.
+   *
+   * @returns The current rendered source text.
+   */
   get outputSource(): string {
     return this._outputSource;
   }
 
+  /**
+   * Gets the diagnostics from parsing and the latest render.
+   *
+   * @returns The current diagnostics.
+   */
   get diagnostics(): readonly DocfillyDiagnostic[] {
     return this.diagnosticList;
   }
 
+  /**
+   * Gets the current form values keyed by variable name.
+   *
+   * @returns A read-only map of serialized control values.
+   */
   get values(): ReadonlyMap<string, string> {
     const values = new Map<string, string>();
     const controls = this.form.elements;
@@ -86,6 +111,11 @@ export class Docfilly {
     return values;
   }
 
+  /**
+   * Interpolates the template and refreshes the rendered output.
+   *
+   * @returns The interpolated source text.
+   */
   render(): string {
     const values = this.values;
     this.diagnosticList.splice(0, this.diagnosticList.length, ...this.parseDiagnostics);
@@ -127,6 +157,9 @@ export class Docfilly {
     return this._outputSource;
   }
 
+  /**
+   * Removes event listeners, cancels pending work, and detaches the view.
+   */
   destroy(): void {
     if (this.debounceTimer !== undefined) clearTimeout(this.debounceTimer);
     this.form.removeEventListener("submit", this.preventSubmit);
@@ -135,16 +168,32 @@ export class Docfilly {
     this.element.remove();
   }
 
+  /**
+   * Prevents the generated form from navigating on submission.
+   *
+   * @param event - The form submission event.
+   */
   private readonly preventSubmit = (event: SubmitEvent): void => {
     event.preventDefault();
   };
 
+  /**
+   * Schedules a debounced render after a form value changes.
+   */
   private readonly scheduleRender = (): void => {
     if (this.debounceTimer !== undefined) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => this.render(), this.debounceMs);
   };
 }
 
+/**
+ * Creates an interactive Docfilly document view.
+ *
+ * @param source - The complete document source.
+ * @param sourceType - The source format used for rendering.
+ * @param options - Optional rendering behavior.
+ * @returns The initialized Docfilly instance.
+ */
 export function createDocfilly(
   source: string,
   sourceType: DocfillySourceType,

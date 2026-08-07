@@ -43,6 +43,14 @@ app.innerHTML = `
   </main>
 `;
 
+/**
+ * Finds a required element in the current document.
+ *
+ * @typeParam T - The expected element type.
+ * @param selector - The CSS selector used to locate the element.
+ * @returns The matching element.
+ * @throws An error when no matching element exists.
+ */
 function getRequiredElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
   if (!element) throw new Error(`Required UI element was not found: ${selector}`);
@@ -56,6 +64,13 @@ const status = getRequiredElement<HTMLElement>("#status");
 
 let documentView: Docfilly | undefined;
 
+/**
+ * Replaces the current document view with rendered source content.
+ *
+ * @param source - The document source to render.
+ * @param sourceType - The source format used for rendering.
+ * @param name - The file name displayed in the document metadata.
+ */
 function showDocument(source: string, sourceType: DocfillySourceType, name: string): void {
   const nextView = createDocfilly(source, sourceType);
   documentView?.destroy();
@@ -77,11 +92,22 @@ function showDocument(source: string, sourceType: DocfillySourceType, name: stri
   }
 }
 
+/**
+ * Determines the supported source type from a file name.
+ *
+ * @param file - The selected document file.
+ * @returns `"md"` for Markdown extensions, or `"text"` otherwise.
+ */
 function detectSourceType(file: File): DocfillySourceType {
   const extension = file.name.toLowerCase().split(".").pop();
   return extension === "md" || extension === "markdown" ? "md" : "text";
 }
 
+/**
+ * Loads the selected file and updates the document viewer.
+ *
+ * @returns A promise that resolves after the file selection is handled.
+ */
 async function handleFileChange(): Promise<void> {
   const file = fileInput.files?.[0];
   if (!file) return;

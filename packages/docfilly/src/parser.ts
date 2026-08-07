@@ -14,6 +14,12 @@ interface ParsedVariableRow {
   diagnostic?: DocfillyDiagnostic;
 }
 
+/**
+ * Separates Docfilly definitions from the document template.
+ *
+ * @param source - The complete document source.
+ * @returns The split source and any delimiter diagnostic.
+ */
 function splitAtDelimiterLine(source: string): SplitSource {
   const lines = source.replace(/^\uFEFF/, "").split(/\r?\n/);
   const isDocfilly = lines[0]?.trim().toLowerCase() === "#!docfilly";
@@ -55,12 +61,26 @@ function splitAtDelimiterLine(source: string): SplitSource {
   };
 }
 
+/**
+ * Splits a string around the first occurrence of a delimiter.
+ *
+ * @param value - The value to split.
+ * @param delimiter - The delimiter to locate.
+ * @returns The content before and after the first delimiter.
+ */
 function splitAtFirst(value: string, delimiter: string): [string, string] {
   const index = value.indexOf(delimiter);
   if (index === -1) return [value, ""];
   return [value.slice(0, index), value.slice(index + delimiter.length)];
 }
 
+/**
+ * Parses a single variable definition row.
+ *
+ * @param row - The trimmed variable definition.
+ * @param lineNumber - The one-based source line number.
+ * @returns The parsed variable and any associated diagnostic.
+ */
 function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   const [nameAndLabel, rawValue] = splitAtFirst(row, "=");
 
@@ -152,6 +172,12 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   return { variable: { type: "text", name, label, initialValue: value } };
 }
 
+/**
+ * Parses document source into Docfilly variables, template content, and diagnostics.
+ *
+ * @param source - The complete document source.
+ * @returns The parsed Docfilly source model.
+ */
 export function parseDocfillySource(source: string): ParsedDocfillySource {
   const split = splitAtDelimiterLine(source);
   const variables: DocfillyVariable[] = [];
