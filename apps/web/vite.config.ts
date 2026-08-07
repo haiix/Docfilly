@@ -5,6 +5,8 @@ const docfillyEntry = decodeURIComponent(
 ).replace(/^\/([A-Za-z]:\/)/, "$1");
 
 export default defineConfig({
+  // GitHub Pages serves this project at https://haiix.github.io/Docfilly/.
+  base: "/Docfilly/",
   resolve: {
     alias: {
       docfilly: docfillyEntry,
