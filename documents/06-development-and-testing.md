@@ -75,6 +75,8 @@ dist/
 - 設定: `packages/docfilly/vitest.config.ts`
 - 解析テスト: `packages/docfilly/tests/parser.test.ts`
 - DOM表示テスト: `packages/docfilly/tests/docfilly.test.ts`
+- Webアプリ設定: `apps/web/vitest.config.ts`
+- Webアプリテスト: `apps/web/tests/`
 
 jsdomを使うことで、ブラウザを起動せずにフォーム要素、イベント、Markdown出力を検証しています。
 
@@ -112,6 +114,13 @@ jsdomを使うことで、ブラウザを起動せずにフォーム要素、イ
 - Markdown HTMLのサニタイズ
 - `docfilly:render`イベント
 - `destroy()`によるDOM削除
+
+### Webアプリ
+
+- `.md`、`.markdown`、`.txt`のファイル形式判定
+- 対応外のファイル形式の拒否
+- ドラッグ中のドロップ領域表示
+- 1ファイルのドロップ受付と複数ファイルの拒否
 
 ## 変更時の確認手順
 
