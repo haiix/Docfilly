@@ -9,8 +9,8 @@
     "format:check": "prettier . --check --ignore-unknown",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "pnpm --filter docfilly test",
-    "test:watch": "pnpm --filter docfilly test:watch",
+    "test": "pnpm -r test",
+    "test:watch": "pnpm -r --parallel test:watch",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {

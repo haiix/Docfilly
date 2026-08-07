@@ -51,6 +51,39 @@ select {
   text-transform: uppercase;
 }
 
+.file-drop-zone {
+  display: grid;
+  justify-items: center;
+  min-width: 18rem;
+  padding: 1rem;
+  border: 2px dashed #637087;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 4%);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+.file-drop-zone.is-dragging {
+  border-color: #d9ff70;
+  background: rgb(217 255 112 / 12%);
+  transform: translateY(-2px);
+}
+.file-drop-zone p {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+  color: #edf1f8;
+  font-size: 0.9rem;
+}
+.file-drop-zone p span,
+.file-drop-zone small {
+  color: #b9c3d8;
+}
+.file-drop-zone small {
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+}
 .file-picker {
   flex: none;
   cursor: pointer;
@@ -192,6 +225,10 @@ main {
   .document-meta {
     align-items: stretch;
     flex-direction: column;
+  }
+  .file-drop-zone {
+    width: 100%;
+    min-width: 0;
   }
   .docfilly {
     grid-template-columns: 1fr;

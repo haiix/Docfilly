@@ -1,4 +1,10 @@
 import { createDocfilly, type Docfilly, type DocfillySourceType } from "docfilly";
+import {
+  readDocumentFile,
+  supportedFileDescription,
+  UnsupportedDocumentFileError,
+} from "./document-file";
+import { setupFileDropZone } from "./file-drop-zone";
 import "./style.css";
 
 const sampleSource = `#!docfilly
@@ -26,10 +32,14 @@ app.innerHTML = `
       <h1>Docfilly</h1>
       <p class="lead">Markdown またはテキストファイルを読み込み、フォームから内容を変更できます。</p>
     </div>
-    <label class="file-picker">
-      <span>ファイルを選択</span>
-      <input id="file-input" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" />
-    </label>
+    <div id="drop-zone" class="file-drop-zone" aria-label="ファイルのドロップ領域">
+      <p><strong>ファイルをドロップ</strong><span>または</span></p>
+      <label class="file-picker">
+        <span>ファイルを選択</span>
+        <input id="file-input" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" />
+      </label>
+      <small>${supportedFileDescription}（1ファイル）</small>
+    </div>
   </header>
   <main>
     <div class="document-meta">
@@ -58,6 +68,7 @@ function getRequiredElement<T extends Element>(selector: string): T {
 }
 
 const fileInput = getRequiredElement<HTMLInputElement>("#file-input");
+const dropZone = getRequiredElement<HTMLElement>("#drop-zone");
 const viewer = getRequiredElement<HTMLDivElement>("#viewer");
 const fileName = getRequiredElement<HTMLElement>("#file-name");
 const status = getRequiredElement<HTMLElement>("#status");
@@ -93,38 +104,38 @@ function showDocument(source: string, sourceType: DocfillySourceType, name: stri
 }
 
 /**
- * Determines the supported source type from a file name.
+ * Loads a selected or dropped file and updates the document viewer.
  *
- * @param file - The selected document file.
- * @returns `"md"` for Markdown extensions, or `"text"` otherwise.
- */
-function detectSourceType(file: File): DocfillySourceType {
-  const extension = file.name.toLowerCase().split(".").pop();
-  return extension === "md" || extension === "markdown" ? "md" : "text";
-}
-
-/**
- * Loads the selected file and updates the document viewer.
- *
+ * @param file - The local document file to load.
  * @returns A promise that resolves after the file selection is handled.
  */
-async function handleFileChange(): Promise<void> {
-  const file = fileInput.files?.[0];
-  if (!file) return;
-
+async function loadFile(file: File): Promise<void> {
   try {
-    const source = await file.text();
-    showDocument(source, detectSourceType(file), file.name);
-  } catch {
-    status.textContent = "ファイルを読み込めませんでした。もう一度選択してください。";
+    const document = await readDocumentFile(file);
+    showDocument(document.source, document.sourceType, document.name);
+  } catch (error) {
+    status.textContent =
+      error instanceof UnsupportedDocumentFileError
+        ? error.message
+        : "ファイルを読み込めませんでした。もう一度選択してください。";
     status.classList.add("is-warning");
-  } finally {
-    fileInput.value = "";
   }
 }
 
 fileInput.addEventListener("change", () => {
-  void handleFileChange();
+  const file = fileInput.files?.[0];
+  if (file) void loadFile(file);
+  fileInput.value = "";
+});
+
+setupFileDropZone(dropZone, {
+  onFile: (file) => {
+    void loadFile(file);
+  },
+  onValidationError: (message) => {
+    status.textContent = message;
+    status.classList.add("is-warning");
+  },
 });
 
 showDocument(sampleSource, "md", "サンプル.md");
