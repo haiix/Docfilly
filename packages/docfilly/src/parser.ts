@@ -1,3 +1,4 @@
+import { compileTemplate, type CompiledTemplate } from "./template";
 import type { DocfillyDiagnostic, DocfillyVariable, ParsedDocfillySource } from "./types";
 
 interface SplitSource {
@@ -296,13 +297,12 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   return { variable: { type: "text", name, label, initialValue: decodedValue.value } };
 }
 
-/**
- * Parses document source into Docfilly variables, template content, and diagnostics.
- *
- * @param source - The complete document source.
- * @returns The parsed Docfilly source model.
- */
-export function parseDocfillySource(source: string): ParsedDocfillySource {
+interface ParsedDocfillyDocument extends ParsedDocfillySource {
+  compiledTemplate: CompiledTemplate;
+}
+
+/** Parses source and compiles its body for use by the interactive renderer. */
+export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
   const split = splitAtDelimiterLine(source);
   const variables: DocfillyVariable[] = [];
   const diagnostics: DocfillyDiagnostic[] = split.diagnostic ? [split.diagnostic] : [];
@@ -333,11 +333,37 @@ export function parseDocfillySource(source: string): ParsedDocfillySource {
     variables.push(variable);
   });
 
+  const compiledTemplate = compileTemplate(
+    split.template,
+    variables,
+    split.templateLineOffset,
+    split.isDocfilly,
+  );
+  diagnostics.push(...compiledTemplate.diagnostics);
+
   return {
     isDocfilly: split.isDocfilly,
     variables,
     template: split.template,
     templateLineOffset: split.templateLineOffset,
     diagnostics,
+    compiledTemplate,
+  };
+}
+
+/**
+ * Parses document source into Docfilly variables, template content, and diagnostics.
+ *
+ * @param source - The complete document source.
+ * @returns The parsed Docfilly source model.
+ */
+export function parseDocfillySource(source: string): ParsedDocfillySource {
+  const parsed = parseDocfillyDocument(source);
+  return {
+    isDocfilly: parsed.isDocfilly,
+    variables: parsed.variables,
+    template: parsed.template,
+    templateLineOffset: parsed.templateLineOffset,
+    diagnostics: parsed.diagnostics,
   };
 }

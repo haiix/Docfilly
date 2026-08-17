@@ -219,4 +219,14 @@ describe("parseDocfillySource", () => {
       { code: "invalid-quoting", line: expectedLine, source: invalidRow },
     ]);
   });
+
+  it("reports invalid if blocks without creating a DOM view", () => {
+    const parsed = parseDocfillySource(
+      "#!docfilly\npublished = [x]\n---\n[[#if missing]]\ncontent\n[[#endif]]",
+    );
+
+    expect(parsed.diagnostics).toMatchObject([
+      { code: "undefined-condition-variable", line: 4, source: "[[#if missing]]" },
+    ]);
+  });
 });
