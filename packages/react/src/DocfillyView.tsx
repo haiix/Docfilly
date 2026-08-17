@@ -10,6 +10,7 @@ export interface DocfillyRenderState {
   outputSource: string;
   values: ReadonlyMap<string, string>;
   diagnostics: readonly DocfillyDiagnostic[];
+  isDocfilly: boolean;
 }
 
 export interface DocfillyViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
@@ -48,6 +49,7 @@ export function DocfillyView({
         outputSource: view.outputSource,
         values: view.values,
         diagnostics: [...view.diagnostics],
+        isDocfilly: view.isDocfilly,
       });
     };
 

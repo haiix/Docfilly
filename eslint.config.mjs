@@ -13,7 +13,7 @@ export default defineConfig(
     extends: [js.configs.recommended],
   },
   {
-    files: ["**/*.ts"],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,

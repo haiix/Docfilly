@@ -79,6 +79,7 @@ dist/
 - DOM表示テスト: `packages/docfilly/tests/docfilly.test.ts`
 - Webアプリ設定: `apps/web/vitest.config.ts`
 - Webアプリテスト: `apps/web/tests/`
+- WebアプリUIテスト: React Testing Library
 
 jsdomを使うことで、ブラウザを起動せずにフォーム要素、イベント、Markdown出力を検証しています。
 
@@ -133,6 +134,9 @@ jsdomを使うことで、ブラウザを起動せずにフォーム要素、イ
 - 対応外のファイル形式の拒否
 - ドラッグ中のドロップ領域表示
 - 1ファイルのドロップ受付と複数ファイルの拒否
+- サンプル文書とローカルファイルのReact統合表示
+- React再レンダー時のフォーム値保持とDOM重複防止
+- Reactラッパーから受け取った通常文書状態とdiagnosticsの表示
 
 ## 変更時の確認手順
 

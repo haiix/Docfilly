@@ -47,6 +47,7 @@ describe("DocfillyView", () => {
       outputSource: "Hello Alice",
       values: new Map([["name", "Alice"]]),
       diagnostics: [],
+      isDocfilly: true,
     });
 
     act(() => {
@@ -60,6 +61,7 @@ describe("DocfillyView", () => {
       outputSource: "Hello Bob",
       values: new Map([["name", "Bob"]]),
       diagnostics: [],
+      isDocfilly: true,
     });
   });
 
@@ -114,6 +116,7 @@ describe("DocfillyView", () => {
       outputSource: "Hello Bob",
       values: new Map([["name", "Bob"]]),
       diagnostics: [],
+      isDocfilly: true,
     });
   });
 
