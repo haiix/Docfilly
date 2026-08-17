@@ -46,6 +46,7 @@ deploy --project [[プロジェクト名]] --environment [[実行環境]]
 ## リポジトリ構成
 
 - `packages/docfilly`: ViteでビルドするTypeScriptライブラリ
+- `packages/react`: `docfilly`をReactへ接続するラッパーライブラリ
 - `apps/web`: `docfilly`を利用するVite Webアプリ
 - `documents`: 利用方法、フォーマット、APIなどの詳細文書
 
@@ -86,5 +87,31 @@ view.diagnostics; // 読み飛ばしや自動補正に関する執筆者向け�
 `createDocfilly`の第2引数には`"md"`または`"text"`を指定します。MarkdownのHTML出力はDOMPurifyでサニタイズされます。
 
 Webデモでは`.md`、`.markdown`、`.txt`ファイルを選択するか、画面へドラッグ＆ドロップして読み込めます。ファイルはブラウザ内で処理され、サーバーには送信されません。
+
+## React API
+
+React 18または19では、`@docfilly/react`を利用できます。
+
+```sh
+pnpm add @docfilly/react react react-dom
+```
+
+```tsx
+import { DocfillyView } from "@docfilly/react";
+
+<DocfillyView
+  source={source}
+  sourceType="md"
+  options={{ debounceMs: 200 }}
+  className="document-preview"
+  onRender={({ outputSource, values, diagnostics }) => {
+    console.log({ outputSource, values, diagnostics });
+  }}
+/>;
+```
+
+`DocfillyView`はマウント時にDocfillyを生成し、`source`、`sourceType`、または`options.debounceMs`が変わると再生成します。アンマウント時には破棄します。`onRender`は初期表示と、その後フォーム入力によって出力が更新されるたびに呼び出されます。コールバックだけを変更しても、フォームの入力状態は維持されます。
+
+`className`、`id`、`aria-*`などの`HTMLAttributes<HTMLDivElement>`は外側のラッパー要素へ渡されます。`onRender`には現在の`outputSource`、`ReadonlyMap`形式の`values`、および`diagnostics`が渡されます。
 
 テストにはVitestとjsdomを使用しています。通常実行は`pnpm test`、ウォッチモードは`pnpm test:watch`です。
