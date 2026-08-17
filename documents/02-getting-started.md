@@ -1,12 +1,36 @@
 # はじめに
 
-## 必要な環境
+このページでは、執筆者が最初のDocfilly文書を作り、読者向けの表示を確認するまでを説明します。ライブラリを別のアプリへ組み込む方法も後半で扱います。
+
+## 最初の文書を作る
+
+次の内容を`setup.md`として保存します。
+
+````text
+#!docfilly
+プロジェクト名 = MyProject
+実行環境 = [development, staging, *production]
+---
+# [[プロジェクト名]] のセットアップ
+
+対象は **[[実行環境]]** 環境です。
+
+```sh
+deploy --project [[プロジェクト名]] --environment [[実行環境]]
+```
+````
+
+この文書では、区切り行`---`より前が入力項目、後ろが読者に表示する本文です。読者が「プロジェクト名」と「実行環境」をフォームで指定すると、見出し、説明、コマンドのすべてに同じ値が反映されます。
+
+執筆者は同じ値を使う箇所へ`[[設定名]]`を書く必要がありますが、読者はこの構文を扱いません。詳しい記法は[ソースフォーマット仕様](./03-source-format.md)を参照してください。
+
+## Webデモで確認する
+
+### 必要な環境
 
 - Node.js
 - pnpm 11系（リポジトリでは`pnpm@11.9.0`を指定）
 - DOM APIを利用できるブラウザ
-
-## モノレポを起動する
 
 リポジトリのルートで実行します。
 
@@ -15,11 +39,13 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev`は`apps/web`のVite開発サーバーを起動します。
+`pnpm dev`は`apps/web`のVite開発サーバーを起動します。ブラウザで開発サーバーを開き、作成した`setup.md`を選択またはドラッグ＆ドロップしてください。
 
-Docfilly専用の設定を使わず、通常のMarkdownやテキストをそのまま読み込むこともできます。先頭に`#!docfilly`がない文書は、フォームなしで文書全体を表示します。
+フォームの値を変更すると、カスタマイズされた本文が更新されます。これが読者の基本体験です。
 
-## ライブラリをワークスペースから利用する
+先頭に`#!docfilly`がない通常のMarkdown／テキストも読み込めます。その場合はフォームを生成せず、文書全体をそのまま表示します。
+
+## ライブラリを組み込む
 
 Webデモでは、次のworkspace依存として登録されています。
 
@@ -33,34 +59,23 @@ Webデモでは、次のworkspace依存として登録されています。
 
 Docfillyがnpmなどへ公開された後は、利用側プロジェクトへ通常のパッケージとして追加できます。現在のリポジトリ内ではworkspace依存を使用してください。
 
-## 最小構成
+文書のソースを`createDocfilly`へ渡し、返された要素をページへ追加します。
 
 ```ts
 import { createDocfilly } from "docfilly";
-
-const source = `#!docfilly
-title | タイトル = Docfilly
-theme | テーマ = [light, *dark]
-published | 公開する = [x]
----
-# [[title]]
-
-- Theme: [[theme]]
-- Published: [[published]]
-`;
 
 const view = createDocfilly(source, "md");
 document.body.append(view.element);
 ```
 
-これだけで、3つの入力欄とMarkdownプレビューを含むコンテナが生成されます。
+`view.element`には、読者が入力するフォームと、カスタマイズされた文書の表示領域が含まれます。構文上の注意点を執筆者へ知らせる場合は`view.diagnostics`を利用できます。
 
 ## プレーンテキストを表示する
 
 第2引数へ`"text"`を指定します。
 
 ```ts
-const view = createDocfilly("#!docfilly\nname = Alice\n---\nHello, [[name]]!", "text");
+const view = createDocfilly("#!docfilly\n名前 = Alice\n---\nこんにちは、[[名前]]さん。", "text");
 
 document.body.append(view.element);
 ```
@@ -83,7 +98,7 @@ const view = createDocfilly(source, "md", {
 });
 ```
 
-即座に現在値を反映したい場合は、`view.render()`を呼び出せます。
+プログラムから入力値を変更し、すぐに本文へ反映したい場合は`view.render()`を呼び出せます。
 
 ## 後片付け
 
