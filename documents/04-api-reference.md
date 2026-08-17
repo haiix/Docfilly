@@ -1,5 +1,7 @@
 # APIリファレンス
 
+このAPIは、執筆者が作ったDocfilly文書から、読者向けの入力フォームとカスタマイズされた本文を表示するための組み込み用APIです。読者にDocfilly構文を操作させず、フォーム入力後の文書へ集中できるUIを構築することを前提にしています。
+
 ## 公開API一覧
 
 ```ts
@@ -18,7 +20,7 @@ import {
 
 ## `createDocfilly`
 
-ソースを解析し、フォームと出力を持つ`Docfilly`インスタンスを生成します。
+ソースを解析し、読者向けフォームとカスタマイズされた出力を持つ`Docfilly`インスタンスを生成します。
 
 ```ts
 function createDocfilly(
@@ -41,7 +43,7 @@ const view = createDocfilly(source, "md", { debounceMs: 100 });
 document.querySelector("#viewer")?.append(view.element);
 ```
 
-ソースに読み取れない箇所があっても、構文上の理由で`Error`を送出しません。可能な範囲でインスタンスを生成し、`diagnostics`へ注意点を格納します。
+ソースに読み取れない箇所があっても、構文上の理由で`Error`を送出しません。可能な範囲で読者向けの文書を表示し、`diagnostics`へ執筆者向けの注意点を格納します。
 
 ```ts
 const view = createDocfilly(source, "md");
@@ -69,7 +71,7 @@ console.log(parsed.template);
 console.log(parsed.diagnostics);
 ```
 
-構文の確認、独自UIの作成、注意点の表示などに利用できます。`#!docfilly`がない場合は、`isDocfilly`が`false`、`variables`が空、`template`が入力された文書全体になります。
+執筆時の構文確認、独自UIの作成、執筆者向け注意点の表示などに利用できます。`#!docfilly`がない場合は、`isDocfilly`が`false`、`variables`が空、`template`が入力された文書全体になります。
 
 識別子があるのに区切り行がない場合は、`isDocfilly`が`true`のまま、識別子より後の内容を`template`として返します。
 
@@ -93,7 +95,7 @@ container.append(view.element);
 
 #### `form: HTMLFormElement`
 
-変数定義から生成されたフォームです。クラス名は`docfilly__form`です。フォームのsubmitイベントは既定でキャンセルされます。
+入力項目の定義から生成された読者向けフォームです。クラス名は`docfilly__form`です。フォームのsubmitイベントは既定でキャンセルされます。
 
 ```ts
 const titleInput = view.form.elements.namedItem("title");
@@ -113,7 +115,7 @@ const titleInput = view.form.elements.namedItem("title");
 
 #### `diagnostics: readonly DocfillyDiagnostic[]`
 
-読み飛ばした設定や自動補正した内容です。注意点がなければ空の配列です。注意点が存在しても、フォームと本文は可能な範囲で生成されます。
+読み飛ばした設定や自動補正した内容です。執筆者へ修正方法を伝えるために利用できます。注意点が存在しても、フォームと本文は可能な範囲で生成されます。
 
 #### `sourceType: "md" | "text"`
 
