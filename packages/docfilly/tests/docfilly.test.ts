@@ -153,6 +153,17 @@ describe("Docfilly", () => {
     expect(view.output.textContent).toContain("<img src=x onerror=alert(1)>");
   });
 
+  it("keeps quoted initial values inside the existing markdown safety boundary", () => {
+    const view = createDocfilly(
+      '#!docfilly\nvalue = "<img src=x onerror=""alert(1)"">"\n---\n[[value]]',
+      "md",
+    );
+
+    expect(view.values.get("value")).toBe('<img src=x onerror="alert(1)">');
+    expect(view.output.querySelector("img")).toBeNull();
+    expect(view.output.textContent?.trim()).toBe('<img src=x onerror="alert(1)">');
+  });
+
   it("emits a render event and removes its element when destroyed", () => {
     const view = createDocfilly("#!docfilly\nname = Alice\n---\n[[name]]", "text");
     const listener = vi.fn();
