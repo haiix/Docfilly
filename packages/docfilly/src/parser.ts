@@ -14,6 +14,8 @@ interface ParsedVariableRow {
   diagnostic?: DocfillyDiagnostic;
 }
 
+type ScanResult<T> = { ok: true; value: T } | { ok: false };
+
 /**
  * Separates Docfilly definitions from the document template.
  *
@@ -62,16 +64,107 @@ function splitAtDelimiterLine(source: string): SplitSource {
 }
 
 /**
- * Splits a string around the first occurrence of a delimiter.
+ * Finds the first delimiter that is not enclosed in a quoted field.
  *
- * @param value - The value to split.
- * @param delimiter - The delimiter to locate.
- * @returns The content before and after the first delimiter.
+ * @param value - The text to scan.
+ * @param delimiter - The single-character delimiter to locate.
+ * @returns The delimiter index, or a failed result for an unclosed quote.
  */
-function splitAtFirst(value: string, delimiter: string): [string, string] {
-  const index = value.indexOf(delimiter);
-  if (index === -1) return [value, ""];
-  return [value.slice(0, index), value.slice(index + delimiter.length)];
+function findFirstOutsideQuotes(value: string, delimiter: string): ScanResult<number> {
+  let inQuotes = false;
+  let delimiterIndex = -1;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === '"') {
+      if (inQuotes && value[index + 1] === '"') {
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (!inQuotes && character === delimiter && delimiterIndex === -1) {
+      delimiterIndex = index;
+    }
+  }
+
+  return inQuotes ? { ok: false } : { ok: true, value: delimiterIndex };
+}
+
+/**
+ * Splits text at delimiters that are not enclosed in quoted fields.
+ *
+ * @param value - The text to split.
+ * @param delimiter - The single-character delimiter to use.
+ * @returns The split fields, or a failed result for an unclosed quote.
+ */
+function splitOutsideQuotes(value: string, delimiter: string): ScanResult<string[]> {
+  const parts: string[] = [];
+  let start = 0;
+  let inQuotes = false;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === '"') {
+      if (inQuotes && value[index + 1] === '"') {
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (!inQuotes && character === delimiter) {
+      parts.push(value.slice(start, index));
+      start = index + 1;
+    }
+  }
+
+  if (inQuotes) return { ok: false };
+  parts.push(value.slice(start));
+  return { ok: true, value: parts };
+}
+
+/**
+ * Trims an unquoted field or decodes a CSV-style quoted field.
+ *
+ * @param rawField - The field text, including any surrounding quotes.
+ * @returns The decoded field, or a failed result for invalid quoting.
+ */
+function decodeField(rawField: string): ScanResult<string> {
+  const field = rawField.trim();
+  if (!field.includes('"')) return { ok: true, value: field };
+  if (!field.startsWith('"')) return { ok: false };
+
+  let decoded = "";
+  for (let index = 1; index < field.length; index += 1) {
+    const character = field[index];
+    if (character !== '"') {
+      decoded += character;
+      continue;
+    }
+
+    if (field[index + 1] === '"') {
+      decoded += '"';
+      index += 1;
+      continue;
+    }
+
+    return field.slice(index + 1).trim().length === 0
+      ? { ok: true, value: decoded }
+      : { ok: false };
+  }
+
+  return { ok: false };
+}
+
+/**
+ * Creates a diagnostic for a variable row with invalid CSV-style quoting.
+ */
+function invalidQuotingDiagnostic(row: string, lineNumber: number): DocfillyDiagnostic {
+  return {
+    code: "invalid-quoting",
+    severity: "warning",
+    message: `${lineNumber}行目の引用符の使い方が不正なため、設定項目として読み飛ばしました。値を引用する場合は全体を「"」で囲み、値に含む「"」は「""」と記述してください。`,
+    line: lineNumber,
+    source: row,
+  };
 }
 
 /**
@@ -82,9 +175,12 @@ function splitAtFirst(value: string, delimiter: string): [string, string] {
  * @returns The parsed variable and any associated diagnostic.
  */
 function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
-  const [nameAndLabel, rawValue] = splitAtFirst(row, "=");
+  const equals = findFirstOutsideQuotes(row, "=");
+  if (!equals.ok) {
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+  }
 
-  if (!row.includes("=")) {
+  if (equals.value === -1) {
     return {
       diagnostic: {
         code: "missing-equals",
@@ -96,9 +192,23 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
     };
   }
 
-  const [rawName, rawLabel = ""] = nameAndLabel.split("|", 2);
+  const nameAndLabel = row.slice(0, equals.value);
+  const rawValue = row.slice(equals.value + 1);
+  const nameAndLabelFields = splitOutsideQuotes(nameAndLabel, "|");
+  if (!nameAndLabelFields.ok) {
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+  }
+
+  const [rawName, rawLabel = ""] = nameAndLabelFields.value;
   const name = rawName.trim();
-  const label = rawLabel.trim() || name;
+  if (rawName.includes('"')) {
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+  }
+  const decodedLabel = decodeField(rawLabel);
+  if (!decodedLabel.ok) {
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+  }
+  const label = decodedLabel.value || name;
   const value = rawValue.trim();
 
   if (!/^[\p{L}\p{N}_]+$/u.test(name)) {
@@ -125,15 +235,24 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   }
 
   if (value.startsWith("[") && value.endsWith("]")) {
-    const candidates = value
-      .slice(1, -1)
-      .split(",")
-      .map((item) => item.trim());
-    const entries = candidates
-      .map((item) => ({ raw: item, value: item.replace(/^\*/, "").trim() }))
-      .filter((item) => item.value.length > 0);
+    const splitCandidates = splitOutsideQuotes(value.slice(1, -1), ",");
+    if (!splitCandidates.ok) {
+      return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+    }
+
+    const entries: { selected: boolean; value: string }[] = [];
+    for (const rawCandidate of splitCandidates.value) {
+      const candidate = rawCandidate.trim();
+      const selected = candidate.startsWith("*");
+      const decoded = decodeField(selected ? candidate.slice(1) : candidate);
+      if (!decoded.ok) {
+        return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+      }
+      if (decoded.value.length > 0) entries.push({ selected, value: decoded.value });
+    }
+
     const diagnostic =
-      entries.length === candidates.length
+      entries.length === splitCandidates.value.length
         ? undefined
         : {
             code: "invalid-dropdown" as const,
@@ -156,7 +275,7 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
       };
     }
 
-    const selected = entries.find((item) => item.raw.startsWith("*")) ?? entries[0];
+    const selected = entries.find((item) => item.selected) ?? entries[0];
     return {
       variable: {
         type: "select",
@@ -169,7 +288,12 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
     };
   }
 
-  return { variable: { type: "text", name, label, initialValue: value } };
+  const decodedValue = decodeField(value);
+  if (!decodedValue.ok) {
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+  }
+
+  return { variable: { type: "text", name, label, initialValue: decodedValue.value } };
 }
 
 /**

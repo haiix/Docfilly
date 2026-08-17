@@ -31,6 +31,7 @@ export type DocfillyDiagnosticCode =
   | "invalid-variable-name"
   | "duplicate-variable"
   | "invalid-dropdown"
+  | "invalid-quoting"
   | "undefined-variable"
   | "unknown-filter"
   | "invalid-placeholder"

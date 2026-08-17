@@ -55,6 +55,65 @@ describe("parseDocfillySource", () => {
     expect(parsed.variables[0]).toMatchObject({ name: "author", label: "author" });
   });
 
+  it("decodes quoted labels and text values", () => {
+    const parsed = parseDocfillySource(
+      [
+        "#!docfilly",
+        'message | "表示文 | 補足 = 詳細" = "彼は ""はい"" と言った, 本当です"',
+        'spacing | " 前後に空白 " = "  value  "',
+        "---",
+        "[[message]]",
+      ].join("\n"),
+    );
+
+    expect(parsed.variables).toEqual([
+      {
+        type: "text",
+        name: "message",
+        label: "表示文 | 補足 = 詳細",
+        initialValue: '彼は "はい" と言った, 本当です',
+      },
+      {
+        type: "text",
+        name: "spacing",
+        label: " 前後に空白 ",
+        initialValue: "  value  ",
+      },
+    ]);
+    expect(parsed.diagnostics).toEqual([]);
+  });
+
+  it("treats quoted input type syntax as text", () => {
+    const parsed = parseDocfillySource(
+      '#!docfilly\ncheckbox = "[x]"\nlist = "[one, two]"\n---\n[[checkbox]]',
+    );
+
+    expect(parsed.variables).toMatchObject([
+      { type: "text", name: "checkbox", initialValue: "[x]" },
+      { type: "text", name: "list", initialValue: "[one, two]" },
+    ]);
+  });
+
+  it("decodes quoted dropdown choices and distinguishes the selection marker", () => {
+    const parsed = parseDocfillySource(
+      [
+        "#!docfilly",
+        'region = ["東京, 日本", *"大阪, ""中央""", "*通常値"]',
+        "---",
+        "[[region]]",
+      ].join("\n"),
+    );
+
+    expect(parsed.variables[0]).toEqual({
+      type: "select",
+      name: "region",
+      label: "region",
+      options: ["東京, 日本", '大阪, "中央"', "*通常値"],
+      initialValue: '大阪, "中央"',
+    });
+    expect(parsed.diagnostics).toEqual([]);
+  });
+
   it("treats uppercase X as an unchecked checkbox", () => {
     const parsed = parseDocfillySource("#!docfilly\nenabled = [X]\n---\n[[enabled]]");
 
@@ -140,5 +199,24 @@ describe("parseDocfillySource", () => {
 
     expect(parsed.variables[0]).toMatchObject({ type: "text", initialValue: "[]" });
     expect(parsed.diagnostics).toMatchObject([{ code: "invalid-dropdown" }]);
+  });
+
+  it.each([
+    ['value = "unclosed', 2],
+    ['value = "closed" trailing', 2],
+    ['value = unquoted "quote"', 2],
+    ['value = [valid, "unclosed]', 2],
+    ['"quoted-name" = value', 2],
+  ])("skips invalid quoting and continues parsing: %s", (invalidRow, expectedLine) => {
+    const parsed = parseDocfillySource(
+      ["#!docfilly", invalidRow, "valid = accepted", "---", "[[valid]]"].join("\n"),
+    );
+
+    expect(parsed.variables).toEqual([
+      { type: "text", name: "valid", label: "valid", initialValue: "accepted" },
+    ]);
+    expect(parsed.diagnostics).toMatchObject([
+      { code: "invalid-quoting", line: expectedLine, source: invalidRow },
+    ]);
   });
 });
