@@ -2,7 +2,7 @@
 
 ## 概要
 
-`apps/web`は、Docfillyライブラリを利用したViteアプリです。執筆者が作ったローカル文書を選択するか、画面上部のドロップ領域へドラッグ＆ドロップすると、ブラウザ内で内容を読み取ります。読者には入力フォームと、その値を反映した文書を表示します。
+`apps/web`は、React、TypeScript、Viteと`@docfilly/react`を利用したアプリです。執筆者が作ったローカル文書を選択するか、画面上部のドロップ領域へドラッグ＆ドロップすると、ブラウザ内で内容を読み取ります。読者には入力フォームと、その値を反映した文書を表示します。
 
 このデモで確認する中心的な体験は、読者が必要な値を最初に入力し、その後はDocfillyの構文を意識せず自分向けの文書を読めることです。
 
@@ -23,15 +23,16 @@ pnpm dev
 1. `<input type="file">`から文書を選択するか、画面上部の領域へファイルをドラッグ＆ドロップします。
 2. File APIの`file.text()`でソース文字列を取得します。
 3. ファイル名から`"md"`または`"text"`を判定します。
-4. `createDocfilly`で新しい表示インスタンスを作ります。先頭が`#!docfilly`なら読者向けの入力フォームを生成し、識別子がなければ通常文書として表示します。
-5. 以前のインスタンスへ`destroy()`を呼び出します。
-6. 新しい`element`をビューアーへ配置します。
+4. Reactの文書状態を更新し、`DocumentViewer`へソースと形式を渡します。
+5. `DocumentViewer`が`@docfilly/react`の`DocfillyView`を描画します。先頭が`#!docfilly`なら読者向けの入力フォームを生成し、識別子がなければ通常文書として表示します。
+6. `DocfillyView`の`onRender`から値、diagnostics、文書種別を受け取り、ステータス表示へ反映します。インスタンスの生成と破棄はReactラッパーが担当します。
 
-```ts
+```tsx
 const source = await file.text();
 const sourceType = file.name.endsWith(".md") ? "md" : "text";
-const view = createDocfilly(source, sourceType);
-viewer.replaceChildren(view.element);
+setDocument({ name: file.name, source, sourceType });
+
+<DocfillyView source={document.source} sourceType={document.sourceType} onRender={handleRender} />;
 ```
 
 実際の実装では`.markdown`もMarkdownとして判定し、読み飛ばした設定や自動補正があれば、画面のステータス領域へ注意点を表示します。
@@ -71,3 +72,10 @@ Webデモは生成されたフォームと文書を表示したうえで、ス�
 WebデモのCSSはライブラリ本体には含まれません。独自アプリでは`Docfilly`が付与するCSSクラスを使い、自由にレイアウトを変更できます。
 
 デモではデスクトップ時にフォームと出力を左右へ並べ、幅760px以下では上下へ並べています。
+
+## コンポーネント構成
+
+- `App`: 現在の文書、ファイル名、読み込み結果とステータスを管理
+- `FileDropZone`: ファイル選択、ドラッグ＆ドロップ、複数ファイルの検証を担当
+- `DocumentViewer`: `DocfillyView`とアプリ固有のステータス表示を接続
+- `document-file`: 拡張子による形式判定とFile APIによる読み込みを担当

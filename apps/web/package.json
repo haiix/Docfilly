@@ -12,9 +12,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "docfilly": "workspace:*"
+    "@docfilly/react": "workspace:*",
+    "docfilly": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^6.0.0",
     "jsdom": "^30.0.1",
     "typescript": "^5.8.3",
     "vite": "^8.2.1",

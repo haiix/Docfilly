@@ -6,10 +6,12 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "paths": {
-      "docfilly": ["../../packages/docfilly/src/index.ts"]
+      "docfilly": ["../../packages/docfilly/src/index.ts"],
+      "@docfilly/react": ["../../packages/react/src/index.ts"]
     },
     "noEmit": true
   },
