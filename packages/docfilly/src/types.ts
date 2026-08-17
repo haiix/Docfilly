@@ -35,6 +35,13 @@ export type DocfillyDiagnosticCode =
   | "undefined-variable"
   | "unknown-filter"
   | "invalid-placeholder"
+  | "invalid-if-condition"
+  | "undefined-condition-variable"
+  | "invalid-condition-type"
+  | "unexpected-directive"
+  | "duplicate-else"
+  | "unclosed-if"
+  | "if-nesting-too-deep"
   | "markdown-render-fallback";
 
 export interface DocfillyDiagnostic {

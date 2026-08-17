@@ -1,8 +1,8 @@
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { createControl } from "./controls";
-import { parseDocfillySource } from "./parser";
-import { escapeHtml, interpolate } from "./template";
+import { parseDocfillyDocument } from "./parser";
+import { escapeHtml, type CompiledTemplate } from "./template";
 import type {
   DocfillyDiagnostic,
   DocfillyOptions,
@@ -21,8 +21,7 @@ export class Docfilly {
   readonly variables: readonly DocfillyVariable[];
   readonly sourceType: DocfillySourceType;
 
-  private readonly template: string;
-  private readonly templateLineOffset: number;
+  private readonly compiledTemplate: CompiledTemplate;
   private readonly debounceMs: number;
   private readonly parseDiagnostics: readonly DocfillyDiagnostic[];
   private readonly diagnosticList: DocfillyDiagnostic[];
@@ -37,13 +36,12 @@ export class Docfilly {
    * @param options - Optional rendering behavior.
    */
   constructor(source: string, sourceType: DocfillySourceType, options: DocfillyOptions = {}) {
-    const parsed = parseDocfillySource(source);
+    const parsed = parseDocfillyDocument(source);
     this.isDocfilly = parsed.isDocfilly;
     this.variables = parsed.variables;
+    this.compiledTemplate = parsed.compiledTemplate;
     this.parseDiagnostics = parsed.diagnostics;
     this.diagnosticList = [...this.parseDiagnostics];
-    this.template = parsed.template;
-    this.templateLineOffset = parsed.templateLineOffset;
     this.sourceType = sourceType;
     this.debounceMs = options.debounceMs ?? 200;
 
@@ -119,19 +117,13 @@ export class Docfilly {
   render(): string {
     const values = this.values;
     this.diagnosticList.splice(0, this.diagnosticList.length, ...this.parseDiagnostics);
-    this._outputSource = interpolate(
-      this.template,
-      values,
-      undefined,
-      (diagnostic) => {
-        this.diagnosticList.push(diagnostic);
-      },
-      this.templateLineOffset,
-    );
+    this._outputSource = this.compiledTemplate.render(values, undefined, (diagnostic) => {
+      this.diagnosticList.push(diagnostic);
+    });
 
     if (this.sourceType === "md") {
       try {
-        const safeTemplate = interpolate(this.template, values, escapeHtml);
+        const safeTemplate = this.compiledTemplate.render(values, escapeHtml);
         const html = marked.parse(safeTemplate, { async: false });
         this.output.innerHTML = DOMPurify.sanitize(html);
       } catch {
