@@ -1,11 +1,10 @@
 import { useCallback } from "react";
 import { DocfillyView, type DocfillyRenderState } from "@docfilly/react";
-import type { DocfillySourceType } from "docfilly";
+import type { DocfillyDiagnostic, DocfillySourceType } from "docfilly";
 
 export interface ViewerStatus {
   message: string;
   isWarning: boolean;
-  title?: string;
 }
 
 interface DocumentViewerProps {
@@ -13,6 +12,7 @@ interface DocumentViewerProps {
   sourceType: DocfillySourceType;
   onStatusChange: (status: ViewerStatus) => void;
   onOutputSourceChange: (outputSource: string) => void;
+  onDiagnosticsChange: (diagnostics: readonly DocfillyDiagnostic[]) => void;
 }
 
 export function DocumentViewer({
@@ -20,10 +20,12 @@ export function DocumentViewer({
   sourceType,
   onStatusChange,
   onOutputSourceChange,
+  onDiagnosticsChange,
 }: DocumentViewerProps) {
   const handleRender = useCallback(
     (state: DocfillyRenderState): void => {
       onOutputSourceChange(state.outputSource);
+      onDiagnosticsChange(state.diagnostics);
 
       if (!state.isDocfilly) {
         const formatName = sourceType === "md" ? "Markdown" : "テキスト";
@@ -37,9 +39,8 @@ export function DocumentViewer({
       const warningCount = state.diagnostics.length;
       if (warningCount > 0) {
         onStatusChange({
-          message: `${state.values.size}個の設定項目を読み込みました。${warningCount}件の注意点があります：${state.diagnostics[0].message}`,
-          isWarning: true,
-          title: state.diagnostics.map((item) => item.message).join("\n"),
+          message: `${state.values.size}個の設定項目を読み込みました。文書に${warningCount}件の診断があります。`,
+          isWarning: false,
         });
         return;
       }
@@ -49,7 +50,7 @@ export function DocumentViewer({
         isWarning: false,
       });
     },
-    [onOutputSourceChange, onStatusChange, sourceType],
+    [onDiagnosticsChange, onOutputSourceChange, onStatusChange, sourceType],
   );
 
   return <DocfillyView source={source} sourceType={sourceType} onRender={handleRender} />;

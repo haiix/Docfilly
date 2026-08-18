@@ -182,17 +182,67 @@ describe("App", () => {
     expect(screen.getByText("Hello")).toBeTruthy();
   });
 
-  it("shows diagnostics reported by the React wrapper", async () => {
+  it("lists every diagnostic separately from app notifications", async () => {
     const user = userEvent.setup();
     render(<App />);
-    const source = "#!docfilly\nbroken setting\n---\nBody";
+    const source = "#!docfilly\nbroken setting\nalso broken\n---\nBody";
 
     await user.upload(screen.getByLabelText("ファイルを開く"), readableFile(source, "warning.txt"));
 
     const status = await screen.findByRole("status");
-    await waitFor(() => expect(status.classList.contains("is-warning")).toBe(true));
-    expect(status.textContent).toContain("1件の注意点があります");
-    expect(status.getAttribute("title")).toBeTruthy();
+    await waitFor(() => expect(status.textContent).toContain("文書に2件の診断があります"));
+    expect(status.classList.contains("is-warning")).toBe(false);
+    expect(status.getAttribute("title")).toBeNull();
+
+    await user.click(screen.getAllByRole("button", { name: "診断 2件" })[0]);
+
+    const dialog = screen.getByRole("dialog", { name: "文書の診断（2件）" });
+    expect(dialog.textContent).toContain("2行目は「=」がないため");
+    expect(dialog.textContent).toContain("3行目は「=」がないため");
+    expect(dialog.textContent).toContain("broken setting");
+    expect(dialog.textContent).toContain("also broken");
+    expect(screen.getByText("Body")).toBeTruthy();
+  });
+
+  it("opens the help dialog, supports keyboard closing, and restores focus", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const helpButton = screen.getAllByRole<HTMLButtonElement>("button", { name: "ヘルプ" })[0];
+
+    helpButton.focus();
+    await user.keyboard("{Enter}");
+
+    const dialog = screen.getByRole("dialog", { name: "Docfillyの使い方" });
+    expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
+    expect(dialog.textContent).toContain("Docfilly形式での保存は、現在のWebビューアーでは未対応");
+    expect(dialog.textContent).toContain("外部サーバーへ送信されず");
+    expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Docfillyの使い方" }));
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(helpButton);
+  });
+
+  it("keeps tab focus inside the help dialog and opens its sample", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
+
+    await user.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(
+      screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" }),
+    );
+    await user.keyboard("{Tab}");
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Docfillyの使い方を閉じる" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "サンプル文書を開く" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(await screen.findByLabelText("作成者")).toBeTruthy();
   });
 
   it("keeps the current document when multiple files are dropped", async () => {
