@@ -49,6 +49,7 @@ deploy --project [[プロジェクト名]] --environment [[実行環境]]
 - `packages/react`: `docfilly`をReactへ接続するラッパーライブラリ
 - `apps/web`: `docfilly`を利用するVite Webアプリ
 - `documents`: 利用方法、フォーマット、APIなどの詳細文書
+- [`brand`](./brand/README.md): アイコンの原本、生成設定、Web用アイコンの生成方法
 
 ## 開発コマンド
 
