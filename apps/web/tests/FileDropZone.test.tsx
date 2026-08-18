@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FileDropZone } from "../src/FileDropZone";
@@ -12,51 +13,76 @@ function createFileList(files: File[]): FileList {
   };
 }
 
-function dataTransfer(files: File[]) {
+function dataTransfer(files: File[], types = ["Files"]): DataTransfer {
   return {
     dropEffect: "none",
     files: createFileList(files),
-    types: ["Files"],
-  };
+    types,
+  } as unknown as DataTransfer;
+}
+
+function renderDropZone(onFile = vi.fn(), onValidationError = vi.fn()) {
+  return render(
+    <FileDropZone
+      inputRef={createRef<HTMLInputElement>()}
+      onFile={onFile}
+      onValidationError={onValidationError}
+    />,
+  );
 }
 
 describe("FileDropZone", () => {
-  it("shows drag state until the pointer leaves the complete drop zone", () => {
-    render(<FileDropZone onFile={vi.fn()} onValidationError={vi.fn()} />);
-    const dropZone = screen.getByLabelText("ファイルのドロップ領域");
+  it("shows the full-screen overlay only while a file is dragged over the window", () => {
+    renderDropZone();
+    const overlay = document.querySelector(".drop-overlay");
     const transfer = dataTransfer([new File(["content"], "document.md")]);
 
-    fireEvent.dragEnter(dropZone, { dataTransfer: transfer });
-    fireEvent.dragEnter(dropZone, { dataTransfer: transfer });
-    fireEvent.dragLeave(dropZone, { dataTransfer: transfer });
-    expect(dropZone.classList.contains("is-dragging")).toBe(true);
+    expect(overlay?.classList.contains("is-visible")).toBe(false);
+    fireEvent.dragEnter(window, { dataTransfer: transfer });
+    expect(overlay?.classList.contains("is-visible")).toBe(true);
 
-    fireEvent.dragLeave(dropZone, { dataTransfer: transfer });
-    expect(dropZone.classList.contains("is-dragging")).toBe(false);
+    fireEvent.dragLeave(window, { dataTransfer: transfer });
+    expect(overlay?.classList.contains("is-visible")).toBe(false);
   });
 
-  it("passes a single dropped file to the callback", () => {
+  it("ignores drags that do not contain files", () => {
+    renderDropZone();
+    const overlay = document.querySelector(".drop-overlay");
+
+    fireEvent.dragEnter(window, { dataTransfer: dataTransfer([], ["text/plain"]) });
+
+    expect(overlay?.classList.contains("is-visible")).toBe(false);
+  });
+
+  it("prevents navigation and passes a single file dropped anywhere to the callback", () => {
     const onFile = vi.fn();
-    render(<FileDropZone onFile={onFile} onValidationError={vi.fn()} />);
+    renderDropZone(onFile);
     const file = new File(["content"], "document.md");
+    const event = new Event("drop", { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "dataTransfer", { value: dataTransfer([file]) });
 
-    fireEvent.drop(screen.getByLabelText("ファイルのドロップ領域"), {
-      dataTransfer: dataTransfer([file]),
-    });
+    window.dispatchEvent(event);
 
+    expect(event.defaultPrevented).toBe(true);
     expect(onFile).toHaveBeenCalledWith(file);
   });
 
   it("rejects multiple dropped files", () => {
     const onFile = vi.fn();
     const onValidationError = vi.fn();
-    render(<FileDropZone onFile={onFile} onValidationError={onValidationError} />);
+    renderDropZone(onFile, onValidationError);
 
-    fireEvent.drop(screen.getByLabelText("ファイルのドロップ領域"), {
+    fireEvent.drop(window, {
       dataTransfer: dataTransfer([new File(["a"], "a.md"), new File(["b"], "b.md")]),
     });
 
     expect(onFile).not.toHaveBeenCalled();
     expect(onValidationError).toHaveBeenCalledWith("ファイルは1つずつドロップしてください。");
+  });
+
+  it("keeps a keyboard-accessible file input", () => {
+    renderDropZone();
+
+    expect(screen.getByLabelText("ファイルを開く").getAttribute("type")).toBe("file");
   });
 });
