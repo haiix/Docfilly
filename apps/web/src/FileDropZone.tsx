@@ -1,60 +1,75 @@
-import { useRef, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type RefObject } from "react";
 import { supportedFileDescription } from "./document-file";
 
 interface FileDropZoneProps {
+  inputRef: RefObject<HTMLInputElement | null>;
   onFile: (file: File) => void | Promise<void>;
   onValidationError: (message: string) => void;
 }
 
 const multipleFilesMessage = "ファイルは1つずつドロップしてください。";
 
-function hasFiles(event: DragEvent<HTMLElement>): boolean {
-  return event.dataTransfer.types.includes("Files");
+function hasFiles(dataTransfer: DataTransfer | null): boolean {
+  return dataTransfer !== null && Array.from(dataTransfer.types).includes("Files");
 }
 
-export function FileDropZone({ onFile, onValidationError }: FileDropZoneProps) {
-  const dropZoneRef = useRef<HTMLDivElement>(null);
+export function FileDropZone({ inputRef, onFile, onValidationError }: FileDropZoneProps) {
+  const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
 
-  const resetDragState = (): void => {
-    dragDepth.current = 0;
-    dropZoneRef.current?.classList.remove("is-dragging");
-  };
+  useEffect(() => {
+    const resetDragState = (): void => {
+      dragDepth.current = 0;
+      setIsDragging(false);
+    };
 
-  const handleDragEnter = (event: DragEvent<HTMLDivElement>): void => {
-    if (!hasFiles(event)) return;
-    event.preventDefault();
-    dragDepth.current += 1;
-    event.currentTarget.classList.add("is-dragging");
-  };
+    const handleDragEnter = (event: DragEvent): void => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      dragDepth.current += 1;
+      setIsDragging(true);
+    };
 
-  const handleDragOver = (event: DragEvent<HTMLDivElement>): void => {
-    if (!hasFiles(event)) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "copy";
-  };
+    const handleDragOver = (event: DragEvent): void => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      if (event.dataTransfer !== null) event.dataTransfer.dropEffect = "copy";
+    };
 
-  const handleDragLeave = (event: DragEvent<HTMLDivElement>): void => {
-    if (!hasFiles(event)) return;
-    event.preventDefault();
-    dragDepth.current = Math.max(0, dragDepth.current - 1);
-    if (dragDepth.current === 0) resetDragState();
-  };
+    const handleDragLeave = (event: DragEvent): void => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      dragDepth.current = Math.max(0, dragDepth.current - 1);
+      if (dragDepth.current === 0 || event.relatedTarget === null) resetDragState();
+    };
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>): void => {
-    if (!hasFiles(event)) return;
-    event.preventDefault();
-    resetDragState();
+    const handleDrop = (event: DragEvent): void => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      resetDragState();
 
-    if (event.dataTransfer.files.length === 0) return;
-    if (event.dataTransfer.files.length > 1) {
-      onValidationError(multipleFilesMessage);
-      return;
-    }
+      const files = event.dataTransfer?.files;
+      if (files === undefined || files.length === 0) return;
+      if (files.length > 1) {
+        onValidationError(multipleFilesMessage);
+        return;
+      }
 
-    const file = event.dataTransfer.files.item(0);
-    if (file !== null) void onFile(file);
-  };
+      const file = files.item(0);
+      if (file !== null) void onFile(file);
+    };
+
+    window.addEventListener("dragenter", handleDragEnter);
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("dragleave", handleDragLeave);
+    window.addEventListener("drop", handleDrop);
+    return () => {
+      window.removeEventListener("dragenter", handleDragEnter);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("dragleave", handleDragLeave);
+      window.removeEventListener("drop", handleDrop);
+    };
+  }, [onFile, onValidationError]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.currentTarget.files?.[0];
@@ -63,29 +78,27 @@ export function FileDropZone({ onFile, onValidationError }: FileDropZoneProps) {
   };
 
   return (
-    <div
-      ref={dropZoneRef}
-      className="file-drop-zone"
-      aria-label="ファイルのドロップ領域"
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <p>
-        <strong>ファイルをドロップ</strong>
-        <span>または</span>
-      </p>
-      <label className="file-picker">
-        <span>ファイルを選択</span>
+    <>
+      <label className="toolbar-button file-picker">
+        <span>開く</span>
         <input
+          ref={inputRef}
           type="file"
-          aria-label="ファイルを選択"
+          aria-label="ファイルを開く"
           accept=".md,.markdown,.txt,text/markdown,text/plain"
           onChange={handleChange}
         />
       </label>
-      <small>{supportedFileDescription}（1ファイル）</small>
-    </div>
+      <div
+        className={`drop-overlay${isDragging ? " is-visible" : ""}`}
+        aria-label="ファイルのドロップ領域"
+        aria-hidden={!isDragging}
+      >
+        <div className="drop-overlay__message">
+          <strong>ここにファイルをドロップ</strong>
+          <span>{supportedFileDescription}（1ファイル）</span>
+        </div>
+      </div>
+    </>
   );
 }
