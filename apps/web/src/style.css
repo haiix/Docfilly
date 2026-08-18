@@ -125,6 +125,12 @@ button.toolbar-button:not(:disabled),
   cursor: not-allowed;
 }
 
+.diagnostic-action {
+  border-color: #e6a43a;
+  color: #fff3cf;
+  background: rgb(193 107 0 / 18%);
+}
+
 .file-picker input {
   position: absolute;
   width: 1px;
@@ -182,6 +188,136 @@ button.toolbar-button:not(:disabled),
   border-left-color: #c16b00;
   color: #814b08;
   background: #fff9ee;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  padding: 1rem;
+  overflow-y: auto;
+  background: rgb(12 18 30 / 70%);
+  place-items: center;
+}
+
+.app-dialog {
+  width: min(42rem, 100%);
+  max-height: min(44rem, calc(100vh - 2rem));
+  overflow-y: auto;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 32%);
+}
+
+.app-dialog__header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.5rem;
+  border-bottom: 1px solid #e4e8ee;
+  background: white;
+}
+
+.app-dialog__header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.app-dialog__header h2:focus {
+  outline: none;
+}
+
+.dialog-close {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  border: 1px solid #cbd3df;
+  border-radius: 50%;
+  color: #26324a;
+  background: white;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.dialog-close:hover {
+  background: #f3f5f8;
+}
+
+.dialog-close:focus-visible,
+.app-dialog a:focus-visible {
+  outline: 3px solid rgb(89 108 255 / 28%);
+  outline-offset: 2px;
+}
+
+.app-dialog__content {
+  padding: 0.25rem 1.5rem 1.5rem;
+  color: #48556b;
+  line-height: 1.7;
+}
+
+.app-dialog__content section {
+  margin-top: 1.5rem;
+}
+
+.app-dialog__content h3,
+.app-dialog__content p {
+  margin-top: 0;
+}
+
+.app-dialog__content h3 {
+  margin-bottom: 0.4rem;
+  color: #172033;
+  font-size: 1rem;
+}
+
+.app-dialog__content a {
+  color: #4054d8;
+  font-weight: 700;
+}
+
+.diagnostic-summary {
+  margin-top: 1.25rem;
+}
+
+.diagnostic-list {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.7rem;
+}
+
+.diagnostic-list li {
+  padding: 0.85rem 1rem;
+  border-left: 3px solid #c16b00;
+  background: #fff9ee;
+}
+
+.diagnostic-list p {
+  margin-bottom: 0.35rem;
+  color: #623b09;
+  font-weight: 700;
+}
+
+.diagnostic-list dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.1rem 0.6rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.diagnostic-list dt {
+  font-weight: 700;
+}
+
+.diagnostic-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 main {
