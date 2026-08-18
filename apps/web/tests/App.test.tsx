@@ -1,9 +1,30 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+function readBlob(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Blobをテキストとして読み取れませんでした。"));
+      }
+    });
+    reader.addEventListener("error", () =>
+      reject(reader.error ?? new Error("Blobの読み取りに失敗しました。")),
+    );
+    reader.readAsText(blob);
+  });
+}
 
 function readableFile(source: string, name: string): File {
   const file = new File([source], name, { type: "text/plain" });
@@ -54,6 +75,98 @@ describe("App", () => {
     expect(screen.getByLabelText("作成者")).toBe(input);
     expect(input.value).toBe("鈴木花子");
     expect(document.querySelectorAll(".docfilly")).toHaveLength(1);
+  });
+
+  it("exports the latest rendered output without the Docfilly header", async () => {
+    const user = userEvent.setup();
+    let downloadedBlob: Blob | undefined;
+    let downloadedName: string | undefined;
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn((blob: Blob) => {
+        downloadedBlob = blob;
+        return "blob:document-export";
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedName = this.download;
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    const input = await screen.findByLabelText<HTMLInputElement>("作成者");
+
+    await user.clear(input);
+    await user.type(input, "鈴木花子");
+    await waitFor(() =>
+      expect(screen.getByText(/作成者:/).textContent).toContain("作成者: 鈴木花子"),
+    );
+    const exportButton = screen.getAllByRole<HTMLButtonElement>("button", {
+      name: "表示結果を書き出す",
+    })[0];
+    exportButton.focus();
+    await user.keyboard("{Enter}");
+
+    expect(document.activeElement).toBe(exportButton);
+    expect(downloadedName).toBe("サンプル-output.md");
+    expect(downloadedBlob?.type).toBe("text/markdown;charset=utf-8");
+    const exportedText = await readBlob(downloadedBlob!);
+    expect(exportedText).toContain("作成者: **鈴木花子**");
+    expect(exportedText).not.toContain("#!docfilly");
+    expect(exportedText).not.toContain("author | 作成者");
+    expect(exportedText).not.toContain("[[author]]");
+  });
+
+  it("exports an ordinary text document without changing its content", async () => {
+    const user = userEvent.setup();
+    let downloadedBlob: Blob | undefined;
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn((blob: Blob) => {
+        downloadedBlob = blob;
+        return "blob:document-export";
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    render(<App />);
+
+    await user.upload(
+      screen.getByLabelText("ファイルを開く"),
+      readableFile("first\nsecond", "notes.txt"),
+    );
+    await screen.findByText("notes.txt");
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole<HTMLButtonElement>("button", {
+          name: "表示結果を書き出す",
+        })[0].disabled,
+      ).toBe(false),
+    );
+    await user.click(screen.getAllByRole("button", { name: "表示結果を書き出す" })[0]);
+
+    await expect(readBlob(downloadedBlob!)).resolves.toBe("first\nsecond");
+  });
+
+  it("keeps the current document and reports an export failure", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => {
+        throw new Error("download failed");
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    await screen.findByLabelText("作成者");
+
+    await user.click(screen.getAllByRole("button", { name: "表示結果を書き出す" })[0]);
+
+    expect(screen.getByText("サンプル.md")).toBeTruthy();
+    expect(screen.getByLabelText("作成者")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "表示結果を書き出せませんでした。文書はそのまま表示されています。",
+    );
   });
 
   it("loads a selected plain-text file through the toolbar file input", async () => {

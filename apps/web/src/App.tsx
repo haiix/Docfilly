@@ -4,6 +4,7 @@ import {
   UnsupportedDocumentFileError,
   type LoadedDocument,
 } from "./document-file";
+import { createDocumentExport, downloadDocumentExport } from "./document-export";
 import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
 
@@ -35,11 +36,13 @@ const loadingStatus: ViewerStatus = {
 
 export function App() {
   const [document, setDocument] = useState<LoadedDocument | null>(null);
+  const [outputSource, setOutputSource] = useState<string | null>(null);
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showDocument = useCallback((nextDocument: LoadedDocument): void => {
     setStatus(loadingStatus);
+    setOutputSource(null);
     setDocument(nextDocument);
   }, []);
 
@@ -66,6 +69,24 @@ export function App() {
 
   const openFilePicker = (): void => fileInputRef.current?.click();
 
+  const exportRenderedDocument = (): void => {
+    if (document === null || outputSource === null) return;
+
+    try {
+      const documentExport = createDocumentExport(outputSource, document.sourceType, document.name);
+      downloadDocumentExport(documentExport);
+      setStatus({
+        message: `表示結果「${documentExport.fileName}」の書き出しを開始しました。`,
+        isWarning: false,
+      });
+    } catch {
+      setStatus({
+        message: "表示結果を書き出せませんでした。文書はそのまま表示されています。",
+        isWarning: true,
+      });
+    }
+  };
+
   return (
     <div className="app-shell">
       <header className="toolbar">
@@ -82,8 +103,13 @@ export function App() {
             onFile={loadFile}
             onValidationError={handleValidationError}
           />
-          <button type="button" className="toolbar-button secondary-action" disabled>
-            書き出し
+          <button
+            type="button"
+            className="toolbar-button secondary-action"
+            disabled={outputSource === null}
+            onClick={exportRenderedDocument}
+          >
+            表示結果を書き出す
           </button>
           <button type="button" className="toolbar-button secondary-action" disabled>
             診断
@@ -94,8 +120,12 @@ export function App() {
           <details className="toolbar-overflow">
             <summary className="toolbar-button">その他</summary>
             <div className="toolbar-overflow__menu">
-              <button type="button" disabled>
-                書き出し
+              <button
+                type="button"
+                disabled={outputSource === null}
+                onClick={exportRenderedDocument}
+              >
+                表示結果を書き出す
               </button>
               <button type="button" disabled>
                 診断
@@ -145,6 +175,7 @@ export function App() {
             source={document.source}
             sourceType={document.sourceType}
             onStatusChange={setStatus}
+            onOutputSourceChange={setOutputSource}
           />
         )}
       </main>

@@ -12,11 +12,19 @@ interface DocumentViewerProps {
   source: string;
   sourceType: DocfillySourceType;
   onStatusChange: (status: ViewerStatus) => void;
+  onOutputSourceChange: (outputSource: string) => void;
 }
 
-export function DocumentViewer({ source, sourceType, onStatusChange }: DocumentViewerProps) {
+export function DocumentViewer({
+  source,
+  sourceType,
+  onStatusChange,
+  onOutputSourceChange,
+}: DocumentViewerProps) {
   const handleRender = useCallback(
     (state: DocfillyRenderState): void => {
+      onOutputSourceChange(state.outputSource);
+
       if (!state.isDocfilly) {
         const formatName = sourceType === "md" ? "Markdown" : "テキスト";
         onStatusChange({
@@ -41,7 +49,7 @@ export function DocumentViewer({ source, sourceType, onStatusChange }: DocumentV
         isWarning: false,
       });
     },
-    [onStatusChange, sourceType],
+    [onOutputSourceChange, onStatusChange, sourceType],
   );
 
   return <DocfillyView source={source} sourceType={sourceType} onRender={handleRender} />;
