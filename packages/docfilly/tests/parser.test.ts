@@ -114,10 +114,24 @@ describe("parseDocfillySource", () => {
     expect(parsed.diagnostics).toEqual([]);
   });
 
-  it("treats uppercase X as an unchecked checkbox", () => {
-    const parsed = parseDocfillySource("#!docfilly\nenabled = [X]\n---\n[[enabled]]");
+  it.each([
+    ["[x]", true],
+    ["[X]", true],
+    ["[ ]", false],
+  ])("parses %s as a checkbox with initialValue %s", (value, initialValue) => {
+    const parsed = parseDocfillySource(`#!docfilly\nenabled = ${value}\n---\n[[enabled]]`);
 
-    expect(parsed.variables[0]).toMatchObject({ type: "checkbox", initialValue: false });
+    expect(parsed.variables[0]).toMatchObject({ type: "checkbox", initialValue });
+  });
+
+  it.each(["[True]", "[False]"])("treats %s as a dropdown rather than a checkbox", (value) => {
+    const parsed = parseDocfillySource(`#!docfilly\nenabled = ${value}\n---\n[[enabled]]`);
+
+    expect(parsed.variables[0]).toMatchObject({
+      type: "select",
+      options: [value.slice(1, -1)],
+      initialValue: value.slice(1, -1),
+    });
   });
 
   it("accepts Japanese variable names and a delimiter with surrounding spaces", () => {

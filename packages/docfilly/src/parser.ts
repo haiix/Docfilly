@@ -230,7 +230,7 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
         type: "checkbox",
         name,
         label,
-        initialValue: value === "[x]",
+        initialValue: value.toLowerCase() === "[x]",
       },
     };
   }
