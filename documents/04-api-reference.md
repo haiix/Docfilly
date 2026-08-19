@@ -105,7 +105,7 @@ container.append(view.element);
 
 #### `form: HTMLFormElement`
 
-入力項目の定義から生成された読者向けフォームです。クラス名は`docfilly__form`です。フォームのsubmitイベントは既定でキャンセルされます。
+入力項目と説明文から生成された読者向けフォームです。クラス名は`docfilly__form`です。フォームのsubmitイベントは既定でキャンセルされます。入力項目エリアの`>`行は、ソース順に`p.docfilly__description`として挿入され、説明文だけの場合もフォームは表示されます。
 
 ```ts
 const titleInput = view.form.elements.namedItem("title");
@@ -121,7 +121,7 @@ const titleInput = view.form.elements.namedItem("title");
 
 #### `variables: readonly DocfillyVariable[]`
 
-解析済みの変数定義です。フォームの並び順と同じ順序です。
+解析済みの変数定義です。変数同士の並び順はフォームと同じです。フォーム内の説明文は入力値を持たないため、この配列には含まれません。
 
 #### `diagnostics: readonly DocfillyDiagnostic[]`
 
@@ -143,7 +143,7 @@ const markdown = view.outputSource;
 
 #### `values: ReadonlyMap<string, string>`
 
-現在のフォーム値を格納した新しいMapを返します。
+現在のフォーム値を格納した新しいMapを返します。フォーム内の説明文は含まれません。
 
 ```ts
 const environment = view.values.get("environment");
@@ -303,6 +303,7 @@ type DocfillyVariable =
 - `.docfilly`
 - `.docfilly--without-form`
 - `.docfilly__form`
+- `.docfilly__description`
 - `.docfilly__field`
 - `.docfilly__field--text`
 - `.docfilly__field--select`

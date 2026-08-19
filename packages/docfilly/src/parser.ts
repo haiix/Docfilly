@@ -1,5 +1,10 @@
 import { compileTemplate, type CompiledTemplate } from "./template";
-import type { DocfillyDiagnostic, DocfillyVariable, ParsedDocfillySource } from "./types";
+import type {
+  DocfillyDiagnostic,
+  DocfillyFormItem,
+  DocfillyVariable,
+  ParsedDocfillySource,
+} from "./types";
 
 interface SplitSource {
   isDocfilly: boolean;
@@ -299,18 +304,26 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
 
 interface ParsedDocfillyDocument extends ParsedDocfillySource {
   compiledTemplate: CompiledTemplate;
+  formItems: readonly DocfillyFormItem[];
 }
 
 /** Parses source and compiles its body for use by the interactive renderer. */
 export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
   const split = splitAtDelimiterLine(source);
   const variables: DocfillyVariable[] = [];
+  const formItems: DocfillyFormItem[] = [];
   const diagnostics: DocfillyDiagnostic[] = split.diagnostic ? [split.diagnostic] : [];
   const names = new Set<string>();
 
   split.definitions.split("\n").forEach((rawRow, index) => {
     const row = rawRow.trim();
     if (!row || row.startsWith("#")) return;
+
+    if (row.startsWith(">")) {
+      const text = row.slice(1).replace(/^\s/, "");
+      formItems.push({ kind: "description", text });
+      return;
+    }
 
     const lineNumber = index + split.definitionLineOffset;
     const parsed = parseVariable(row, lineNumber);
@@ -331,6 +344,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
 
     names.add(variable.name);
     variables.push(variable);
+    formItems.push({ kind: "variable", variable });
   });
 
   const compiledTemplate = compileTemplate(
@@ -344,6 +358,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
   return {
     isDocfilly: split.isDocfilly,
     variables,
+    formItems,
     template: split.template,
     templateLineOffset: split.templateLineOffset,
     diagnostics,

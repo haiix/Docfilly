@@ -51,10 +51,19 @@ export class Docfilly {
     this.form.className = "docfilly__form";
     this.form.addEventListener("submit", this.preventSubmit);
 
-    for (const variable of this.variables) {
+    for (const item of parsed.formItems) {
+      if (item.kind === "description") {
+        const description = document.createElement("p");
+        description.className = "docfilly__description";
+        description.textContent = item.text;
+        this.form.append(description);
+        continue;
+      }
+
+      const { variable } = item;
       this.form.append(createControl(variable, options.initialValues?.get(variable.name)));
     }
-    if (this.variables.length === 0) {
+    if (parsed.formItems.length === 0) {
       this.form.hidden = true;
       this.element.classList.add("docfilly--without-form");
     }
