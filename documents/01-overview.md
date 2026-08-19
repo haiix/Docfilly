@@ -29,7 +29,9 @@ Docfillyが解決したいのは、単なる文字列置換ではありません
 #!docfilly
 プロジェクト名 = MyProject
 実行環境 = [development, staging, *production]
+
 ---
+
 # [[プロジェクト名]] のセットアップ
 
 ```sh

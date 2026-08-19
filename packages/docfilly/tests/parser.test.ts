@@ -145,6 +145,17 @@ describe("parseDocfillySource", () => {
     expect(parsed.diagnostics).toEqual([]);
   });
 
+  it.each([
+    ["without blank lines", "#!docfilly\nname = Alice\n---\nHello", "Hello"],
+    ["with blank lines", "#!docfilly\nname = Alice\n\n---\n\nHello", "\nHello"],
+  ])("parses a delimiter %s without diagnostics", (_label, source, expectedTemplate) => {
+    const parsed = parseDocfillySource(source);
+
+    expect(parsed.variables[0]).toMatchObject({ name: "name", initialValue: "Alice" });
+    expect(parsed.template).toBe(expectedTemplate);
+    expect(parsed.diagnostics).toEqual([]);
+  });
+
   it("treats a source without the identifier as an ordinary document", () => {
     const source = "# 普通のMarkdown\n\n区切りがなくても表示します。";
     const parsed = parseDocfillySource(source);
