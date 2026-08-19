@@ -74,15 +74,22 @@ describe("DocfillyView", () => {
     const firstElement = container.querySelector(".docfilly");
 
     act(() => {
-      root.render(<DocfillyView source="second" sourceType="md" />);
+      root.render(<DocfillyView source="second" sourceType="text" />);
     });
 
     expect(destroy).toHaveBeenCalledTimes(1);
     expect(container.querySelector(".docfilly")).not.toBe(firstElement);
     expect(container.querySelector(".docfilly__output")?.textContent?.trim()).toBe("second");
 
-    act(() => root.unmount());
+    act(() => {
+      root.render(<DocfillyView source="second" sourceType="md" />);
+    });
+
     expect(destroy).toHaveBeenCalledTimes(2);
+    expect(container.querySelector(".docfilly__output--md")).not.toBeNull();
+
+    act(() => root.unmount());
+    expect(destroy).toHaveBeenCalledTimes(3);
   });
 
   it("does not reset form input when only onRender changes", () => {
@@ -118,6 +125,80 @@ describe("DocfillyView", () => {
       diagnostics: [],
       isDocfilly: true,
     });
+  });
+
+  it("applies initial values without resetting for an equivalent Map", () => {
+    const destroy = vi.spyOn(Docfilly.prototype, "destroy");
+    const onRender = vi.fn<(state: DocfillyRenderState) => void>();
+    const source = "#!docfilly\nname = Header\n---\nHello [[name]]";
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={source}
+          sourceType="text"
+          options={{ initialValues: new Map([["name", "Saved"]]) }}
+          onRender={onRender}
+        />,
+      );
+    });
+
+    const input = container.querySelector<HTMLInputElement>('input[name="name"]');
+    if (input === null) throw new Error("Expected the generated input");
+    expect(input.value).toBe("Saved");
+    expect(onRender).toHaveBeenLastCalledWith({
+      outputSource: "Hello Saved",
+      values: new Map([["name", "Saved"]]),
+      diagnostics: [],
+      isDocfilly: true,
+    });
+    input.value = "Edited";
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={source}
+          sourceType="text"
+          options={{ initialValues: new Map([["name", "Saved"]]) }}
+        />,
+      );
+    });
+
+    expect(container.querySelector<HTMLInputElement>('input[name="name"]')).toBe(input);
+    expect(input.value).toBe("Edited");
+    expect(destroy).not.toHaveBeenCalled();
+  });
+
+  it("recreates the instance when initial value contents change", () => {
+    const destroy = vi.spyOn(Docfilly.prototype, "destroy");
+    const source = "#!docfilly\nname = Header\n---\nHello [[name]]";
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={source}
+          sourceType="text"
+          options={{ initialValues: new Map([["name", "First"]]) }}
+        />,
+      );
+    });
+    const firstInput = container.querySelector<HTMLInputElement>('input[name="name"]');
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={source}
+          sourceType="text"
+          options={{ initialValues: new Map([["name", "Second"]]) }}
+        />,
+      );
+    });
+
+    const secondInput = container.querySelector<HTMLInputElement>('input[name="name"]');
+    expect(secondInput).not.toBe(firstInput);
+    expect(secondInput?.value).toBe("Second");
+    expect(container.querySelector(".docfilly__output")?.textContent).toBe("Hello Second");
+    expect(destroy).toHaveBeenCalledOnce();
   });
 
   it("does not duplicate the Docfilly DOM in Strict Mode", () => {

@@ -38,6 +38,67 @@ describe("Docfilly", () => {
     );
   });
 
+  it("applies serialized initial values to every supported control", () => {
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "title = Header title",
+        "environment = [*dev, prod]",
+        "enabled = [ ]",
+        "---",
+        "[[title]] / [[environment]] / [[enabled]]",
+      ].join("\n"),
+      "text",
+      {
+        initialValues: new Map([
+          ["title", "Saved title"],
+          ["environment", "prod"],
+          ["enabled", "true"],
+        ]),
+      },
+    );
+
+    expect(view.values).toEqual(
+      new Map([
+        ["title", "Saved title"],
+        ["environment", "prod"],
+        ["enabled", "true"],
+      ]),
+    );
+    expect(view.outputSource).toBe("Saved title / prod / true");
+    expect(view.output.textContent).toBe("Saved title / prod / true");
+  });
+
+  it("ignores unknown, incorrectly typed, and invalid serialized initial values", () => {
+    const invalidInitialValues = new Map<string, unknown>([
+      ["title", false],
+      ["environment", "staging"],
+      ["enabled", "yes"],
+      ["unknown", "ignored"],
+    ]) as ReadonlyMap<string, string>;
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "title = Header title",
+        "environment = [dev, *prod]",
+        "enabled = [x]",
+        "---",
+        "[[title]] / [[environment]] / [[enabled]]",
+      ].join("\n"),
+      "text",
+      { initialValues: invalidInitialValues },
+    );
+
+    expect(view.values).toEqual(
+      new Map([
+        ["title", "Header title"],
+        ["environment", "prod"],
+        ["enabled", "true"],
+      ]),
+    );
+    expect(view.outputSource).toBe("Header title / prod / true");
+  });
+
   it("updates output after a form input changes", () => {
     vi.useFakeTimers();
     const view = createDocfilly("#!docfilly\nname = before\n---\nHello [[name]]", "text");

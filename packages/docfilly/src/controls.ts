@@ -16,9 +16,13 @@ function nextControlId(): string {
  * Creates a labeled form control for a Docfilly variable.
  *
  * @param variable - The variable definition used to configure the control.
+ * @param serializedInitialValue - A saved value to apply when valid for the control.
  * @returns A field container with the appropriate input element.
  */
-export function createControl(variable: DocfillyVariable): HTMLDivElement {
+export function createControl(
+  variable: DocfillyVariable,
+  serializedInitialValue?: unknown,
+): HTMLDivElement {
   const group = document.createElement("div");
   group.className = `docfilly__field docfilly__field--${variable.type}`;
 
@@ -32,7 +36,12 @@ export function createControl(variable: DocfillyVariable): HTMLDivElement {
     input.type = "checkbox";
     input.id = id;
     input.name = variable.name;
-    input.checked = variable.initialValue;
+    input.checked =
+      serializedInitialValue === "true"
+        ? true
+        : serializedInitialValue === "false"
+          ? false
+          : variable.initialValue;
     group.append(input, label);
     return group;
   }
@@ -41,11 +50,16 @@ export function createControl(variable: DocfillyVariable): HTMLDivElement {
     const select = document.createElement("select");
     select.id = id;
     select.name = variable.name;
+    const initialValue =
+      typeof serializedInitialValue === "string" &&
+      variable.options.includes(serializedInitialValue)
+        ? serializedInitialValue
+        : variable.initialValue;
     for (const option of variable.options) {
       const optionElement = document.createElement("option");
       optionElement.value = option;
       optionElement.textContent = option;
-      optionElement.selected = option === variable.initialValue;
+      optionElement.selected = option === initialValue;
       select.append(optionElement);
     }
     group.append(label, select);
@@ -56,7 +70,8 @@ export function createControl(variable: DocfillyVariable): HTMLDivElement {
   input.type = "text";
   input.id = id;
   input.name = variable.name;
-  input.value = variable.initialValue;
+  input.value =
+    typeof serializedInitialValue === "string" ? serializedInitialValue : variable.initialValue;
   group.append(label, input);
   return group;
 }

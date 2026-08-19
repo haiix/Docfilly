@@ -2,6 +2,7 @@ import { useEffect, useRef, type HTMLAttributes, type ReactElement } from "react
 import {
   createDocfilly,
   type DocfillyDiagnostic,
+  type DocfillyInitialValues,
   type DocfillyOptions,
   type DocfillySourceType,
 } from "docfilly";
@@ -18,6 +19,31 @@ export interface DocfillyViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   sourceType: DocfillySourceType;
   options?: DocfillyOptions;
   onRender?: (state: DocfillyRenderState) => void;
+}
+
+function initialValuesEqual(
+  left: DocfillyInitialValues | undefined,
+  right: DocfillyInitialValues | undefined,
+): boolean {
+  if (left === right) return true;
+  if (left === undefined) return false;
+  if (right === undefined) return false;
+  if (left.size !== right.size) return false;
+
+  for (const [name, value] of left) {
+    if (right.get(name) !== value) return false;
+  }
+  return true;
+}
+
+function useStableInitialValues(
+  initialValues: DocfillyInitialValues | undefined,
+): DocfillyInitialValues | undefined {
+  const stableInitialValuesRef = useRef(initialValues);
+  if (!initialValuesEqual(stableInitialValuesRef.current, initialValues)) {
+    stableInitialValuesRef.current = initialValues;
+  }
+  return stableInitialValuesRef.current;
 }
 
 /**
@@ -38,12 +64,13 @@ export function DocfillyView({
   }, [onRender]);
 
   const debounceMs = options?.debounceMs;
+  const initialValues = useStableInitialValues(options?.initialValues);
 
   useEffect(() => {
     const container = containerRef.current;
     if (container === null) return;
 
-    const view = createDocfilly(source, sourceType, { debounceMs });
+    const view = createDocfilly(source, sourceType, { debounceMs, initialValues });
     const notify = (): void => {
       onRenderRef.current?.({
         outputSource: view.outputSource,
@@ -61,7 +88,7 @@ export function DocfillyView({
       view.element.removeEventListener("docfilly:render", notify);
       view.destroy();
     };
-  }, [source, sourceType, debounceMs]);
+  }, [source, sourceType, debounceMs, initialValues]);
 
   return <div {...containerProps} ref={containerRef} />;
 }

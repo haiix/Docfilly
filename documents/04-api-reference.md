@@ -9,6 +9,7 @@ import {
   createDocfilly,
   parseDocfillySource,
   Docfilly,
+  type DocfillyInitialValues,
   type DocfillyOptions,
   type DocfillyDiagnostic,
   type DocfillyDiagnosticCode,
@@ -39,9 +40,18 @@ function createDocfilly(
 ### 例
 
 ```ts
-const view = createDocfilly(source, "md", { debounceMs: 100 });
+const savedValues = new Map([
+  ["title", "保存済みのタイトル"],
+  ["published", "true"],
+]);
+const view = createDocfilly(source, "md", {
+  debounceMs: 100,
+  initialValues: savedValues,
+});
 document.querySelector("#viewer")?.append(view.element);
 ```
+
+`initialValues`を指定すると、ソースを書き換えずに保存済みのフォーム値を初期表示へ適用できます。指定のない変数、文字列ではない値、選択肢にないドロップダウン値、`"true"`または`"false"`ではないチェックボックス値は無視され、Headerの初期値が使われます。変数定義にないキーも無視されます。
 
 ソースに読み取れない箇所があっても、構文上の理由で`Error`を送出しません。可能な範囲で読者向けの文書を表示し、`diagnostics`へ執筆者向けの注意点を格納します。
 
@@ -193,8 +203,20 @@ type DocfillySourceType = "md" | "text";
 ```ts
 interface DocfillyOptions {
   debounceMs?: number;
+  initialValues?: ReadonlyMap<string, string>;
 }
 ```
+
+- `debounceMs`: フォーム操作から再描画までの待機時間。既定値は200ミリ秒です
+- `initialValues`: 初期表示へ適用する、変数名とシリアライズ済み値のMapです。`values` getterの戻り値をそのまま次回の生成に渡せます
+
+### `DocfillyInitialValues`
+
+```ts
+type DocfillyInitialValues = ReadonlyMap<string, string>;
+```
+
+テキストとドロップダウンは入力値を文字列で、チェックボックスは`"true"`または`"false"`で指定します。
 
 ### `ParsedDocfillySource`
 
