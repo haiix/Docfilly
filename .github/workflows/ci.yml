@@ -40,6 +40,9 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      - name: Check synchronized versions
+        run: pnpm version:check
+
       - name: Test
         run: pnpm test
 

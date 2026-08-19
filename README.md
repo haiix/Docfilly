@@ -61,10 +61,13 @@ pnpm dev
 pnpm build
 pnpm lint
 pnpm format:check
+pnpm version:check
 pnpm typecheck
 pnpm test
 pnpm test:e2e
 ```
+
+Issue、Pull Request、バージョン、GitHub Pagesへのデプロイ、リリースの運用については[CONTRIBUTING.md](./CONTRIBUTING.md)を参照してください。
 
 ブラウザーE2EテストはPlaywrightとChromiumを使用します。初回実行前にブラウザーをインストールしてください。
 
