@@ -52,7 +52,7 @@ export class Docfilly {
     this.form.addEventListener("submit", this.preventSubmit);
 
     for (const variable of this.variables) {
-      this.form.append(createControl(variable));
+      this.form.append(createControl(variable, options.initialValues?.get(variable.name)));
     }
     if (this.variables.length === 0) {
       this.form.hidden = true;

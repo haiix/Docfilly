@@ -1,5 +1,7 @@
 export type DocfillySourceType = "md" | "text";
 
+export type DocfillyInitialValues = ReadonlyMap<string, string>;
+
 export type DocfillyVariable =
   | {
       type: "text";
@@ -23,6 +25,7 @@ export type DocfillyVariable =
 
 export interface DocfillyOptions {
   debounceMs?: number;
+  initialValues?: DocfillyInitialValues;
 }
 
 export type DocfillyDiagnosticCode =
