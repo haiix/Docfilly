@@ -13,7 +13,8 @@
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @docfilly/web test:e2e",
     "test:watch": "pnpm -r --parallel test:watch",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "version:check": "node scripts/check-version-sync.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
