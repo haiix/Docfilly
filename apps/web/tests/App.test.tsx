@@ -204,6 +204,93 @@ describe("App", () => {
     await expect(readBlob(downloadedBlob!)).resolves.toBe("first\nsecond");
   });
 
+  it("saves current values in Docfilly format while preserving the source template", async () => {
+    const user = userEvent.setup();
+    let downloadedBlob: Blob | undefined;
+    let downloadedName: string | undefined;
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn((blob: Blob) => {
+        downloadedBlob = blob;
+        return "blob:docfilly-export";
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedName = this.download;
+    });
+    render(<App />);
+    const source = [
+      "#!docfilly",
+      "name = Before",
+      "region = [*east, west]",
+      "enabled = [ ]",
+      "---",
+      "# [[name]]",
+      "[[#if enabled]]",
+      "Region: [[region]]",
+      "[[#endif]]",
+    ].join("\n");
+    await user.upload(
+      screen.getByLabelText("ファイルを開く"),
+      readableFile(source, "settings.markdown"),
+    );
+
+    const nameInput = await screen.findByLabelText<HTMLInputElement>("name");
+    await user.clear(nameInput);
+    await user.type(nameInput, '彼は "はい" と言った');
+    await user.selectOptions(screen.getByLabelText("region"), "west");
+    await user.click(screen.getByLabelText("enabled"));
+    await waitFor(() => expect(screen.getByText("Region: west")).toBeTruthy());
+    await user.click(screen.getAllByRole("button", { name: "Docfilly形式で保存" })[0]);
+
+    expect(downloadedName).toBe("settings.markdown");
+    const savedSource = await readBlob(downloadedBlob!);
+    expect(savedSource).toContain('name = "彼は ""はい"" と言った"');
+    expect(savedSource).toContain("region = [east, *west]");
+    expect(savedSource).toContain("enabled = [x]");
+    expect(savedSource).toContain("[[#if enabled]]\nRegion: [[region]]\n[[#endif]]");
+    expect(screen.getByDisplayValue('彼は "はい" と言った')).toBeTruthy();
+  });
+
+  it("does not allow an ordinary document to be saved as Docfilly", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.upload(
+      screen.getByLabelText("ファイルを開く"),
+      readableFile("ordinary text", "notes.txt"),
+    );
+    await screen.findByText("notes.txt");
+
+    expect(
+      screen.getAllByRole<HTMLButtonElement>("button", { name: "Docfilly形式で保存" })[0].disabled,
+    ).toBe(true);
+  });
+
+  it("keeps the current values when Docfilly saving fails", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn(() => {
+        throw new Error("download failed");
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    const input = await screen.findByLabelText<HTMLInputElement>("作成者");
+    await user.clear(input);
+    await user.type(input, "保存失敗後も残る値");
+
+    await user.click(screen.getAllByRole("button", { name: "Docfilly形式で保存" })[0]);
+
+    expect(screen.getByDisplayValue("保存失敗後も残る値")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "Docfilly形式で保存できませんでした。文書とフォーム値は維持されています。",
+    );
+  });
+
   it("keeps the current document and reports an export failure", async () => {
     const user = userEvent.setup();
     vi.stubGlobal("URL", {
@@ -270,7 +357,8 @@ describe("App", () => {
 
     const dialog = screen.getByRole("dialog", { name: "Docfillyの使い方" });
     expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
-    expect(dialog.textContent).toContain("Docfilly形式での保存は、現在のWebビューアーでは未対応");
+    expect(dialog.textContent).toContain("現在のフォーム値を次回の初期値");
+    expect(dialog.textContent).toContain("通常文書では利用できません");
     expect(dialog.textContent).toContain("外部サーバーへ送信されず");
     expect(dialog.textContent).toContain("最後に開いた1文書");
     expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();

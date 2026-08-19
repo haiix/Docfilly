@@ -1,4 +1,8 @@
-import type { DocfillySourceType } from "docfilly";
+import {
+  updateDocfillyDefaults,
+  type DocfillyInitialValues,
+  type DocfillySourceType,
+} from "docfilly";
 
 export interface DocumentExport {
   blob: Blob;
@@ -9,6 +13,46 @@ const exportTypes: Record<DocfillySourceType, { extension: string; mimeType: str
   md: { extension: "md", mimeType: "text/markdown;charset=utf-8" },
   text: { extension: "txt", mimeType: "text/plain;charset=utf-8" },
 };
+
+const sourceTypeExtensions: Record<DocfillySourceType, readonly string[]> = {
+  md: ["md", "markdown"],
+  text: ["txt"],
+};
+
+/** Raised when Docfilly-format saving is requested for an ordinary document. */
+export class OrdinaryDocumentExportError extends Error {
+  constructor() {
+    super("通常文書はDocfilly形式で保存できません。");
+    this.name = "OrdinaryDocumentExportError";
+  }
+}
+
+/**
+ * Creates a Docfilly source file with the current form values stored as defaults.
+ */
+export function createDocfillyDocumentExport(
+  source: string,
+  values: DocfillyInitialValues,
+  sourceType: DocfillySourceType,
+  originalFileName: string,
+): DocumentExport {
+  const updated = updateDocfillyDefaults(source, values);
+  if (!updated.isDocfilly) throw new OrdinaryDocumentExportError();
+
+  const { extension: fallbackExtension, mimeType } = exportTypes[sourceType];
+  const originalExtension = /\.([^.]+)$/u.exec(originalFileName)?.[1].toLowerCase();
+  const extension =
+    originalExtension !== undefined && sourceTypeExtensions[sourceType].includes(originalExtension)
+      ? originalExtension
+      : fallbackExtension;
+  const fileNameWithoutExtension = originalFileName.replace(/\.[^.]+$/u, "").trim();
+  const baseName = fileNameWithoutExtension || "document";
+
+  return {
+    blob: new Blob([updated.source], { type: mimeType }),
+    fileName: `${baseName}.${extension}`,
+  };
+}
 
 /**
  * Creates the file payload used to download the currently rendered document.
