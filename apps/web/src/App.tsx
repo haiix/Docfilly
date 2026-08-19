@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DocfillyDiagnostic } from "docfilly";
 import { AppDialog } from "./AppDialog";
 import {
@@ -9,6 +9,7 @@ import {
 import { createDocumentExport, downloadDocumentExport } from "./document-export";
 import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
+import { clearDocumentSession, loadDocumentSession, saveDocumentSession } from "./document-session";
 
 const sampleSource = `#!docfilly
 # Docfilly sample
@@ -36,19 +37,104 @@ const loadingStatus: ViewerStatus = {
   isWarning: false,
 };
 
+const sessionSaveDelayMs = 500;
+
 export function App() {
   const [document, setDocument] = useState<LoadedDocument | null>(null);
+  const [initialValues, setInitialValues] = useState<ReadonlyMap<string, string> | undefined>();
   const [outputSource, setOutputSource] = useState<string | null>(null);
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const [diagnostics, setDiagnostics] = useState<readonly DocfillyDiagnostic[]>([]);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentRef = useRef<LoadedDocument | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const restoredNoticeRef = useRef(false);
+  const restoreCancelledRef = useRef(false);
+  const persistenceSuppressedRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    void loadDocumentSession()
+      .then((session) => {
+        if (!active || restoreCancelledRef.current || session === null) return;
+        const restoredDocument: LoadedDocument = {
+          name: session.name,
+          source: session.source,
+          sourceType: session.sourceType,
+        };
+        documentRef.current = restoredDocument;
+        restoredNoticeRef.current = true;
+        setInitialValues(session.values);
+        setDocument(restoredDocument);
+      })
+      .catch(() => {
+        if (!active) return;
+        setStatus({
+          message: "この端末の保存データを読み込めませんでした。新しい文書を開けます。",
+          isWarning: true,
+        });
+      });
+
+    return () => {
+      active = false;
+      if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
 
   const showDocument = useCallback((nextDocument: LoadedDocument): void => {
+    if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
+    restoreCancelledRef.current = true;
+    documentRef.current = nextDocument;
+    persistenceSuppressedRef.current = false;
     setStatus(loadingStatus);
     setOutputSource(null);
     setDiagnostics([]);
+    setInitialValues(undefined);
     setDocument(nextDocument);
+  }, []);
+
+  const handleValuesChange = useCallback((values: ReadonlyMap<string, string>): void => {
+    if (restoredNoticeRef.current) {
+      restoredNoticeRef.current = false;
+      setStatus({ message: "前回の文書を復元しました。", isWarning: false });
+      return;
+    }
+    if (persistenceSuppressedRef.current || documentRef.current === null) return;
+    if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
+    const documentToSave = documentRef.current;
+    const valuesToSave = new Map(values);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = undefined;
+      void saveDocumentSession(documentToSave, valuesToSave).catch(() => {
+        setStatus({
+          message: "この端末へ文書データを保存できませんでした。表示中の文書は維持されています。",
+          isWarning: true,
+        });
+      });
+    }, sessionSaveDelayMs);
+  }, []);
+
+  const clearSavedDocument = useCallback(async (): Promise<void> => {
+    restoreCancelledRef.current = true;
+    if (saveTimerRef.current !== undefined) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = undefined;
+    }
+    persistenceSuppressedRef.current = true;
+    try {
+      await clearDocumentSession();
+      setStatus({
+        message: "この端末に保存した文書データを削除しました。表示中の文書は維持されています。",
+        isWarning: false,
+      });
+    } catch {
+      persistenceSuppressedRef.current = false;
+      setStatus({
+        message: "この端末の保存データを削除できませんでした。",
+        isWarning: true,
+      });
+    }
   }, []);
 
   const loadFile = useCallback(
@@ -192,9 +278,11 @@ export function App() {
           <DocumentViewer
             source={document.source}
             sourceType={document.sourceType}
+            initialValues={initialValues}
             onStatusChange={setStatus}
             onOutputSourceChange={setOutputSource}
             onDiagnosticsChange={setDiagnostics}
+            onValuesChange={handleValuesChange}
           />
         )}
       </main>
@@ -225,8 +313,11 @@ export function App() {
           <section>
             <h3>プライバシーと利用範囲</h3>
             <p>
-              開いたファイルは外部サーバーへ送信されず、ブラウザー内だけで処理されます。現在は文書を端末内へ保存せず、再読み込み時の復元、保存データの削除、インストール、オフライン起動には未対応です。
+              開いたファイルは外部サーバーへ送信されず、ブラウザー内だけで処理されます。最後に開いた1文書のファイル名、元ソース、形式、フォーム値を現在のブラウザープロファイル内へ保存し、次回起動時に復元します。共有端末では利用後に保存データを削除してください。インストールとオフライン起動には未対応です。
             </p>
+            <button type="button" className="text-button" onClick={() => void clearSavedDocument()}>
+              この端末の保存データを削除
+            </button>
           </section>
         </AppDialog>
       )}
