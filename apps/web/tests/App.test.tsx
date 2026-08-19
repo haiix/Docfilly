@@ -1,7 +1,13 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { IDBFactory as FDBFactory } from "fake-indexeddb";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
+import { saveDocumentSession } from "../src/document-session";
+
+beforeEach(() => {
+  vi.stubGlobal("indexedDB", new FDBFactory());
+});
 
 afterEach(() => {
   cleanup();
@@ -75,6 +81,56 @@ describe("App", () => {
     expect(screen.getByLabelText("作成者")).toBe(input);
     expect(input.value).toBe("鈴木花子");
     expect(document.querySelectorAll(".docfilly")).toHaveLength(1);
+  });
+
+  it("restores the last document and its form values after reopening", async () => {
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    const input = await screen.findByLabelText<HTMLInputElement>("作成者");
+    await user.clear(input);
+    await user.type(input, "復元する名前");
+    await waitFor(() => expect(screen.getByText(/作成者:/).textContent).toContain("復元する名前"));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    firstRender.unmount();
+
+    render(<App />);
+
+    expect(await screen.findByText("サンプル.md")).toBeTruthy();
+    expect(await screen.findByDisplayValue("復元する名前")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("前回の文書を復元しました。");
+  });
+
+  it("does not replace a document opened while startup restoration is pending", async () => {
+    await saveDocumentSession(
+      { name: "previous.txt", source: "Previous", sourceType: "text" },
+      new Map(),
+    );
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "サンプルを開く" }));
+
+    expect(await screen.findByText("サンプル.md")).toBeTruthy();
+    await waitFor(() => expect(screen.queryByText("previous.txt")).toBeNull());
+  });
+
+  it("deletes locally saved data without closing the current document", async () => {
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    await screen.findByLabelText("作成者");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
+
+    await user.click(screen.getByRole("button", { name: "この端末の保存データを削除" }));
+
+    expect(screen.getByText("サンプル.md")).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain("保存した文書データを削除しました"),
+    );
+    firstRender.unmount();
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
   });
 
   it("exports the latest rendered output without the Docfilly header", async () => {
@@ -216,6 +272,7 @@ describe("App", () => {
     expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
     expect(dialog.textContent).toContain("Docfilly形式での保存は、現在のWebビューアーでは未対応");
     expect(dialog.textContent).toContain("外部サーバーへ送信されず");
+    expect(dialog.textContent).toContain("最後に開いた1文書");
     expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Docfillyの使い方" }));
 
@@ -232,7 +289,7 @@ describe("App", () => {
 
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(
-      screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" }),
+      screen.getByRole("button", { name: "この端末の保存データを削除" }),
     );
     await user.keyboard("{Tab}");
     expect(document.activeElement).toBe(
