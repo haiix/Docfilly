@@ -63,7 +63,19 @@ pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
+pnpm test:e2e
 ```
+
+ブラウザーE2EテストはPlaywrightとChromiumを使用します。初回実行前にブラウザーをインストールしてください。
+
+```sh
+pnpm --filter @docfilly/web exec playwright install chromium
+pnpm test:e2e
+```
+
+Playwrightは`apps/web`のViteサーバーを起動し、GitHub Pagesと同じ`/Docfilly/`ベースパスで実行します。ローカルでは同じURLの既存サーバーを再利用し、CIではワーカーを1つに制限します。失敗時は`apps/web/test-results`へスクリーンショットとtraceを保存し、CIではHTMLレポートとともに成果物として取得できます。
+
+E2Eテストは`apps/web/e2e`へ利用者シナリオ単位で追加します。CSSクラスやDOM階層ではなくrole、label、表示文言を優先し、固定時間の待機ではなくlocatorとweb-first assertionを使用してください。各テストは独立させ、ブラウザーコンテキストをまたぐ状態が必要な場合だけ明示的に準備します。細かなロジック、コンポーネント分岐、境界値は引き続きVitestで検証します。
 
 ## ライブラリAPI
 
