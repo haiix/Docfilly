@@ -49,6 +49,25 @@ describe("parseDocfillySource", () => {
     expect(parsed.template).toBe("Hello [[name]]");
   });
 
+  it("recognizes description rows without exposing them as variables or diagnostics", () => {
+    const parsed = parseDocfillySource(
+      [
+        "#!docfilly",
+        "  > 説明文 = 設定行ではありません。  ",
+        ">  先頭の空白は1文字だけ除去します。",
+        "> <strong>プレーンテキスト</strong>",
+        "name = Alice",
+        "---",
+        "Hello [[name]]",
+      ].join("\n"),
+    );
+
+    expect(parsed.variables).toEqual([
+      { type: "text", name: "name", label: "name", initialValue: "Alice" },
+    ]);
+    expect(parsed.diagnostics).toEqual([]);
+  });
+
   it("uses the variable name when the label is omitted", () => {
     const parsed = parseDocfillySource("#!docfilly\nauthor = 山田太郎\n---\n[[author]]");
 
@@ -206,6 +225,17 @@ describe("parseDocfillySource", () => {
       "duplicate-variable",
     ]);
     expect(parsed.diagnostics.map((item) => item.line)).toEqual([3, 4, 5]);
+  });
+
+  it("keeps comments hidden and reports non-description rows without equals", () => {
+    const parsed = parseDocfillySource(
+      "#!docfilly\n# author comment\n> reader description\nbroken row\n---\nBody",
+    );
+
+    expect(parsed.variables).toEqual([]);
+    expect(parsed.diagnostics).toMatchObject([
+      { code: "missing-equals", line: 4, source: "broken row" },
+    ]);
   });
 
   it("ignores empty dropdown choices when valid choices remain", () => {

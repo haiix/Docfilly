@@ -69,6 +69,67 @@ describe("Docfilly", () => {
     expect(view.output.textContent).toBe("Saved title / prod / true");
   });
 
+  it("renders descriptions and controls in source order", () => {
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "  >  最初の説明  ",
+        "name = Alice",
+        ">\t次の説明",
+        "enabled = [x]",
+        "---",
+        "Hello [[name]]",
+      ].join("\n"),
+      "text",
+    );
+
+    expect(
+      Array.from(view.form.children).map((element) => ({
+        className: element.className,
+        text: element.textContent,
+      })),
+    ).toEqual([
+      { className: "docfilly__description", text: " 最初の説明" },
+      { className: "docfilly__field docfilly__field--text", text: "name" },
+      { className: "docfilly__description", text: "次の説明" },
+      { className: "docfilly__field docfilly__field--checkbox", text: "enabled" },
+    ]);
+  });
+
+  it("renders each description as safe plain text without adding form values", () => {
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "> <img src=x onerror=alert(1)>",
+        "> [[name | upper]]",
+        "name = Alice",
+        "---",
+        "Hello [[name]]",
+      ].join("\n"),
+      "md",
+    );
+
+    const descriptions = view.form.querySelectorAll(".docfilly__description");
+    expect(descriptions).toHaveLength(2);
+    expect(descriptions[0]?.textContent).toBe("<img src=x onerror=alert(1)>");
+    expect(descriptions[0]?.querySelector("img")).toBeNull();
+    expect(descriptions[1]?.textContent).toBe("[[name | upper]]");
+    expect(view.variables).toHaveLength(1);
+    expect(view.values).toEqual(new Map([["name", "Alice"]]));
+  });
+
+  it("keeps the form visible when it only contains descriptions", () => {
+    const view = createDocfilly("#!docfilly\n> 説明だけのフォーム\n---\nBody", "text");
+
+    expect(view.variables).toEqual([]);
+    expect(view.values).toEqual(new Map());
+    expect(view.form.hidden).toBe(false);
+    expect(view.element.classList.contains("docfilly--without-form")).toBe(false);
+    expect(view.form.querySelector(".docfilly__description")?.textContent).toBe(
+      "説明だけのフォーム",
+    );
+  });
+
   it("ignores unknown, incorrectly typed, and invalid serialized initial values", () => {
     const invalidInitialValues = new Map<string, unknown>([
       ["title", false],

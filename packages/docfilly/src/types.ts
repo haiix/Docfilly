@@ -23,6 +23,10 @@ export type DocfillyVariable =
       initialValue: boolean;
     };
 
+/** Internal ordered representation of content rendered in the form area. */
+export type DocfillyFormItem =
+  { kind: "variable"; variable: DocfillyVariable } | { kind: "description"; text: string };
+
 export interface DocfillyOptions {
   debounceMs?: number;
   initialValues?: DocfillyInitialValues;

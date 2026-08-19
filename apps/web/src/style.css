@@ -476,6 +476,14 @@ main {
   background: #fafbfc;
 }
 
+.docfilly__description {
+  margin: 0 0 1.25rem;
+  color: #637087;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .docfilly__field {
   display: flex;
   flex-direction: column;
