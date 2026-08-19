@@ -173,4 +173,12 @@ describe("updateDocfillyDefaults", () => {
 
     expect(result.source).toBe("#!docfilly\n  name | Name =    updated\n---\n[[name]]");
   });
+
+  it("handles long whitespace sequences in source values without expensive backtracking", () => {
+    const source = `#!docfilly\nname = before${" ".repeat(20_000)}x\n---\n[[name]]`;
+
+    const result = updateDocfillyDefaults(source, new Map([["name", "updated"]]));
+
+    expect(result.source).toBe("#!docfilly\nname = updated\n---\n[[name]]");
+  });
 });

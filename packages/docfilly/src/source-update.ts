@@ -132,7 +132,10 @@ export function updateDocfillyDefaults(
 
     const rawValue = line.slice(equalsIndex + 1);
     const leadingWhitespace = /^\s*/u.exec(rawValue)?.[0] ?? "";
-    const trailingWhitespace = /\s*$/u.exec(rawValue.slice(leadingWhitespace.length))?.[0] ?? "";
+    const valueWithTrailingWhitespace = rawValue.slice(leadingWhitespace.length);
+    const trailingWhitespace = valueWithTrailingWhitespace.slice(
+      valueWithTrailingWhitespace.trimEnd().length,
+    );
     parts[partIndex] =
       `${line.slice(0, equalsIndex + 1)}${leadingWhitespace}${encodedValue}${trailingWhitespace}`;
   }
