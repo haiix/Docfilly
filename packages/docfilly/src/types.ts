@@ -39,6 +39,7 @@ export type DocfillyDiagnosticCode =
   | "duplicate-variable"
   | "invalid-dropdown"
   | "invalid-quoting"
+  | "invalid-default-value"
   | "undefined-variable"
   | "unknown-filter"
   | "invalid-placeholder"
@@ -64,5 +65,11 @@ export interface ParsedDocfillySource {
   variables: readonly DocfillyVariable[];
   template: string;
   templateLineOffset: number;
+  diagnostics: readonly DocfillyDiagnostic[];
+}
+
+export interface DocfillySourceUpdateResult {
+  source: string;
+  isDocfilly: boolean;
   diagnostics: readonly DocfillyDiagnostic[];
 }

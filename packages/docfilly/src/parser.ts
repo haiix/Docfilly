@@ -302,9 +302,10 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   return { variable: { type: "text", name, label, initialValue: decodedValue.value } };
 }
 
-interface ParsedDocfillyDocument extends ParsedDocfillySource {
+export interface ParsedDocfillyDocument extends ParsedDocfillySource {
   compiledTemplate: CompiledTemplate;
   formItems: readonly DocfillyFormItem[];
+  variableLines: ReadonlyMap<string, number>;
 }
 
 /** Parses source and compiles its body for use by the interactive renderer. */
@@ -314,6 +315,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
   const formItems: DocfillyFormItem[] = [];
   const diagnostics: DocfillyDiagnostic[] = split.diagnostic ? [split.diagnostic] : [];
   const names = new Set<string>();
+  const variableLines = new Map<string, number>();
 
   split.definitions.split("\n").forEach((rawRow, index) => {
     const row = rawRow.trim();
@@ -343,6 +345,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
     }
 
     names.add(variable.name);
+    variableLines.set(variable.name, lineNumber);
     variables.push(variable);
     formItems.push({ kind: "variable", variable });
   });
@@ -363,6 +366,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
     templateLineOffset: split.templateLineOffset,
     diagnostics,
     compiledTemplate,
+    variableLines,
   };
 }
 

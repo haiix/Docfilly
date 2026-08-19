@@ -8,12 +8,14 @@
 import {
   createDocfilly,
   parseDocfillySource,
+  updateDocfillyDefaults,
   Docfilly,
   type DocfillyInitialValues,
   type DocfillyOptions,
   type DocfillyDiagnostic,
   type DocfillyDiagnosticCode,
   type DocfillySourceType,
+  type DocfillySourceUpdateResult,
   type DocfillyVariable,
   type ParsedDocfillySource,
 } from "docfilly";
@@ -84,6 +86,34 @@ console.log(parsed.diagnostics);
 執筆時の構文確認、独自UIの作成、執筆者向け注意点の表示などに利用できます。`#!docfilly`がない場合は、`isDocfilly`が`false`、`variables`が空、`template`が入力された文書全体になります。
 
 識別子があるのに区切り行がない場合は、`isDocfilly`が`true`のまま、識別子より後の内容を`template`として返します。
+
+## `updateDocfillyDefaults`
+
+現在のフォーム値をHeaderの新しい初期値へ反映し、再度フォーム付きで開けるDocfillyソースを生成します。
+
+```ts
+function updateDocfillyDefaults(
+  source: string,
+  values: DocfillyInitialValues,
+): DocfillySourceUpdateResult;
+```
+
+```ts
+const view = createDocfilly(source, "md");
+const updated = updateDocfillyDefaults(source, view.values);
+
+if (updated.isDocfilly) {
+  downloadAsDocfilly(updated.source);
+}
+
+for (const diagnostic of updated.diagnostics) {
+  console.warn(diagnostic.message);
+}
+```
+
+テキスト値は必要に応じてCSV風に引用され、ドロップダウンは選択肢を維持したまま現在値へ選択を移し、チェックボックスは`[x]`または`[ ]`になります。`values`にない変数と変数定義にないキーは無視します。
+
+コメント、ラベル、変数順、本文、LF／CRLF、UTF-8 BOMは維持されます。不正な設定行と重複変数の2行目以降は変更しません。通常文書は`source`を変更せず`isDocfilly: false`で返します。ドロップダウンの選択肢にない値、チェックボックスの`"true"`／`"false"`以外の値、改行を含むテキスト値は保存せず、元の初期値と`invalid-default-value`の注意点を返します。
 
 ## `Docfilly`クラス
 
@@ -232,6 +262,20 @@ interface ParsedDocfillySource {
 
 `templateLineOffset`は、`template`の1行目より前に元文書内で存在した行数です。テンプレートから生成される診断の行番号を元文書の行番号へ対応させるために利用できます。
 
+### `DocfillySourceUpdateResult`
+
+```ts
+interface DocfillySourceUpdateResult {
+  source: string;
+  isDocfilly: boolean;
+  diagnostics: readonly DocfillyDiagnostic[];
+}
+```
+
+- `source`: 更新後のDocfillyソース。通常文書と安全に更新できない値は元の内容を維持します
+- `isDocfilly`: `#!docfilly`識別子を認識したかを示します
+- `diagnostics`: 元ソースの解析時と値の保存時に見つかった注意点です
+
 ### `DocfillyDiagnostic`
 
 ```ts
@@ -242,6 +286,7 @@ type DocfillyDiagnosticCode =
   | "duplicate-variable"
   | "invalid-dropdown"
   | "invalid-quoting"
+  | "invalid-default-value"
   | "undefined-variable"
   | "unknown-filter"
   | "invalid-placeholder"

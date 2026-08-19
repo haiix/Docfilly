@@ -1,0 +1,141 @@
+import { parseDocfillyDocument } from "./parser";
+import type {
+  DocfillyDiagnostic,
+  DocfillyInitialValues,
+  DocfillySourceUpdateResult,
+  DocfillyVariable,
+} from "./types";
+
+/** Returns the first equals sign outside a CSV-style quoted field. */
+function findDefinitionEquals(line: string): number {
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    if (line[index] !== '"') {
+      if (!inQuotes && line[index] === "=") return index;
+      continue;
+    }
+
+    if (inQuotes && line[index + 1] === '"') {
+      index += 1;
+    } else {
+      inQuotes = !inQuotes;
+    }
+  }
+
+  return -1;
+}
+
+/** Quotes a field when its raw representation would change how the parser reads it. */
+function encodeField(value: string, delimiters: string): string {
+  const requiresQuotes =
+    value !== value.trim() ||
+    value.includes('"') ||
+    [...delimiters].some((delimiter) => value.includes(delimiter));
+
+  return requiresQuotes ? `"${value.replaceAll('"', '""')}"` : value;
+}
+
+function encodeTextValue(value: string): string {
+  const resemblesControl = value.startsWith("[") && value.endsWith("]");
+  if (resemblesControl) return `"${value.replaceAll('"', '""')}"`;
+  return encodeField(value, '"');
+}
+
+function encodeDropdownOption(value: string): string {
+  if (value.startsWith("*")) return `"${value.replaceAll('"', '""')}"`;
+  return encodeField(value, ',"');
+}
+
+function encodeVariableValue(variable: DocfillyVariable, value: string): string | undefined {
+  if (value.includes("\n") || value.includes("\r")) return undefined;
+
+  if (variable.type === "text") return encodeTextValue(value);
+  if (variable.type === "checkbox") {
+    if (value === "true") return "[x]";
+    if (value === "false") return "[ ]";
+    return undefined;
+  }
+
+  if (!variable.options.includes(value)) return undefined;
+  let selected = false;
+  const options = variable.options.map((option) => {
+    const selectionMarker = !selected && option === value ? "*" : "";
+    if (selectionMarker) selected = true;
+    return `${selectionMarker}${encodeDropdownOption(option)}`;
+  });
+  return `[${options.join(", ")}]`;
+}
+
+function invalidDefaultDiagnostic(
+  variable: DocfillyVariable,
+  value: string,
+  line: number,
+  source: string,
+): DocfillyDiagnostic {
+  const reason =
+    variable.type === "select"
+      ? "選択肢に存在しません"
+      : variable.type === "checkbox"
+        ? "trueまたはfalseではありません"
+        : "改行を含むため1行の設定値として保存できません";
+
+  return {
+    code: "invalid-default-value",
+    severity: "warning",
+    message: `${line}行目の「${variable.name}」の値「${value}」は${reason}。元の初期値を維持しました。`,
+    line,
+    source,
+  };
+}
+
+/**
+ * Applies current form values to the initial values in a Docfilly source document.
+ *
+ * Invalid definitions, duplicate variables, comments, and the document body are left untouched.
+ */
+export function updateDocfillyDefaults(
+  source: string,
+  values: DocfillyInitialValues,
+): DocfillySourceUpdateResult {
+  const parsed = parseDocfillyDocument(source);
+  if (!parsed.isDocfilly) {
+    return { source, isDocfilly: false, diagnostics: parsed.diagnostics };
+  }
+
+  const parts = source.split(/(\r\n|\n)/);
+  const diagnostics = [...parsed.diagnostics];
+  const unsafeDefinitionLines = new Set(
+    parsed.diagnostics.flatMap((diagnostic) =>
+      diagnostic.line === undefined ? [] : [diagnostic.line],
+    ),
+  );
+
+  for (const variable of parsed.variables) {
+    const value = values.get(variable.name);
+    if (value === undefined) continue;
+
+    const lineNumber = parsed.variableLines.get(variable.name);
+    if (lineNumber === undefined) continue;
+    if (unsafeDefinitionLines.has(lineNumber)) continue;
+
+    const partIndex = (lineNumber - 1) * 2;
+    const line = parts[partIndex];
+    const equalsIndex = findDefinitionEquals(line);
+    if (equalsIndex === -1) continue;
+
+    const encodedValue = encodeVariableValue(variable, value);
+    if (encodedValue === undefined) {
+      diagnostics.push(invalidDefaultDiagnostic(variable, value, lineNumber, line.trim()));
+      continue;
+    }
+
+    const rawValue = line.slice(equalsIndex + 1);
+    const leadingWhitespace = /^\s*/u.exec(rawValue)?.[0] ?? "";
+    const trailingWhitespace = /\s*$/u.exec(rawValue.slice(leadingWhitespace.length))?.[0] ?? "";
+    parts[partIndex] =
+      `${line.slice(0, equalsIndex + 1)}${leadingWhitespace}${encodedValue}${trailingWhitespace}`;
+  }
+
+  return { source: parts.join(""), isDocfilly: true, diagnostics };
+}
