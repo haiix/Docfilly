@@ -3,3 +3,5 @@ node_modules/
 dist/
 coverage/
 pnpm-lock.yaml
+.release-please-manifest.json
+CHANGELOG.md
