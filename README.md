@@ -19,7 +19,9 @@ Docfillyが目指すのは汎用テンプレートエンジンではなく、**�
 #!docfilly
 プロジェクト名 = MyProject
 実行環境 = [development, staging, *production]
+
 ---
+
 # [[プロジェクト名]] のセットアップ
 
 次のコマンドを実行してください。
@@ -29,7 +31,7 @@ deploy --project [[プロジェクト名]] --environment [[実行環境]]
 ```
 ````
 
-読者には「プロジェクト名」と「実行環境」のフォーム、および入力値が反映された文書が表示されます。先頭に`#!docfilly`がないファイルは、通常のMarkdown／テキストとしてそのまま表示します。
+読者には「プロジェクト名」と「実行環境」のフォーム、および入力値が反映された文書が表示されます。Markdownでは、直接表示したときに設定行がSetext形式の見出しとして解釈されないよう、区切り行`---`の前に空行を入れることを推奨します。空行の有無はDocfillyの解析結果に影響しません。先頭に`#!docfilly`がないファイルは、通常のMarkdown／テキストとしてそのまま表示します。
 
 詳細は[Docfillyドキュメント](./documents/README.md)を参照してください。
 
@@ -70,7 +72,9 @@ import { createDocfilly } from "docfilly";
 
 const source = `#!docfilly
 プロジェクト名 = MyProject
+
 ---
+
 # [[プロジェクト名]]
 `;
 

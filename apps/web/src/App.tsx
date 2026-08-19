@@ -17,7 +17,9 @@ project_name | プロジェクト名 = Docfilly
 environment | 実行環境 = [development, *staging, production]
 author | 作成者 = 山田太郎
 use_docker | Dockerを使用する = [x]
+
 ---
+
 # [[project_name]] セットアップ
 
 作成者: **[[author]]**
