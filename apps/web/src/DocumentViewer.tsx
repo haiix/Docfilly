@@ -15,6 +15,7 @@ interface DocumentViewerProps {
   onOutputSourceChange: (outputSource: string) => void;
   onDiagnosticsChange: (diagnostics: readonly DocfillyDiagnostic[]) => void;
   onValuesChange: (values: ReadonlyMap<string, string>) => void;
+  onDocumentTypeChange: (isDocfilly: boolean) => void;
 }
 
 export function DocumentViewer({
@@ -25,11 +26,13 @@ export function DocumentViewer({
   onOutputSourceChange,
   onDiagnosticsChange,
   onValuesChange,
+  onDocumentTypeChange,
 }: DocumentViewerProps) {
   const handleRender = useCallback(
     (state: DocfillyRenderState): void => {
       onOutputSourceChange(state.outputSource);
       onDiagnosticsChange(state.diagnostics);
+      onDocumentTypeChange(state.isDocfilly);
 
       if (!state.isDocfilly) {
         const formatName = sourceType === "md" ? "Markdown" : "テキスト";
@@ -57,7 +60,14 @@ export function DocumentViewer({
       });
       onValuesChange(state.values);
     },
-    [onDiagnosticsChange, onOutputSourceChange, onStatusChange, onValuesChange, sourceType],
+    [
+      onDiagnosticsChange,
+      onDocumentTypeChange,
+      onOutputSourceChange,
+      onStatusChange,
+      onValuesChange,
+      sourceType,
+    ],
   );
 
   return (

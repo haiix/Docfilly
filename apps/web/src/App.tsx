@@ -6,7 +6,11 @@ import {
   UnsupportedDocumentFileError,
   type LoadedDocument,
 } from "./document-file";
-import { createDocumentExport, downloadDocumentExport } from "./document-export";
+import {
+  createDocfillyDocumentExport,
+  createDocumentExport,
+  downloadDocumentExport,
+} from "./document-export";
 import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
 import { clearDocumentSession, loadDocumentSession, saveDocumentSession } from "./document-session";
@@ -45,6 +49,8 @@ export function App() {
   const [document, setDocument] = useState<LoadedDocument | null>(null);
   const [initialValues, setInitialValues] = useState<ReadonlyMap<string, string> | undefined>();
   const [outputSource, setOutputSource] = useState<string | null>(null);
+  const [currentValues, setCurrentValues] = useState<ReadonlyMap<string, string> | null>(null);
+  const [isDocfilly, setIsDocfilly] = useState(false);
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const [diagnostics, setDiagnostics] = useState<readonly DocfillyDiagnostic[]>([]);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
@@ -91,12 +97,15 @@ export function App() {
     persistenceSuppressedRef.current = false;
     setStatus(loadingStatus);
     setOutputSource(null);
+    setCurrentValues(null);
+    setIsDocfilly(false);
     setDiagnostics([]);
     setInitialValues(undefined);
     setDocument(nextDocument);
   }, []);
 
   const handleValuesChange = useCallback((values: ReadonlyMap<string, string>): void => {
+    setCurrentValues(new Map(values));
     if (restoredNoticeRef.current) {
       restoredNoticeRef.current = false;
       setStatus({ message: "前回の文書を復元しました。", isWarning: false });
@@ -185,6 +194,29 @@ export function App() {
     }
   };
 
+  const saveDocfillyDocument = (): void => {
+    if (document === null || currentValues === null || !isDocfilly) return;
+
+    try {
+      const documentExport = createDocfillyDocumentExport(
+        document.source,
+        currentValues,
+        document.sourceType,
+        document.name,
+      );
+      downloadDocumentExport(documentExport);
+      setStatus({
+        message: `Docfilly文書「${documentExport.fileName}」の保存を開始しました。`,
+        isWarning: false,
+      });
+    } catch {
+      setStatus({
+        message: "Docfilly形式で保存できませんでした。文書とフォーム値は維持されています。",
+        isWarning: true,
+      });
+    }
+  };
+
   return (
     <div className="app-shell">
       <header className="toolbar">
@@ -201,6 +233,14 @@ export function App() {
             onFile={loadFile}
             onValidationError={handleValidationError}
           />
+          <button
+            type="button"
+            className="toolbar-button secondary-action"
+            disabled={!isDocfilly || currentValues === null}
+            onClick={saveDocfillyDocument}
+          >
+            Docfilly形式で保存
+          </button>
           <button
             type="button"
             className="toolbar-button secondary-action"
@@ -228,6 +268,13 @@ export function App() {
           <details className="toolbar-overflow">
             <summary className="toolbar-button">その他</summary>
             <div className="toolbar-overflow__menu">
+              <button
+                type="button"
+                disabled={!isDocfilly || currentValues === null}
+                onClick={saveDocfillyDocument}
+              >
+                Docfilly形式で保存
+              </button>
               <button
                 type="button"
                 disabled={outputSource === null}
@@ -285,6 +332,7 @@ export function App() {
             onOutputSourceChange={setOutputSource}
             onDiagnosticsChange={setDiagnostics}
             onValuesChange={handleValuesChange}
+            onDocumentTypeChange={setIsDocfilly}
           />
         )}
       </main>
@@ -306,7 +354,7 @@ export function App() {
             <h3>形式と書き出し</h3>
             <p>
               Docfilly形式は先頭のHeaderにフォーム設定を持つ文書です。通常のMarkdown／テキストにはフォームがありません。
-              「表示結果を書き出す」はHeaderを除いた現在の本文を保存します。フォーム付きで再度開けるDocfilly形式での保存は、現在のWebビューアーでは未対応です。
+              「Docfilly形式で保存」は現在のフォーム値を次回の初期値にして、Header、本文テンプレート、条件ディレクティブを保った文書をダウンロードします。通常文書では利用できません。「表示結果を書き出す」はHeaderを除いた現在の本文を保存します。
             </p>
             <a href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md">
               詳細なDocfillyフォーマット仕様

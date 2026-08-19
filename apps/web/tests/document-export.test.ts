@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createDocumentExport } from "../src/document-export";
+import { parseDocfillySource } from "docfilly";
+import {
+  createDocfillyDocumentExport,
+  createDocumentExport,
+  OrdinaryDocumentExportError,
+} from "../src/document-export";
 
 function readBlob(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -37,5 +42,58 @@ describe("createDocumentExport", () => {
 
   it("uses a safe fallback when the original base name is empty", () => {
     expect(createDocumentExport("content", "md", ".md").fileName).toBe("document-output.md");
+  });
+});
+
+describe("createDocfillyDocumentExport", () => {
+  it("stores current values while preserving the Docfilly template and original extension", async () => {
+    const source = [
+      "#!docfilly",
+      "title = Before",
+      "region = [*east, west]",
+      "enabled = [ ]",
+      "---",
+      "# [[title]]",
+      "[[#if enabled]]",
+      "Region: [[region]]",
+      "[[#endif]]",
+    ].join("\n");
+    const result = createDocfillyDocumentExport(
+      source,
+      new Map([
+        ["title", '彼は "はい" と言った'],
+        ["region", "west"],
+        ["enabled", "true"],
+      ]),
+      "md",
+      "guide.markdown",
+    );
+
+    expect(result.fileName).toBe("guide.markdown");
+    expect(result.blob.type).toBe("text/markdown;charset=utf-8");
+    const savedSource = await readBlob(result.blob);
+    expect(savedSource).toBe(
+      source
+        .replace("title = Before", 'title = "彼は ""はい"" と言った"')
+        .replace("region = [*east, west]", "region = [east, *west]")
+        .replace("enabled = [ ]", "enabled = [x]"),
+    );
+    expect(parseDocfillySource(savedSource).variables).toMatchObject([
+      { name: "title", initialValue: '彼は "はい" と言った' },
+      { name: "region", initialValue: "west" },
+      { name: "enabled", initialValue: true },
+    ]);
+  });
+
+  it("rejects an ordinary document", () => {
+    expect(() =>
+      createDocfillyDocumentExport("# Ordinary", new Map(), "md", "ordinary.md"),
+    ).toThrow(OrdinaryDocumentExportError);
+  });
+
+  it("uses a source-type fallback when the original file name has no usable base", () => {
+    const result = createDocfillyDocumentExport("#!docfilly\n---\nBody", new Map(), "text", ".txt");
+
+    expect(result.fileName).toBe("document.txt");
   });
 });
