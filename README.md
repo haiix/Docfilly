@@ -91,6 +91,20 @@ view.diagnostics; // 読み飛ばしや自動補正に関する執筆者向け�
 
 `createDocfilly`の第2引数には`"md"`または`"text"`を指定します。MarkdownのHTML出力はDOMPurifyでサニタイズされます。
 
+現在のフォーム値を次回の初期値としてDocfillyソースへ保存する場合は、`updateDocfillyDefaults`を使用します。
+
+```ts
+import { updateDocfillyDefaults } from "docfilly";
+
+const updated = updateDocfillyDefaults(source, view.values);
+
+if (updated.isDocfilly) {
+  await saveTextFile(updated.source);
+}
+```
+
+このAPIはHeader内の有効な変数定義だけを更新し、本文、コメント、ラベル、変数順を維持します。通常文書は変更せず、保存できない値は元の初期値を維持して`diagnostics`で通知します。
+
 Webアプリは空状態から`.md`、`.markdown`、`.txt`ファイルを選択するか、ウィンドウ内の任意の位置へドラッグ＆ドロップして読み込めます。組み込みサンプルは空状態の「サンプルを開く」から任意に表示できます。ファイルはブラウザ内で処理され、サーバーには送信されません。
 
 ## React API
