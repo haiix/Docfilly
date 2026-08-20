@@ -473,7 +473,11 @@ export function App() {
             <button type="button" className="text-button" onClick={openSample}>
               サンプル文書を開く
             </button>
-            <a href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md">
+            <a
+              href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               詳細なDocfillyフォーマット仕様
             </a>
           </section>

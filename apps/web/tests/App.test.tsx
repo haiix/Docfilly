@@ -503,7 +503,11 @@ describe("App", () => {
     expect(dialog.textContent).toContain("最後に開いた1文書");
     expect(dialog.textContent).toContain("インストールとオフライン起動には未対応");
     expect(screen.getByRole("button", { name: "サンプル文書を開く" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
+    const formatSpecificationLink = screen.getByRole("link", {
+      name: "詳細なDocfillyフォーマット仕様",
+    });
+    expect(formatSpecificationLink.getAttribute("target")).toBe("_blank");
+    expect(formatSpecificationLink.getAttribute("rel")).toBe("noopener noreferrer");
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Docfillyの使い方" }));
 
     await user.keyboard("{Escape}");
