@@ -1,9 +1,18 @@
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 interface AppDialogProps {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  initialFocusRef?: RefObject<HTMLElement | null>;
+  inactive?: boolean;
 }
 
 const focusableSelector = [
@@ -15,19 +24,25 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-export function AppDialog({ title, children, onClose }: AppDialogProps) {
+export function AppDialog({
+  title,
+  children,
+  onClose,
+  initialFocusRef,
+  inactive = false,
+}: AppDialogProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
-    titleRef.current?.focus();
+    (initialFocusRef?.current ?? titleRef.current)?.focus();
 
     return () => {
       if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
     };
-  }, []);
+  }, [initialFocusRef]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key === "Escape") {
@@ -65,7 +80,9 @@ export function AppDialog({ title, children, onClose }: AppDialogProps) {
   return (
     <div
       className="dialog-backdrop"
-      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      aria-hidden={inactive || undefined}
+      inert={inactive || undefined}
+      onMouseDown={(event) => !inactive && event.target === event.currentTarget && onClose()}
     >
       <div
         ref={dialogRef}

@@ -54,15 +54,19 @@ export function App() {
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const [diagnostics, setDiagnostics] = useState<readonly DocfillyDiagnostic[]>([]);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
+  const [isClearConfirmationOpen, setIsClearConfirmationOpen] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const overflowButtonRef = useRef<HTMLButtonElement>(null);
+  const clearDataButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelClearButtonRef = useRef<HTMLButtonElement>(null);
   const documentRef = useRef<LoadedDocument | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const restoredNoticeRef = useRef(false);
   const restoreCancelledRef = useRef(false);
   const persistenceSuppressedRef = useRef(false);
+  const restoreClearDataFocusRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -116,6 +120,12 @@ export function App() {
     };
   }, [isOverflowOpen]);
 
+  useEffect(() => {
+    if (isClearConfirmationOpen || !restoreClearDataFocusRef.current) return;
+    restoreClearDataFocusRef.current = false;
+    clearDataButtonRef.current?.focus();
+  }, [isClearConfirmationOpen]);
+
   const showDocument = useCallback((nextDocument: LoadedDocument): void => {
     if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
     restoreCancelledRef.current = true;
@@ -161,6 +171,7 @@ export function App() {
     persistenceSuppressedRef.current = true;
     try {
       await clearDocumentSession();
+      setIsClearConfirmationOpen(false);
       setStatus({
         message: "この端末に保存した文書データを削除しました。表示中の文書は維持されています。",
         isWarning: false,
@@ -169,6 +180,40 @@ export function App() {
       persistenceSuppressedRef.current = false;
       setStatus({
         message: "この端末の保存データを削除できませんでした。",
+        isWarning: true,
+      });
+    }
+  }, []);
+
+  const closeDocument = useCallback(async (): Promise<void> => {
+    if (documentRef.current === null) return;
+    restoreCancelledRef.current = true;
+    restoredNoticeRef.current = false;
+    if (saveTimerRef.current !== undefined) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = undefined;
+    }
+    persistenceSuppressedRef.current = true;
+    documentRef.current = null;
+    setDocument(null);
+    setInitialValues(undefined);
+    setOutputSource(null);
+    setCurrentValues(null);
+    setIsDocfilly(false);
+    setDiagnostics([]);
+    setOpenDialog(null);
+    setIsOverflowOpen(false);
+
+    try {
+      await clearDocumentSession();
+      setStatus({
+        message: "文書を閉じました。元のローカルファイルは変更されていません。",
+        isWarning: false,
+      });
+    } catch {
+      setStatus({
+        message:
+          "文書を閉じましたが、この端末の復元データを削除できませんでした。再読み込み時に文書が復元される可能性があります。",
         isWarning: true,
       });
     }
@@ -201,6 +246,13 @@ export function App() {
     setOpenDialog(null);
     showDocument(sampleDocument);
   };
+
+  const openClearConfirmation = (): void => {
+    restoreClearDataFocusRef.current = true;
+    setIsClearConfirmationOpen(true);
+  };
+
+  const closeClearConfirmation = (): void => setIsClearConfirmationOpen(false);
 
   const runOverflowAction = (action: () => void): void => {
     setIsOverflowOpen(false);
@@ -281,6 +333,14 @@ export function App() {
           >
             表示結果を書き出す
           </button>
+          <button
+            type="button"
+            className="toolbar-button secondary-action"
+            disabled={document === null}
+            onClick={() => void closeDocument()}
+          >
+            文書を閉じる
+          </button>
           {diagnostics.length > 0 && (
             <button
               type="button"
@@ -325,6 +385,13 @@ export function App() {
                   onClick={() => runOverflowAction(exportRenderedDocument)}
                 >
                   表示結果を書き出す
+                </button>
+                <button
+                  type="button"
+                  disabled={document === null}
+                  onClick={() => runOverflowAction(() => void closeDocument())}
+                >
+                  文書を閉じる
                 </button>
                 {diagnostics.length > 0 && (
                   <button
@@ -389,7 +456,11 @@ export function App() {
       </main>
 
       {openDialog === "help" && (
-        <AppDialog title="Docfillyの使い方" onClose={() => setOpenDialog(null)}>
+        <AppDialog
+          title="Docfillyの使い方"
+          inactive={isClearConfirmationOpen}
+          onClose={() => setOpenDialog(null)}
+        >
           <section>
             <h3>文書を開く</h3>
             <p>
@@ -416,10 +487,47 @@ export function App() {
             <p>
               開いたファイルは外部サーバーへ送信されず、ブラウザー内だけで処理されます。最後に開いた1文書のファイル名、元ソース、形式、フォーム値を現在のブラウザープロファイル内へ保存し、次回起動時に復元します。共有端末では利用後に保存データを削除してください。インストールとオフライン起動には未対応です。
             </p>
-            <button type="button" className="text-button" onClick={() => void clearSavedDocument()}>
+            <button
+              ref={clearDataButtonRef}
+              type="button"
+              className="text-button"
+              onClick={openClearConfirmation}
+            >
               この端末の保存データを削除
             </button>
           </section>
+        </AppDialog>
+      )}
+
+      {isClearConfirmationOpen && (
+        <AppDialog
+          title="この端末の保存データを削除しますか？"
+          initialFocusRef={cancelClearButtonRef}
+          onClose={closeClearConfirmation}
+        >
+          <p>
+            前回の文書を復元するために保存された、ファイル名、元ソース、形式、フォーム値を削除します。
+          </p>
+          <p>
+            現在表示している文書と元のローカルファイルは削除されません。オフライン起動用のアプリデータも対象外です。
+          </p>
+          <div className="dialog-actions">
+            <button
+              ref={cancelClearButtonRef}
+              type="button"
+              className="toolbar-button"
+              onClick={closeClearConfirmation}
+            >
+              キャンセル
+            </button>
+            <button
+              type="button"
+              className="toolbar-button danger-action"
+              onClick={() => void clearSavedDocument()}
+            >
+              保存データを削除
+            </button>
+          </div>
         </AppDialog>
       )}
 
