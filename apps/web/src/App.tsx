@@ -54,7 +54,10 @@ export function App() {
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const [diagnostics, setDiagnostics] = useState<readonly DocfillyDiagnostic[]>([]);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const overflowRef = useRef<HTMLDivElement>(null);
+  const overflowButtonRef = useRef<HTMLButtonElement>(null);
   const documentRef = useRef<LoadedDocument | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const restoredNoticeRef = useRef(false);
@@ -89,6 +92,29 @@ export function App() {
       if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isOverflowOpen) return;
+
+    const closeFromOutside = (event: PointerEvent): void => {
+      if (event.target instanceof Node && !overflowRef.current?.contains(event.target)) {
+        setIsOverflowOpen(false);
+      }
+    };
+    const closeFromEscape = (event: KeyboardEvent): void => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setIsOverflowOpen(false);
+      overflowButtonRef.current?.focus();
+    };
+
+    globalThis.document.addEventListener("pointerdown", closeFromOutside);
+    globalThis.document.addEventListener("keydown", closeFromEscape);
+    return () => {
+      globalThis.document.removeEventListener("pointerdown", closeFromOutside);
+      globalThis.document.removeEventListener("keydown", closeFromEscape);
+    };
+  }, [isOverflowOpen]);
 
   const showDocument = useCallback((nextDocument: LoadedDocument): void => {
     if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
@@ -174,6 +200,12 @@ export function App() {
   const openSample = (): void => {
     setOpenDialog(null);
     showDocument(sampleDocument);
+  };
+
+  const runOverflowAction = (action: () => void): void => {
+    setIsOverflowOpen(false);
+    overflowButtonRef.current?.focus();
+    action();
   };
 
   const exportRenderedDocument = (): void => {
@@ -265,33 +297,52 @@ export function App() {
           >
             ヘルプ
           </button>
-          <details className="toolbar-overflow">
-            <summary className="toolbar-button">その他</summary>
-            <div className="toolbar-overflow__menu">
-              <button
-                type="button"
-                disabled={!isDocfilly || currentValues === null}
-                onClick={saveDocfillyDocument}
-              >
-                Docfilly形式で保存
-              </button>
-              <button
-                type="button"
-                disabled={outputSource === null}
-                onClick={exportRenderedDocument}
-              >
-                表示結果を書き出す
-              </button>
-              {diagnostics.length > 0 && (
-                <button type="button" onClick={() => setOpenDialog("diagnostics")}>
-                  診断 {diagnostics.length}件
+          <div ref={overflowRef} className="toolbar-overflow">
+            <button
+              ref={overflowButtonRef}
+              type="button"
+              className="toolbar-button toolbar-overflow__trigger"
+              aria-label="その他の操作"
+              aria-expanded={isOverflowOpen}
+              aria-controls="toolbar-overflow-menu"
+              title="その他の操作"
+              onClick={() => setIsOverflowOpen((isOpen) => !isOpen)}
+            >
+              <span aria-hidden="true">⋮</span>
+            </button>
+            {isOverflowOpen && (
+              <div id="toolbar-overflow-menu" className="toolbar-overflow__menu">
+                <button
+                  type="button"
+                  disabled={!isDocfilly || currentValues === null}
+                  onClick={() => runOverflowAction(saveDocfillyDocument)}
+                >
+                  Docfilly形式で保存
                 </button>
-              )}
-              <button type="button" onClick={() => setOpenDialog("help")}>
-                ヘルプ
-              </button>
-            </div>
-          </details>
+                <button
+                  type="button"
+                  disabled={outputSource === null}
+                  onClick={() => runOverflowAction(exportRenderedDocument)}
+                >
+                  表示結果を書き出す
+                </button>
+                {diagnostics.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => runOverflowAction(() => setOpenDialog("diagnostics"))}
+                  >
+                    診断 {diagnostics.length}件
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => runOverflowAction(() => setOpenDialog("help"))}
+                >
+                  ヘルプ
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
       </header>
 

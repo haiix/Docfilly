@@ -103,13 +103,11 @@ summary,
 }
 
 button.toolbar-button:not(:disabled),
-.file-picker,
-.toolbar-overflow summary {
+.file-picker {
   cursor: pointer;
 }
 
-.toolbar-button:hover:not(:disabled),
-.toolbar-overflow summary:hover {
+.toolbar-button:hover:not(:disabled) {
   border-color: #8795ad;
   background: #26324a;
 }
@@ -144,12 +142,11 @@ button.toolbar-button:not(:disabled),
   display: none;
 }
 
-.toolbar-overflow summary {
-  list-style: none;
-}
-
-.toolbar-overflow summary::-webkit-details-marker {
-  display: none;
+.toolbar-overflow__trigger {
+  width: 2.5rem;
+  padding: 0;
+  font-size: 1.45rem;
+  line-height: 1;
 }
 
 .toolbar-overflow__menu {
@@ -171,6 +168,22 @@ button.toolbar-button:not(:disabled),
   color: #7c8799;
   background: transparent;
   text-align: left;
+}
+
+.toolbar-overflow__menu button:hover:not(:disabled),
+.toolbar-overflow__menu button:focus-visible {
+  border-radius: 0.4rem;
+  color: #172033;
+  background: #eef1f5;
+}
+
+.toolbar-overflow__menu button:focus-visible {
+  outline: 2px solid #596cff;
+  outline-offset: -2px;
+}
+
+.toolbar-overflow__menu button:disabled {
+  cursor: not-allowed;
 }
 
 .app-status {

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { IDBFactory as FDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -65,6 +65,66 @@ describe("App", () => {
 
     expect(await screen.findByLabelText("作成者")).toBeTruthy();
     expect(screen.getByText("サンプル.md")).toBeTruthy();
+  });
+
+  it("opens the overflow menu with an accessible icon button and closes outside", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const overflowButton = screen.getByRole("button", { name: "その他の操作" });
+
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
+    expect(overflowButton.textContent).toBe("⋮");
+    await user.click(overflowButton);
+
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("true");
+    expect(
+      within(document.getElementById("toolbar-overflow-menu")!).getByRole("button", {
+        name: "ヘルプ",
+      }),
+    ).toBeTruthy();
+    await user.click(screen.getByRole("heading", { name: "Docfilly文書を開く" }));
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
+
+    await user.click(overflowButton);
+    fireEvent.pointerDown(document.body, { pointerType: "touch" });
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("closes the overflow menu with Escape and restores focus to its button", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const overflowButton = screen.getByRole<HTMLButtonElement>("button", {
+      name: "その他の操作",
+    });
+
+    overflowButton.focus();
+    await user.keyboard("{Enter}");
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("true");
+
+    await user.keyboard("{Escape}");
+
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(overflowButton);
+  });
+
+  it("closes the overflow menu before opening help and restores focus after the dialog", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const overflowButton = screen.getByRole<HTMLButtonElement>("button", {
+      name: "その他の操作",
+    });
+    await user.click(overflowButton);
+
+    await user.click(
+      within(document.getElementById("toolbar-overflow-menu")!).getByRole("button", {
+        name: "ヘルプ",
+      }),
+    );
+
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByRole("dialog", { name: "Docfillyの使い方" })).toBeTruthy();
+    await user.keyboard("{Escape}");
+    expect(document.activeElement).toBe(overflowButton);
   });
 
   it("preserves form state across React renders", async () => {
@@ -337,9 +397,16 @@ describe("App", () => {
     expect(status.classList.contains("is-warning")).toBe(false);
     expect(status.getAttribute("title")).toBeNull();
 
-    await user.click(screen.getAllByRole("button", { name: "診断 2件" })[0]);
+    const overflowButton = screen.getByRole("button", { name: "その他の操作" });
+    await user.click(overflowButton);
+    await user.click(
+      within(document.getElementById("toolbar-overflow-menu")!).getByRole("button", {
+        name: "診断 2件",
+      }),
+    );
 
     const dialog = screen.getByRole("dialog", { name: "文書の診断（2件）" });
+    expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
     expect(dialog.textContent).toContain("2行目は「=」がないため");
     expect(dialog.textContent).toContain("3行目は「=」がないため");
     expect(dialog.textContent).toContain("broken setting");
