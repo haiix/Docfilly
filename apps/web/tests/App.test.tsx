@@ -473,20 +473,25 @@ describe("App", () => {
         .map((heading) => heading.textContent),
     ).toEqual([
       "Docfillyとは？",
+      "サンプルと詳細仕様",
       "文書を開く",
       "フォームと表示内容",
       "形式と2種類の保存／書き出し",
       "プライバシーと端末内の保存",
-      "サンプルと詳細仕様",
     ]);
     const introduction = screen.getByRole("heading", { name: "Docfillyとは？" }).parentElement!;
+    const format = screen.getByRole("heading", {
+      name: "形式と2種類の保存／書き出し",
+    }).parentElement!;
     const privacy = screen.getByRole("heading", {
       name: "プライバシーと端末内の保存",
     }).parentElement!;
     expect(introduction.textContent).toContain("書き手があらかじめDocfilly形式に沿って");
     expect(introduction.textContent).toContain("書き手の設定に基づくフォーム");
     expect(introduction.textContent).toContain("手順の内容そのものに集中できます");
-    expect(introduction.textContent).toContain("通常のMarkdown／テキスト文書もそのまま表示");
+    expect(format.textContent).toContain(
+      "通常のMarkdown／テキストにはフォームがなく、そのまま表示",
+    );
     expect(introduction.textContent).not.toContain("外部サーバー");
     expect(dialog.textContent).toContain("書き手が文書内に定義した入力項目から生成");
     expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
@@ -514,7 +519,7 @@ describe("App", () => {
 
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(
-      screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" }),
+      screen.getByRole("button", { name: "この端末の保存データを削除" }),
     );
     await user.keyboard("{Tab}");
     expect(document.activeElement).toBe(
