@@ -462,30 +462,36 @@ export function App() {
           onClose={() => setOpenDialog(null)}
         >
           <section>
+            <h3>Docfillyとは？</h3>
+            <p>
+              Docfillyは、Markdownやテキスト文書に入力項目と条件分岐を追加し、利用者ごとの内容を生成できるローカル文書ビューアーです。通常のMarkdown／テキストもフォームなしで表示できます。文書はブラウザー内で処理され、外部サーバーへ送信されません。
+            </p>
+          </section>
+          <section>
             <h3>文書を開く</h3>
             <p>
               「ファイルを開く」で .md、.markdown、.txt
               を選ぶか、ファイルを画面へドラッグ＆ドロップします。
-              Docfilly文書では、フォームへの入力が右側の本文へ反映されます。
             </p>
-            <button type="button" className="text-button" onClick={openSample}>
-              サンプル文書を開く
-            </button>
           </section>
           <section>
-            <h3>形式と書き出し</h3>
+            <h3>フォームと表示内容</h3>
+            <p>
+              基本の流れは「文書を開く → フォームへ入力する →
+              自分向けの文書を読む」です。Docfilly文書では、フォームへの入力に応じて値の差し込みや条件分岐が処理され、右側の本文へ反映されます。
+            </p>
+          </section>
+          <section>
+            <h3>形式と2種類の保存／書き出し</h3>
             <p>
               Docfilly形式は先頭のHeaderにフォーム設定を持つ文書です。通常のMarkdown／テキストにはフォームがありません。
               「Docfilly形式で保存」は現在のフォーム値を次回の初期値にして、Header、本文テンプレート、条件ディレクティブを保った文書をダウンロードします。通常文書では利用できません。「表示結果を書き出す」はHeaderを除いた現在の本文を保存します。
             </p>
-            <a href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md">
-              詳細なDocfillyフォーマット仕様
-            </a>
           </section>
           <section>
-            <h3>プライバシーと利用範囲</h3>
+            <h3>プライバシーと端末内の保存</h3>
             <p>
-              開いたファイルは外部サーバーへ送信されず、ブラウザー内だけで処理されます。最後に開いた1文書のファイル名、元ソース、形式、フォーム値を現在のブラウザープロファイル内へ保存し、次回起動時に復元します。共有端末では利用後に保存データを削除してください。インストールとオフライン起動には未対応です。
+              最後に開いた1文書のファイル名、元ソース、形式、フォーム値を現在のブラウザープロファイル内へ保存し、次回起動時に復元します。共有端末では利用後に保存データを削除してください。インストールとオフライン起動には未対応です。
             </p>
             <button
               ref={clearDataButtonRef}
@@ -495,6 +501,16 @@ export function App() {
             >
               この端末の保存データを削除
             </button>
+          </section>
+          <section>
+            <h3>サンプルと詳細仕様</h3>
+            <p>組み込みサンプルでフォームと表示内容の変化を試すことができます。</p>
+            <button type="button" className="text-button" onClick={openSample}>
+              サンプル文書を開く
+            </button>
+            <a href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md">
+              詳細なDocfillyフォーマット仕様
+            </a>
           </section>
         </AppDialog>
       )}

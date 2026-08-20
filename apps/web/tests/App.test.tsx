@@ -467,11 +467,28 @@ describe("App", () => {
     await user.keyboard("{Enter}");
 
     const dialog = screen.getByRole("dialog", { name: "Docfillyの使い方" });
+    expect(
+      within(dialog)
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      "Docfillyとは？",
+      "文書を開く",
+      "フォームと表示内容",
+      "形式と2種類の保存／書き出し",
+      "プライバシーと端末内の保存",
+      "サンプルと詳細仕様",
+    ]);
+    expect(dialog.textContent).toContain("入力項目と条件分岐");
+    expect(dialog.textContent).toContain("通常のMarkdown／テキストもフォームなしで表示");
+    expect(dialog.textContent).toContain("文書を開く → フォームへ入力する → 自分向けの文書を読む");
     expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
     expect(dialog.textContent).toContain("現在のフォーム値を次回の初期値");
     expect(dialog.textContent).toContain("通常文書では利用できません");
-    expect(dialog.textContent).toContain("外部サーバーへ送信されず");
+    expect(dialog.textContent).toContain("ブラウザー内で処理され、外部サーバーへ送信されません");
     expect(dialog.textContent).toContain("最後に開いた1文書");
+    expect(dialog.textContent).toContain("インストールとオフライン起動には未対応");
+    expect(screen.getByRole("button", { name: "サンプル文書を開く" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Docfillyの使い方" }));
 
@@ -488,7 +505,7 @@ describe("App", () => {
 
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: "この端末の保存データを削除" }),
+      screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" }),
     );
     await user.keyboard("{Tab}");
     expect(document.activeElement).toBe(
