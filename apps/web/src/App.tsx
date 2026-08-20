@@ -468,6 +468,16 @@ export function App() {
             </p>
           </section>
           <section>
+            <h3>サンプルと詳細仕様</h3>
+            <p>組み込みサンプルでフォームと表示内容の変化を試すことができます。</p>
+            <button type="button" className="text-button" onClick={openSample}>
+              サンプル文書を開く
+            </button>
+            <a href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md">
+              詳細なDocfillyフォーマット仕様
+            </a>
+          </section>
+          <section>
             <h3>文書を開く</h3>
             <p>
               「ファイルを開く」で .md、.markdown、.txt
@@ -500,16 +510,6 @@ export function App() {
             >
               この端末の保存データを削除
             </button>
-          </section>
-          <section>
-            <h3>サンプルと詳細仕様</h3>
-            <p>組み込みサンプルでフォームと表示内容の変化を試すことができます。</p>
-            <button type="button" className="text-button" onClick={openSample}>
-              サンプル文書を開く
-            </button>
-            <a href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md">
-              詳細なDocfillyフォーマット仕様
-            </a>
           </section>
         </AppDialog>
       )}
