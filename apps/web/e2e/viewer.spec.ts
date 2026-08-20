@@ -96,6 +96,8 @@ test("保存データ削除を確認し、キャンセルと実行後の状態�
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(true);
   await page.getByRole("button", { name: "ヘルプ", exact: true }).first().click();
   const clearDataButton = page.getByRole("button", { name: "この端末の保存データを削除" });
+  await expect(clearDataButton).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(clearDataButton).toHaveCSS("background-color", "rgb(180, 35, 24)");
   await clearDataButton.click();
 
   const confirmation = page.getByRole("dialog", {
