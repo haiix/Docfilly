@@ -129,10 +129,13 @@ test("ヘルプをキーボードで閉じると起点へフォーカスが戻�
 
   const dialog = page.getByRole("dialog", { name: "Docfillyの使い方" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("heading", { name: "Docfillyとは？" })).toBeVisible();
-  await expect(dialog).toContainText("入力項目と条件分岐");
-  await expect(dialog).toContainText("文書を開く → フォームへ入力する → 自分向けの文書を読む");
-  await expect(dialog).toContainText("ブラウザー内で処理され、外部サーバーへ送信されません");
+  const introduction = dialog.getByRole("heading", { name: "Docfillyとは？" }).locator("..");
+  const privacy = dialog.getByRole("heading", { name: "プライバシーと端末内の保存" }).locator("..");
+  await expect(introduction).toContainText("書き手があらかじめDocfilly形式に沿って");
+  await expect(introduction).toContainText("書き手の設定に基づくフォーム");
+  await expect(introduction).not.toContainText("外部サーバー");
+  await expect(dialog).toContainText("書き手が文書内に定義した入力項目から生成");
+  await expect(privacy).toContainText("ブラウザー内だけで処理され、外部サーバーへ送信されません");
   await expect(dialog.getByRole("button", { name: "サンプル文書を開く" })).toBeVisible();
   await expect(dialog.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeVisible();
   await page.keyboard.press("Escape");

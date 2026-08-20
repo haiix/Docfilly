@@ -479,13 +479,22 @@ describe("App", () => {
       "プライバシーと端末内の保存",
       "サンプルと詳細仕様",
     ]);
-    expect(dialog.textContent).toContain("入力項目と条件分岐");
-    expect(dialog.textContent).toContain("通常のMarkdown／テキストもフォームなしで表示");
-    expect(dialog.textContent).toContain("文書を開く → フォームへ入力する → 自分向けの文書を読む");
+    const introduction = screen.getByRole("heading", { name: "Docfillyとは？" }).parentElement!;
+    const privacy = screen.getByRole("heading", {
+      name: "プライバシーと端末内の保存",
+    }).parentElement!;
+    expect(introduction.textContent).toContain("書き手があらかじめDocfilly形式に沿って");
+    expect(introduction.textContent).toContain("書き手の設定に基づくフォーム");
+    expect(introduction.textContent).toContain("手順の内容そのものに集中できます");
+    expect(introduction.textContent).toContain("通常のMarkdown／テキスト文書もそのまま表示");
+    expect(introduction.textContent).not.toContain("外部サーバー");
+    expect(dialog.textContent).toContain("書き手が文書内に定義した入力項目から生成");
     expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
     expect(dialog.textContent).toContain("現在のフォーム値を次回の初期値");
     expect(dialog.textContent).toContain("通常文書では利用できません");
-    expect(dialog.textContent).toContain("ブラウザー内で処理され、外部サーバーへ送信されません");
+    expect(privacy.textContent).toContain(
+      "ブラウザー内だけで処理され、外部サーバーへ送信されません",
+    );
     expect(dialog.textContent).toContain("最後に開いた1文書");
     expect(dialog.textContent).toContain("インストールとオフライン起動には未対応");
     expect(screen.getByRole("button", { name: "サンプル文書を開く" })).toBeTruthy();
