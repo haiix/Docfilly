@@ -490,7 +490,7 @@ export function App() {
             <button
               ref={clearDataButtonRef}
               type="button"
-              className="text-button"
+              className="text-button danger-action"
               onClick={openClearConfirmation}
             >
               この端末の保存データを削除

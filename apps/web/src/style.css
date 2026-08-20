@@ -295,16 +295,6 @@ button.toolbar-button:not(:disabled),
   outline-color: rgb(89 108 255 / 28%);
 }
 
-.danger-action {
-  border-color: #b42318;
-  color: white;
-  background: #b42318;
-}
-
-.danger-action:hover {
-  background: #912018;
-}
-
 .app-dialog__content section {
   margin-top: 1.5rem;
 }
@@ -449,6 +439,17 @@ main {
 .text-button:focus-visible {
   outline: 3px solid rgb(89 108 255 / 25%);
   outline-offset: 2px;
+}
+
+.danger-action {
+  border-color: #b42318;
+  color: white;
+  background: #b42318;
+}
+
+.danger-action:hover:not(:disabled) {
+  border-color: #912018;
+  background: #912018;
 }
 
 .empty-state small {
