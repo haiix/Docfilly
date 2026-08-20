@@ -78,6 +78,44 @@ test("ページ再読み込み後に文書とフォーム値を復元する", as
   await expect(page.getByLabel("作成者")).toHaveValue("復元する名前");
 });
 
+test("文書を閉じると復元せず、空状態から別の文書を開ける", async ({ page }) => {
+  await openSample(page);
+  await page.getByLabel("作成者").fill("閉じる直前の値");
+  await page.getByRole("button", { name: "文書を閉じる", exact: true }).first().click();
+
+  await expect(page.getByRole("heading", { name: "Docfilly文書を開く" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Docfilly文書を開く" })).toBeVisible();
+
+  await page.getByRole("button", { name: "サンプルを開く" }).click();
+  await expect(page.getByText("サンプル.md")).toBeVisible();
+});
+
+test("保存データ削除を確認し、キャンセルと実行後の状態を判別できる", async ({ page }) => {
+  await openSample(page);
+  await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(true);
+  await page.getByRole("button", { name: "ヘルプ", exact: true }).first().click();
+  const clearDataButton = page.getByRole("button", { name: "この端末の保存データを削除" });
+  await clearDataButton.click();
+
+  const confirmation = page.getByRole("dialog", {
+    name: "この端末の保存データを削除しますか？",
+  });
+  await expect(confirmation).toContainText(
+    "現在表示している文書と元のローカルファイルは削除されません",
+  );
+  await expect(page.getByRole("button", { name: "キャンセル" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(clearDataButton).toBeFocused();
+  await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(true);
+
+  await clearDataButton.click();
+  await page.getByRole("button", { name: "保存データを削除", exact: true }).click();
+  await expect(page.getByText("サンプル.md")).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("保存した文書データを削除しました");
+  await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(false);
+});
+
 test("ヘルプをキーボードで閉じると起点へフォーカスが戻る", async ({ page }) => {
   await page.goto("./");
   const helpButton = page.getByRole("button", { name: "ヘルプ", exact: true }).first();

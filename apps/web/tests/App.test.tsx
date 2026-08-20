@@ -174,7 +174,31 @@ describe("App", () => {
     await waitFor(() => expect(screen.queryByText("previous.txt")).toBeNull());
   });
 
-  it("deletes locally saved data without closing the current document", async () => {
+  it("closes the document, cancels its pending save, and can open another document", async () => {
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    const input = await screen.findByLabelText<HTMLInputElement>("作成者");
+    await user.clear(input);
+    await user.type(input, "閉じる直前の値");
+
+    await user.click(screen.getAllByRole("button", { name: "文書を閉じる" })[0]);
+
+    expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
+    expect(screen.getByText("ファイル未選択")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "元のローカルファイルは変更されていません",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    firstRender.unmount();
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+    expect(await screen.findByLabelText("作成者")).toBeTruthy();
+  });
+
+  it("confirms before deleting saved data and keeps the document after deletion", async () => {
     const user = userEvent.setup();
     const firstRender = render(<App />);
     await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
@@ -182,7 +206,27 @@ describe("App", () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
     await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
 
-    await user.click(screen.getByRole("button", { name: "この端末の保存データを削除" }));
+    const clearDataButton = screen.getByRole<HTMLButtonElement>("button", {
+      name: "この端末の保存データを削除",
+    });
+    await user.click(clearDataButton);
+
+    const confirmation = screen.getByRole("dialog", {
+      name: "この端末の保存データを削除しますか？",
+    });
+    expect(confirmation.textContent).toContain("ファイル名、元ソース、形式、フォーム値");
+    expect(confirmation.textContent).toContain("元のローカルファイルは削除されません");
+    expect(confirmation.textContent).toContain("オフライン起動用のアプリデータも対象外");
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "キャンセル" }));
+
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByRole("dialog", { name: "この端末の保存データを削除しますか？" }),
+    ).toBeNull();
+    expect(document.activeElement).toBe(clearDataButton);
+
+    await user.click(clearDataButton);
+    await user.click(screen.getByRole("button", { name: /^保存データを削除$/ }));
 
     expect(screen.getByText("サンプル.md")).toBeTruthy();
     await waitFor(() =>
