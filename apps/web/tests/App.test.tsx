@@ -467,12 +467,47 @@ describe("App", () => {
     await user.keyboard("{Enter}");
 
     const dialog = screen.getByRole("dialog", { name: "Docfillyの使い方" });
+    expect(
+      within(dialog)
+        .getAllByRole("heading", { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual([
+      "Docfillyとは？",
+      "サンプルと詳細仕様",
+      "文書を開く",
+      "フォームと表示内容",
+      "形式と2種類の保存／書き出し",
+      "プライバシーと端末内の保存",
+    ]);
+    const introduction = screen.getByRole("heading", { name: "Docfillyとは？" }).parentElement!;
+    const format = screen.getByRole("heading", {
+      name: "形式と2種類の保存／書き出し",
+    }).parentElement!;
+    const privacy = screen.getByRole("heading", {
+      name: "プライバシーと端末内の保存",
+    }).parentElement!;
+    expect(introduction.textContent).toContain("書き手があらかじめDocfilly形式に沿って");
+    expect(introduction.textContent).toContain("書き手の設定に基づくフォーム");
+    expect(introduction.textContent).toContain("手順の内容そのものに集中できます");
+    expect(format.textContent).toContain(
+      "通常のMarkdown／テキストにはフォームがなく、そのまま表示",
+    );
+    expect(introduction.textContent).not.toContain("外部サーバー");
+    expect(dialog.textContent).toContain("書き手が文書内に定義した入力項目から生成");
     expect(dialog.textContent).toContain("ドラッグ＆ドロップ");
     expect(dialog.textContent).toContain("現在のフォーム値を次回の初期値");
     expect(dialog.textContent).toContain("通常文書では利用できません");
-    expect(dialog.textContent).toContain("外部サーバーへ送信されず");
+    expect(privacy.textContent).toContain(
+      "ブラウザー内だけで処理され、外部サーバーへ送信されません",
+    );
     expect(dialog.textContent).toContain("最後に開いた1文書");
-    expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
+    expect(dialog.textContent).toContain("インストールとオフライン起動には未対応");
+    expect(screen.getByRole("button", { name: "サンプル文書を開く" })).toBeTruthy();
+    const formatSpecificationLink = screen.getByRole("link", {
+      name: "詳細なDocfillyフォーマット仕様",
+    });
+    expect(formatSpecificationLink.getAttribute("target")).toBe("_blank");
+    expect(formatSpecificationLink.getAttribute("rel")).toBe("noopener noreferrer");
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Docfillyの使い方" }));
 
     await user.keyboard("{Escape}");
