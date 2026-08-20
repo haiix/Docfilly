@@ -515,7 +515,7 @@ export function App() {
             <button
               ref={cancelClearButtonRef}
               type="button"
-              className="toolbar-button"
+              className="toolbar-button dialog-cancel-action"
               onClick={closeClearConfirmation}
             >
               キャンセル

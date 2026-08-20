@@ -280,6 +280,21 @@ button.toolbar-button:not(:disabled),
   margin-top: 1.5rem;
 }
 
+.dialog-cancel-action {
+  border-color: #cbd3df;
+  color: #26324a;
+  background: white;
+}
+
+.dialog-cancel-action:hover:not(:disabled) {
+  border-color: #8e9aae;
+  background: #f3f5f8;
+}
+
+.dialog-cancel-action:focus-visible {
+  outline-color: rgb(89 108 255 / 28%);
+}
+
 .danger-action {
   border-color: #b42318;
   color: white;

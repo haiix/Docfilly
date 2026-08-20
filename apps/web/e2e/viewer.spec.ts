@@ -104,7 +104,10 @@ test("保存データ削除を確認し、キャンセルと実行後の状態�
   await expect(confirmation).toContainText(
     "現在表示している文書と元のローカルファイルは削除されません",
   );
-  await expect(page.getByRole("button", { name: "キャンセル" })).toBeFocused();
+  const cancelButton = page.getByRole("button", { name: "キャンセル" });
+  await expect(cancelButton).toBeFocused();
+  await expect(cancelButton).toHaveCSS("color", "rgb(38, 50, 74)");
+  await expect(cancelButton).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await page.keyboard.press("Escape");
   await expect(clearDataButton).toBeFocused();
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(true);
