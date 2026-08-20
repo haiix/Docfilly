@@ -67,6 +67,58 @@ describe("App", () => {
     expect(screen.getByText("サンプル.md")).toBeTruthy();
   });
 
+  it("teaches the sample syntax and updates each interactive example", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+
+    expect(await screen.findByRole("heading", { name: "Docfilly 5分チュートリアル" })).toBeTruthy();
+    expect(
+      screen.getByText(/最初に、左のフォームを変更して、右の本文がその場で変わる/),
+    ).toBeTruthy();
+    expect(screen.getByText(/先頭行に/).textContent).toContain("#!docfilly");
+    expect(screen.getByText(/先頭行に/).textContent).toContain("---");
+    expect(document.querySelector(".docfilly__output")?.textContent).toContain(
+      "ラベルは省略でき、その場合は変数名がフォームのラベルになります。変数名には日本語も使えます",
+    );
+
+    const projectName = screen.getByLabelText<HTMLInputElement>("プロジェクト名");
+    await user.clear(projectName);
+    await user.type(projectName, "Atlas");
+    await waitFor(() =>
+      expect(screen.getByText(/現在のプロジェクト名は/).textContent).toContain("Atlas"),
+    );
+
+    await user.selectOptions(screen.getByLabelText("実行環境"), "production");
+    expect(await screen.findByText(/本番環境です。変更前にレビュー/)).toBeTruthy();
+    expect(screen.queryByText(/ステージング環境で、本番前/)).toBeNull();
+
+    const teamWork = screen.getByLabelText<HTMLInputElement>("チームで作業する");
+    expect(teamWork.checked).toBe(true);
+    expect(screen.getByRole("heading", { name: "チームで作業する場合" })).toBeTruthy();
+    await user.click(teamWork);
+    expect(await screen.findByRole("heading", { name: "個人で作業する場合" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "チームで作業する場合" })).toBeNull();
+
+    const codeExamples = Array.from(document.querySelectorAll("pre code"), (code) =>
+      code.textContent?.trim(),
+    );
+    expect(codeExamples).toContain("[[project_name]]");
+    expect(codeExamples).toContain(
+      [
+        "team_work | チームで作業する = [x]",
+        "",
+        "[[#if team_work]]",
+        "チーム作業の手順",
+        "[[#else]]",
+        "個人作業の手順",
+        "[[#endif]]",
+      ].join("\n"),
+    );
+    expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /診断/ })).toBeNull();
+  });
+
   it("opens the overflow menu with an accessible icon button and closes outside", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -273,7 +325,7 @@ describe("App", () => {
     expect(downloadedBlob?.type).toBe("text/markdown;charset=utf-8");
     const exportedText = await readBlob(downloadedBlob!);
     expect(exportedText).toContain("作成者: **鈴木花子**");
-    expect(exportedText).not.toContain("#!docfilly");
+    expect(exportedText).not.toMatch(/^#!docfilly$/mu);
     expect(exportedText).not.toContain("author | 作成者");
     expect(exportedText).not.toContain("[[author]]");
   });

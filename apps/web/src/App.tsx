@@ -16,20 +16,90 @@ import { FileDropZone } from "./FileDropZone";
 import { clearDocumentSession, loadDocumentSession, saveDocumentSession } from "./document-session";
 
 const sampleSource = `#!docfilly
-# Docfilly sample
 project_name | プロジェクト名 = Docfilly
 environment | 実行環境 = [development, *staging, production]
 author | 作成者 = 山田太郎
-use_docker | Dockerを使用する = [x]
+team_work | チームで作業する = [x]
 
 ---
 
-# [[project_name]] セットアップ
+# Docfilly 5分チュートリアル
+
+最初に、左のフォームを変更して、右の本文がその場で変わることを試してください。
+
+Docfilly文書は、先頭行に\`#!docfilly\`を書き、\`---\`の区切り線より前に**フォーム設定**、後ろに**本文テンプレート**を書きます。このサンプル自体にも、次の設定と記法が書かれています。
+
+## 1. テキストを差し込む
+
+「プロジェクト名」のフォームは、ソースの次の行から作られます。
+
+\`\`\`text
+project_name | プロジェクト名 = Docfilly
+\`\`\`
+
+左から「変数名 | ラベル = 初期値」です（\`| ラベル\`は省略でき、その場合は変数名がフォームのラベルになります。変数名には日本語も使えます）。本文に変数名を二重角括弧で書くと、入力した値に置き換わります。
+
+\`\`\`text
+\\[[project_name]]
+\`\`\`
+
+現在のプロジェクト名は **[[project_name]]** です。
 
 作成者: **[[author]]**
 
-- 実行環境: \`[[environment]]\`
-- Docker: \`[[use_docker]]\`
+## 2. 選択肢で表示を変える
+
+「実行環境」はドロップダウンです。角括弧内に選択肢を並べ、\`*\`を付けた項目を初期選択にします。
+
+\`\`\`text
+environment | 実行環境 = [development, *staging, production]
+\`\`\`
+
+現在の選択: **[[environment]]**
+
+[[#if environment = development]]
+開発用の設定で、手元の変更をすぐ確認できます。
+[[#endif]]
+[[#if environment = staging]]
+ステージング環境で、本番前の動作を確認します。
+[[#endif]]
+[[#if environment = production]]
+本番環境です。変更前にレビューとバックアップを確認してください。
+[[#endif]]
+
+## 3. チェックで手順を切り替える
+
+\`[x]\`はON、\`[ ]\`はOFFのチェックボックスを作ります。本文では値を\`true\`／\`false\`と表示する代わりに、条件分岐で必要な手順だけを見せられます。
+
+\`\`\`text
+team_work | チームで作業する = [x]
+
+\\[[#if team_work]]
+チーム作業の手順
+\\[[#else]]
+個人作業の手順
+\\[[#endif]]
+\`\`\`
+
+[[#if team_work]]
+### チームで作業する場合
+
+1. 作業ブランチを作成します。
+2. 変更後にレビューを依頼します。
+[[#else]]
+### 個人で作業する場合
+
+1. 手元で変更内容を確認します。
+2. 作業内容を記録します。
+[[#endif]]
+
+## 次は自分の文書で試す
+
+1. ツールバーの「Docfilly形式で保存」で、このソースをダウンロードします。
+2. 保存したファイルをテキストエディターで開き、フォーム設定や本文を編集します。
+3. ツールバーの「ファイルを開く」から、編集したファイルをもう一度開きます。
+
+すべての記法は[詳細なDocfillyフォーマット仕様](https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md)で確認できます。
 `;
 
 const sampleDocument: LoadedDocument = {
