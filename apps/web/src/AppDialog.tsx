@@ -9,6 +9,7 @@ import {
 
 interface AppDialogProps {
   title: string;
+  closeLabel: string;
   children: ReactNode;
   onClose: () => void;
   initialFocusRef?: RefObject<HTMLElement | null>;
@@ -26,6 +27,7 @@ const focusableSelector = [
 
 export function AppDialog({
   title,
+  closeLabel,
   children,
   onClose,
   initialFocusRef,
@@ -96,12 +98,7 @@ export function AppDialog({
           <h2 ref={titleRef} id={titleId} tabIndex={-1}>
             {title}
           </h2>
-          <button
-            type="button"
-            className="dialog-close"
-            aria-label={`${title}を閉じる`}
-            onClick={onClose}
-          >
+          <button type="button" className="dialog-close" aria-label={closeLabel} onClick={onClose}>
             ×
           </button>
         </header>

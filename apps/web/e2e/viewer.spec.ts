@@ -11,14 +11,15 @@ async function hasSavedValue(page: Page, key: string, expected: string): Promise
     ([valueKey, expectedValue]) =>
       new Promise<boolean>((resolve, reject) => {
         const request = indexedDB.open("docfilly-web");
-        request.onerror = () => reject(request.error ?? new Error("IndexedDBを開けませんでした。"));
+        request.onerror = () =>
+          reject(request.error ?? new Error("The IndexedDB database failed to open."));
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("document-session", "readonly");
           const sessionRequest = transaction.objectStore("document-session").get("latest");
           let matches = false;
           sessionRequest.onerror = () =>
-            reject(sessionRequest.error ?? new Error("保存済みセッションを読み取れませんでした。"));
+            reject(sessionRequest.error ?? new Error("The saved session could not be read."));
           sessionRequest.onsuccess = () => {
             const session: unknown = sessionRequest.result;
             if (typeof session !== "object" || session === null || !("values" in session)) return;
@@ -218,7 +219,7 @@ test.describe("狭い画面のレイアウト", () => {
     await expect(output).toBeVisible();
     const layout = await page.evaluate(() => {
       const outputElement = document.querySelector<HTMLElement>(".docfilly__output");
-      if (outputElement === null) throw new Error("本文エリアが見つかりません。");
+      if (outputElement === null) throw new Error("The document output element was not found.");
       return {
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
@@ -244,4 +245,48 @@ test("表示結果とDocfilly形式のダウンロードを開始できる", asy
   await page.getByRole("button", { name: "Docfilly形式で保存", exact: true }).first().click();
   const sourceDownload = await sourceDownloadPromise;
   expect(sourceDownload.suggestedFilename()).toBe("サンプル.md");
+});
+
+test.describe("English and Japanese locales", () => {
+  test.use({ locale: "en-US" });
+
+  test("uses the browser locale, switches language, localizes the sample and Core diagnostics", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await expect(page.getByRole("heading", { name: "Open a Docfilly document" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+    await page.getByRole("button", { name: "Open sample" }).click();
+    await expect(page.getByLabel("Project name")).toBeVisible();
+    await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
+    await page.getByLabel("Project name").fill("Atlas");
+
+    await page.getByLabel("Language").selectOption("ja");
+    await expect(page.getByRole("navigation", { name: "文書操作" })).toBeVisible();
+    await expect(page.getByLabel("Project name")).toHaveValue("Atlas");
+    await expect(page.getByRole("heading", { name: "Atlas five-minute tutorial" })).toBeVisible();
+    await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
+    await expect(page.getByLabel("プロジェクト名")).toHaveCount(0);
+    await page.getByLabel("言語").selectOption("en");
+
+    await page.getByLabel("Open file").setInputFiles({
+      name: "warning.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from("#!docfilly\nbroken setting\n---\nBody"),
+    });
+    await page.getByRole("button", { name: "Diagnostics (1)", exact: true }).first().click();
+    await expect(page.getByRole("dialog", { name: "Document diagnostics (1)" })).toContainText(
+      "Line 2 was skipped as a setting",
+    );
+    await page.keyboard.press("Escape");
+
+    await page.getByLabel("Language").selectOption("ja");
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.getByRole("navigation", { name: "文書操作" })).toBeVisible();
+    await page.getByRole("button", { name: "診断 1件", exact: true }).first().click();
+    await expect(page.getByRole("dialog", { name: "文書の診断（1件）" })).toContainText(
+      "2行目は「=」がないため",
+    );
+  });
 });

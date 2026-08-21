@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState, type ChangeEvent, type RefObject } from "react";
-import { supportedFileDescription } from "./document-file";
+import type { WebMessages } from "./locale";
 
 interface FileDropZoneProps {
   inputRef: RefObject<HTMLInputElement | null>;
   onFile: (file: File) => void | Promise<void>;
   onValidationError: (message: string) => void;
+  messages: WebMessages;
 }
-
-const multipleFilesMessage = "ファイルは1つずつドロップしてください。";
 
 function hasFiles(dataTransfer: DataTransfer | null): boolean {
   return dataTransfer !== null && Array.from(dataTransfer.types).includes("Files");
 }
 
-export function FileDropZone({ inputRef, onFile, onValidationError }: FileDropZoneProps) {
+export function FileDropZone({ inputRef, onFile, onValidationError, messages }: FileDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
 
@@ -51,7 +50,7 @@ export function FileDropZone({ inputRef, onFile, onValidationError }: FileDropZo
       const files = event.dataTransfer?.files;
       if (files === undefined || files.length === 0) return;
       if (files.length > 1) {
-        onValidationError(multipleFilesMessage);
+        onValidationError(messages.multipleFiles);
         return;
       }
 
@@ -69,7 +68,7 @@ export function FileDropZone({ inputRef, onFile, onValidationError }: FileDropZo
       window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
     };
-  }, [onFile, onValidationError]);
+  }, [messages.multipleFiles, onFile, onValidationError]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.currentTarget.files?.[0];
@@ -80,23 +79,25 @@ export function FileDropZone({ inputRef, onFile, onValidationError }: FileDropZo
   return (
     <>
       <label className="toolbar-button file-picker">
-        <span>開く</span>
+        <span>{messages.open}</span>
         <input
           ref={inputRef}
           type="file"
-          aria-label="ファイルを開く"
+          aria-label={messages.openFile}
           accept=".md,.markdown,.txt,text/markdown,text/plain"
           onChange={handleChange}
         />
       </label>
       <div
         className={`drop-overlay${isDragging ? " is-visible" : ""}`}
-        aria-label="ファイルのドロップ領域"
+        aria-label={messages.dropArea}
         aria-hidden={!isDragging}
       >
         <div className="drop-overlay__message">
-          <strong>ここにファイルをドロップ</strong>
-          <span>{supportedFileDescription}（1ファイル）</span>
+          <strong>{messages.dropFile}</strong>
+          <span>
+            {messages.supportedFiles} ({messages.oneFile})
+          </span>
         </div>
       </div>
     </>

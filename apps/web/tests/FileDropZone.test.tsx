@@ -2,6 +2,7 @@ import { createRef } from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FileDropZone } from "../src/FileDropZone";
+import { webMessages } from "../src/locale";
 
 afterEach(cleanup);
 
@@ -27,6 +28,7 @@ function renderDropZone(onFile = vi.fn(), onValidationError = vi.fn()) {
       inputRef={createRef<HTMLInputElement>()}
       onFile={onFile}
       onValidationError={onValidationError}
+      messages={webMessages.ja}
     />,
   );
 }

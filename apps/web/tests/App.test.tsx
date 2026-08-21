@@ -7,6 +7,8 @@ import { saveDocumentSession } from "../src/document-session";
 
 beforeEach(() => {
   vi.stubGlobal("indexedDB", new FDBFactory());
+  vi.spyOn(window.navigator, "languages", "get").mockReturnValue(["ja-JP"]);
+  vi.spyOn(window.navigator, "language", "get").mockReturnValue("ja-JP");
 });
 
 afterEach(() => {
@@ -22,11 +24,11 @@ function readBlob(blob: Blob): Promise<string> {
       if (typeof reader.result === "string") {
         resolve(reader.result);
       } else {
-        reject(new Error("Blobをテキストとして読み取れませんでした。"));
+        reject(new Error("The Blob could not be read as text."));
       }
     });
     reader.addEventListener("error", () =>
-      reject(reader.error ?? new Error("Blobの読み取りに失敗しました。")),
+      reject(reader.error ?? new Error("Reading the Blob failed.")),
     );
     reader.readAsText(blob);
   });
@@ -53,6 +55,27 @@ function createFileList(files: File[]): FileList {
 }
 
 describe("App", () => {
+  it("switches all app-owned UI, the sample, html lang, and Core diagnostics", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.selectOptions(screen.getByLabelText("言語"), "en");
+    expect(document.documentElement.lang).toBe("en");
+    expect(screen.getByRole("heading", { name: "Open a Docfilly document" })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Open sample" }));
+    expect(await screen.findByLabelText("Project name")).toBeTruthy();
+    expect(screen.getByText("docfilly-tutorial.md")).toBeTruthy();
+
+    const source = "#!docfilly\nbroken setting\n---\nBody";
+    await user.upload(screen.getByLabelText("Open file"), readableFile(source, "warning.txt"));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("1 diagnostic"));
+    await user.click(screen.getAllByRole("button", { name: "Diagnostics (1)" })[0]);
+    expect(screen.getByRole("dialog", { name: "Document diagnostics (1)" }).textContent).toContain(
+      "Line 2 was skipped as a setting",
+    );
+  });
+
   it("starts empty and opens the sample only when requested", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -101,6 +124,24 @@ describe("App", () => {
     expect(codeExamples).toContain("[[#if team_work]]");
     expect(codeExamples).toContain("[[#else]]");
     expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
+  });
+
+  it("keeps an opened sample and its values unchanged when the UI locale changes", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+
+    const projectName = await screen.findByLabelText<HTMLInputElement>("プロジェクト名");
+    await user.clear(projectName);
+    await user.type(projectName, "Atlas");
+    await user.selectOptions(screen.getByLabelText("言語"), "en");
+
+    expect(document.documentElement.lang).toBe("en");
+    expect(screen.getByRole("navigation", { name: "Document actions" })).toBeTruthy();
+    expect(screen.getByLabelText<HTMLInputElement>("プロジェクト名").value).toBe("Atlas");
+    expect(screen.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeTruthy();
+    expect(screen.getByText("サンプル.md")).toBeTruthy();
+    expect(screen.queryByLabelText("Project name")).toBeNull();
   });
 
   it("opens the overflow menu with an accessible icon button and closes outside", async () => {
@@ -497,8 +538,8 @@ describe("App", () => {
 
     const dialog = screen.getByRole("dialog", { name: "文書の診断（2件）" });
     expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
-    expect(dialog.textContent).toContain("Line 2 was skipped as a setting");
-    expect(dialog.textContent).toContain("Line 3 was skipped as a setting");
+    expect(dialog.textContent).toContain("2行目は「=」がないため");
+    expect(dialog.textContent).toContain("3行目は「=」がないため");
     expect(dialog.textContent).toContain("broken setting");
     expect(dialog.textContent).toContain("also broken");
     expect(screen.getByText("Body")).toBeTruthy();

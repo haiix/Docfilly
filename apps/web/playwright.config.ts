@@ -15,6 +15,7 @@ export default defineConfig({
     : "list",
   use: {
     baseURL: `http://${host}:${port}/Docfilly/`,
+    locale: "ja-JP",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
   },

@@ -1,6 +1,6 @@
 import type { DocfillySourceType } from "docfilly";
 
-export const supportedFileDescription = ".md、.markdown、.txt";
+export const supportedFileDescription = ".md, .markdown, and .txt";
 
 export interface LoadedDocument {
   name: string;
@@ -10,7 +10,7 @@ export interface LoadedDocument {
 
 export class UnsupportedDocumentFileError extends Error {
   constructor() {
-    super(`対応しているファイル形式は${supportedFileDescription}です。`);
+    super(`Supported file types are ${supportedFileDescription}.`);
     this.name = "UnsupportedDocumentFileError";
   }
 }

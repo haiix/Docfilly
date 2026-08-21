@@ -2,6 +2,7 @@ import {
   updateDocfillyDefaults,
   type DocfillyInitialValues,
   type DocfillySourceType,
+  type SupportedLocale,
 } from "docfilly";
 
 export interface DocumentExport {
@@ -22,7 +23,7 @@ const sourceTypeExtensions: Record<DocfillySourceType, readonly string[]> = {
 /** Raised when Docfilly-format saving is requested for an ordinary document. */
 export class OrdinaryDocumentExportError extends Error {
   constructor() {
-    super("通常文書はDocfilly形式で保存できません。");
+    super("Ordinary documents cannot be saved in Docfilly format.");
     this.name = "OrdinaryDocumentExportError";
   }
 }
@@ -35,8 +36,9 @@ export function createDocfillyDocumentExport(
   values: DocfillyInitialValues,
   sourceType: DocfillySourceType,
   originalFileName: string,
+  locale?: SupportedLocale,
 ): DocumentExport {
-  const updated = updateDocfillyDefaults(source, values);
+  const updated = updateDocfillyDefaults(source, values, { locale });
   if (!updated.isDocfilly) throw new OrdinaryDocumentExportError();
 
   const { extension: fallbackExtension, mimeType } = exportTypes[sourceType];
