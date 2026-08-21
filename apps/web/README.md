@@ -6,7 +6,7 @@ The web viewer opens local `.md`, `.markdown`, and `.txt` documents entirely in 
 
 The app-owned interface and built-in tutorial support English (`en`) and Japanese (`ja`). On startup, the viewer checks `navigator.languages` in order, then `navigator.language`, and falls back to English when none of those values is supported. Region variants such as `en-US` and `ja-JP` resolve to their base language.
 
-Readers can switch languages with the toolbar language selector. The choice lasts for the current page session and is not persisted. Changing it updates `<html lang>`, all app-owned labels and messages, the built-in sample, and the locale passed to Docfilly Core for diagnostics.
+Readers can switch languages with the toolbar language selector. The choice lasts for the current page session and is not persisted. Changing it updates `<html lang>`, all app-owned labels and messages, and the locale passed to Docfilly Core for diagnostics. An already opened document—including a built-in sample—keeps its source and current form values. Opening a sample afterward selects the sample for the current locale.
 
 Locale catalogs live in `src/locale.ts`. Their shared TypeScript interface keeps keys and interpolation functions consistent. Built-in tutorials live in `src/samples/en.md` and `src/samples/ja.md`; Vite imports both as raw static assets, so no runtime fetch is required.
 

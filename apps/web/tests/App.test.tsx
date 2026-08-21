@@ -126,6 +126,24 @@ describe("App", () => {
     expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
   });
 
+  it("keeps an opened sample and its values unchanged when the UI locale changes", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "サンプルを開く" }));
+
+    const projectName = await screen.findByLabelText<HTMLInputElement>("プロジェクト名");
+    await user.clear(projectName);
+    await user.type(projectName, "Atlas");
+    await user.selectOptions(screen.getByLabelText("言語"), "en");
+
+    expect(document.documentElement.lang).toBe("en");
+    expect(screen.getByRole("navigation", { name: "Document actions" })).toBeTruthy();
+    expect(screen.getByLabelText<HTMLInputElement>("プロジェクト名").value).toBe("Atlas");
+    expect(screen.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeTruthy();
+    expect(screen.getByText("サンプル.md")).toBeTruthy();
+    expect(screen.queryByLabelText("Project name")).toBeNull();
+  });
+
   it("opens the overflow menu with an accessible icon button and closes outside", async () => {
     const user = userEvent.setup();
     render(<App />);

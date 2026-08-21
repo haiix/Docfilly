@@ -28,7 +28,6 @@ const sessionSaveDelayMs = 500;
 export function App() {
   const [locale, setLocale] = useState<WebLocale>(resolveWebLocale);
   const messages = webMessages[locale];
-  const initialLocaleRef = useRef(locale);
   const initialMessagesRef = useRef(messages);
   const [document, setDocument] = useState<LoadedDocument | null>(null);
   const [initialValues, setInitialValues] = useState<ReadonlyMap<string, string> | undefined>();
@@ -61,18 +60,11 @@ export function App() {
     void loadDocumentSession()
       .then((session) => {
         if (!active || restoreCancelledRef.current || session === null) return;
-        let restoredDocument: LoadedDocument = {
+        const restoredDocument: LoadedDocument = {
           name: session.name,
           source: session.source,
           sourceType: session.sourceType,
         };
-        if (
-          Object.values(samples).some(
-            (sample) => sample.name === session.name && sample.source === session.source,
-          )
-        ) {
-          restoredDocument = samples[initialLocaleRef.current];
-        }
         documentRef.current = restoredDocument;
         restoredNoticeRef.current = true;
         setInitialValues(session.values);
@@ -139,13 +131,9 @@ export function App() {
   );
 
   const changeLocale = (nextLocale: WebLocale): void => {
-    const currentDocument = documentRef.current;
-    const isBuiltInSample = Object.values(samples).some(
-      (sample) => currentDocument?.name === sample.name && currentDocument.source === sample.source,
-    );
+    if (currentValues !== null) setInitialValues(new Map(currentValues));
     setStatus(null);
     setLocale(nextLocale);
-    if (isBuiltInSample) showDocument(samples[nextLocale]);
   };
 
   const handleValuesChange = useCallback(

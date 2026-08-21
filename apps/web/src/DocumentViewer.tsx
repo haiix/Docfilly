@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef, type FormEvent } from "react";
 import { DocfillyView, type DocfillyRenderState } from "@docfilly/react";
 import type { DocfillyDiagnostic, DocfillySourceType } from "docfilly";
 import type { WebLocale, WebMessages } from "./locale";
@@ -33,8 +33,11 @@ export function DocumentViewer({
   onValuesChange,
   onDocumentTypeChange,
 }: DocumentViewerProps) {
+  const latestValuesRef = useRef<ReadonlyMap<string, string>>(initialValues ?? new Map());
+
   const handleRender = useCallback(
     (state: DocfillyRenderState): void => {
+      latestValuesRef.current = state.values;
       onOutputSourceChange(state.outputSource);
       onDiagnosticsChange(state.diagnostics);
       onDocumentTypeChange(state.isDocfilly);
@@ -76,12 +79,31 @@ export function DocumentViewer({
     ],
   );
 
+  const handleInput = useCallback(
+    (event: FormEvent<HTMLDivElement>): void => {
+      const control = event.target;
+      if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement)) return;
+      if (control.name === "") return;
+      const values = new Map(latestValuesRef.current);
+      values.set(
+        control.name,
+        control instanceof HTMLInputElement && control.type === "checkbox"
+          ? String(control.checked)
+          : control.value,
+      );
+      latestValuesRef.current = values;
+      onValuesChange(values);
+    },
+    [onValuesChange],
+  );
+
   return (
     <DocfillyView
       source={source}
       sourceType={sourceType}
       options={{ initialValues, locale }}
       onRender={handleRender}
+      onInput={handleInput}
     />
   );
 }

@@ -259,6 +259,15 @@ test.describe("English and Japanese locales", () => {
     await page.getByRole("button", { name: "Open sample" }).click();
     await expect(page.getByLabel("Project name")).toBeVisible();
     await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
+    await page.getByLabel("Project name").fill("Atlas");
+
+    await page.getByLabel("Language").selectOption("ja");
+    await expect(page.getByRole("navigation", { name: "文書操作" })).toBeVisible();
+    await expect(page.getByLabel("Project name")).toHaveValue("Atlas");
+    await expect(page.getByRole("heading", { name: "Atlas five-minute tutorial" })).toBeVisible();
+    await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
+    await expect(page.getByLabel("プロジェクト名")).toHaveCount(0);
+    await page.getByLabel("言語").selectOption("en");
 
     await page.getByLabel("Open file").setInputFiles({
       name: "warning.md",
