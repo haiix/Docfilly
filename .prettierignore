@@ -5,3 +5,4 @@ coverage/
 pnpm-lock.yaml
 .release-please-manifest.json
 CHANGELOG.md
+apps/web/src/samples/*.md

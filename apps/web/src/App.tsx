@@ -14,135 +14,22 @@ import {
 import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
 import { clearDocumentSession, loadDocumentSession, saveDocumentSession } from "./document-session";
+import { resolveWebLocale, webMessages, type WebLocale } from "./locale";
+import englishSample from "./samples/en.md?raw";
+import japaneseSample from "./samples/ja.md?raw";
 
-const sampleSource = `#!docfilly
-> フォームの値を自由に変更してみてください。
-project_name | プロジェクト名 = Docfilly
-environment | 実行環境 = [development, *staging, production]
-author | 作成者 = 山田太郎
-team_work | チームで作業する = [x]
-
----
-
-# [[project_name]] 5分チュートリアル
-
-まずは左のフォームを変更して、右の本文がその場で変わることを試してください。
-
-Docfillyは、通常のMarkdown／テキストに少数の構文を追加し、文書の読み替えを支援するためのドキュメントフォーマットです。
-
-## 基本構造
-
-Docfilly文書は、先頭行に\`#!docfilly\`を書き、\`---\`の区切り線より前に**フォーム設定**、後ろに**本文テンプレート**を書きます。
-
-\`\`\`
-#!docfilly
-
-(フォーム設定)
-
----
-
-(本文テンプレート)
-\`\`\`
-
-このサンプル自体も、この記法に従って書かれています。
-
-## 1. テキストを差し込む
-
-「プロジェクト名」のフォームは、ソースの次の行から作られます。
-
-\`\`\`text
-project_name | プロジェクト名 = Docfilly
-# または
-プロジェクト名 = Docfilly
-\`\`\`
-
-左から「変数名 | ラベル = 初期値」です。\`| ラベル\`は省略でき、その場合は変数名がフォームのラベルになります。変数名には日本語も使えます。本文に変数名を二重角括弧（\`\\[[変数名]]\`）で書くと、入力した値に置き換わります。
-
-\`\`\`text
-\\[[project_name]]
-# または
-\\[[プロジェクト名]]
-\`\`\`
-
-> 現在のプロジェクト名は **[[project_name]]** です。
-
-> 作成者: **[[author]]**
-
-## 2. 選択肢で表示を変える
-
-「実行環境」はドロップダウンです。角括弧内に選択肢を並べ、\`*\`を付けた項目を初期選択にします。
-
-\`\`\`text
-environment | 実行環境 = [development, *staging, production]
-\`\`\`
-
-> 現在の選択: **[[environment]]**
-
-[[#if environment = development]]
-> 開発用の設定で、手元の変更をすぐ確認できます。
-[[#endif]]
-[[#if environment = staging]]
-> ステージング環境で、本番前の動作を確認します。
-[[#endif]]
-[[#if environment = production]]
-> 本番環境です。変更前にレビューとバックアップを確認してください。
-[[#endif]]
-
-## 3. チェックで手順を切り替える
-
-\`[x]\`はON、\`[ ]\`はOFFのチェックボックスを作ります。本文では値を\`true\`／\`false\`と表示する代わりに、条件分岐で必要な手順だけを見せられます。
-
-\`\`\`text
-team_work | チームで作業する = [x]
-
-\\[[#if team_work]]
-### チームで作業する場合
-
-1. 作業ブランチを作成します。
-2. 変更後にレビューを依頼します。
-\\[[#else]]
-### 個人で作業する場合
-
-1. 手元で変更内容を確認します。
-2. 作業内容を記録します。
-\\[[#endif]]
-\`\`\`
-
-[[#if team_work]]
-> ### チームで作業する場合
->
-> 1. 作業ブランチを作成します。
-> 2. 変更後にレビューを依頼します。
-[[#else]]
-> ### 個人で作業する場合
->
-> 1. 手元で変更内容を確認します。
-> 2. 作業内容を記録します。
-[[#endif]]
-
-## 次は自分の文書で試す
-
-1. ツールバーの「Docfilly形式で保存」で、このソースをダウンロードします。
-2. 保存したファイルをテキストエディターで開き、フォーム設定や本文を編集します。
-3. ツールバーの「ファイルを開く」から、編集したファイルをもう一度開きます。
-
-すべての記法は[詳細なDocfillyフォーマット仕様](https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md)で確認できます。
-`;
-
-const sampleDocument: LoadedDocument = {
-  name: "サンプル.md",
-  source: sampleSource,
-  sourceType: "md",
-};
-
-const loadingStatus: ViewerStatus = {
-  message: "文書を読み込んでいます。",
-  isWarning: false,
+const samples: Record<WebLocale, LoadedDocument> = {
+  en: { name: "docfilly-tutorial.md", source: englishSample, sourceType: "md" },
+  ja: { name: "サンプル.md", source: japaneseSample, sourceType: "md" },
 };
 
 const sessionSaveDelayMs = 500;
 
 export function App() {
+  const [locale, setLocale] = useState<WebLocale>(resolveWebLocale);
+  const messages = webMessages[locale];
+  const initialLocaleRef = useRef(locale);
+  const initialMessagesRef = useRef(messages);
   const [document, setDocument] = useState<LoadedDocument | null>(null);
   const [initialValues, setInitialValues] = useState<ReadonlyMap<string, string> | undefined>();
   const [outputSource, setOutputSource] = useState<string | null>(null);
@@ -166,15 +53,26 @@ export function App() {
   const restoreClearDataFocusRef = useRef(false);
 
   useEffect(() => {
+    globalThis.document.documentElement.lang = locale;
+  }, [locale]);
+
+  useEffect(() => {
     let active = true;
     void loadDocumentSession()
       .then((session) => {
         if (!active || restoreCancelledRef.current || session === null) return;
-        const restoredDocument: LoadedDocument = {
+        let restoredDocument: LoadedDocument = {
           name: session.name,
           source: session.source,
           sourceType: session.sourceType,
         };
+        if (
+          Object.values(samples).some(
+            (sample) => sample.name === session.name && sample.source === session.source,
+          )
+        ) {
+          restoredDocument = samples[initialLocaleRef.current];
+        }
         documentRef.current = restoredDocument;
         restoredNoticeRef.current = true;
         setInitialValues(session.values);
@@ -183,7 +81,7 @@ export function App() {
       .catch(() => {
         if (!active) return;
         setStatus({
-          message: "この端末の保存データを読み込めませんでした。新しい文書を開けます。",
+          message: initialMessagesRef.current.restoreFailed,
           isWarning: true,
         });
       });
@@ -223,41 +121,57 @@ export function App() {
     clearDataButtonRef.current?.focus();
   }, [isClearConfirmationOpen]);
 
-  const showDocument = useCallback((nextDocument: LoadedDocument): void => {
-    if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
-    restoreCancelledRef.current = true;
-    documentRef.current = nextDocument;
-    persistenceSuppressedRef.current = false;
-    setStatus(loadingStatus);
-    setOutputSource(null);
-    setCurrentValues(null);
-    setIsDocfilly(false);
-    setDiagnostics([]);
-    setInitialValues(undefined);
-    setDocument(nextDocument);
-  }, []);
+  const showDocument = useCallback(
+    (nextDocument: LoadedDocument): void => {
+      if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
+      restoreCancelledRef.current = true;
+      documentRef.current = nextDocument;
+      persistenceSuppressedRef.current = false;
+      setStatus({ message: messages.loading, isWarning: false });
+      setOutputSource(null);
+      setCurrentValues(null);
+      setIsDocfilly(false);
+      setDiagnostics([]);
+      setInitialValues(undefined);
+      setDocument(nextDocument);
+    },
+    [messages.loading],
+  );
 
-  const handleValuesChange = useCallback((values: ReadonlyMap<string, string>): void => {
-    setCurrentValues(new Map(values));
-    if (restoredNoticeRef.current) {
-      restoredNoticeRef.current = false;
-      setStatus({ message: "前回の文書を復元しました。", isWarning: false });
-      return;
-    }
-    if (persistenceSuppressedRef.current || documentRef.current === null) return;
-    if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
-    const documentToSave = documentRef.current;
-    const valuesToSave = new Map(values);
-    saveTimerRef.current = setTimeout(() => {
-      saveTimerRef.current = undefined;
-      void saveDocumentSession(documentToSave, valuesToSave).catch(() => {
-        setStatus({
-          message: "この端末へ文書データを保存できませんでした。表示中の文書は維持されています。",
-          isWarning: true,
+  const changeLocale = (nextLocale: WebLocale): void => {
+    const currentDocument = documentRef.current;
+    const isBuiltInSample = Object.values(samples).some(
+      (sample) => currentDocument?.name === sample.name && currentDocument.source === sample.source,
+    );
+    setStatus(null);
+    setLocale(nextLocale);
+    if (isBuiltInSample) showDocument(samples[nextLocale]);
+  };
+
+  const handleValuesChange = useCallback(
+    (values: ReadonlyMap<string, string>): void => {
+      setCurrentValues(new Map(values));
+      if (restoredNoticeRef.current) {
+        restoredNoticeRef.current = false;
+        setStatus({ message: messages.restored, isWarning: false });
+        return;
+      }
+      if (persistenceSuppressedRef.current || documentRef.current === null) return;
+      if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
+      const documentToSave = documentRef.current;
+      const valuesToSave = new Map(values);
+      saveTimerRef.current = setTimeout(() => {
+        saveTimerRef.current = undefined;
+        void saveDocumentSession(documentToSave, valuesToSave).catch(() => {
+          setStatus({
+            message: messages.sessionSaveFailed,
+            isWarning: true,
+          });
         });
-      });
-    }, sessionSaveDelayMs);
-  }, []);
+      }, sessionSaveDelayMs);
+    },
+    [messages.restored, messages.sessionSaveFailed],
+  );
 
   const clearSavedDocument = useCallback(async (): Promise<void> => {
     restoreCancelledRef.current = true;
@@ -270,17 +184,17 @@ export function App() {
       await clearDocumentSession();
       setIsClearConfirmationOpen(false);
       setStatus({
-        message: "この端末に保存した文書データを削除しました。表示中の文書は維持されています。",
+        message: messages.cleared,
         isWarning: false,
       });
     } catch {
       persistenceSuppressedRef.current = false;
       setStatus({
-        message: "この端末の保存データを削除できませんでした。",
+        message: messages.clearFailed,
         isWarning: true,
       });
     }
-  }, []);
+  }, [messages.clearFailed, messages.cleared]);
 
   const closeDocument = useCallback(async (): Promise<void> => {
     if (documentRef.current === null) return;
@@ -304,17 +218,16 @@ export function App() {
     try {
       await clearDocumentSession();
       setStatus({
-        message: "文書を閉じました。元のローカルファイルは変更されていません。",
+        message: messages.closed,
         isWarning: false,
       });
     } catch {
       setStatus({
-        message:
-          "文書を閉じましたが、この端末の復元データを削除できませんでした。再読み込み時に文書が復元される可能性があります。",
+        message: messages.closeCleanupFailed,
         isWarning: true,
       });
     }
-  }, []);
+  }, [messages.closeCleanupFailed, messages.closed]);
 
   const loadFile = useCallback(
     async (file: File): Promise<void> => {
@@ -324,13 +237,13 @@ export function App() {
         setStatus({
           message:
             error instanceof UnsupportedDocumentFileError
-              ? error.message
-              : "ファイルを読み込めませんでした。もう一度選択してください。",
+              ? messages.unsupportedFile
+              : messages.fileReadFailed,
           isWarning: true,
         });
       }
     },
-    [showDocument],
+    [messages.fileReadFailed, messages.unsupportedFile, showDocument],
   );
 
   const handleValidationError = useCallback((message: string): void => {
@@ -341,7 +254,7 @@ export function App() {
 
   const openSample = (): void => {
     setOpenDialog(null);
-    showDocument(sampleDocument);
+    showDocument(samples[locale]);
   };
 
   const openClearConfirmation = (): void => {
@@ -364,12 +277,12 @@ export function App() {
       const documentExport = createDocumentExport(outputSource, document.sourceType, document.name);
       downloadDocumentExport(documentExport);
       setStatus({
-        message: `表示結果「${documentExport.fileName}」の書き出しを開始しました。`,
+        message: messages.renderedExportStarted(documentExport.fileName),
         isWarning: false,
       });
     } catch {
       setStatus({
-        message: "表示結果を書き出せませんでした。文書はそのまま表示されています。",
+        message: messages.renderedExportFailed,
         isWarning: true,
       });
     }
@@ -384,15 +297,16 @@ export function App() {
         currentValues,
         document.sourceType,
         document.name,
+        locale,
       );
       downloadDocumentExport(documentExport);
       setStatus({
-        message: `Docfilly文書「${documentExport.fileName}」の保存を開始しました。`,
+        message: messages.docfillySaveStarted(documentExport.fileName),
         isWarning: false,
       });
     } catch {
       setStatus({
-        message: "Docfilly形式で保存できませんでした。文書とフォーム値は維持されています。",
+        message: messages.docfillySaveFailed,
         isWarning: true,
       });
     }
@@ -401,18 +315,30 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="toolbar">
-        <a className="toolbar__brand" href="./" aria-label="Docfilly ホーム">
+        <a className="toolbar__brand" href="./" aria-label={messages.home}>
           Docfilly
         </a>
         <div className="toolbar__document" aria-live="polite">
-          <span>表示中</span>
-          <strong title={document?.name}>{document?.name ?? "ファイル未選択"}</strong>
+          <span>{messages.viewing}</span>
+          <strong title={document?.name}>{document?.name ?? messages.noFileSelected}</strong>
         </div>
-        <nav className="toolbar__actions" aria-label="文書操作">
+        <nav className="toolbar__actions" aria-label={messages.documentActions}>
+          <label className="language-picker">
+            <span className="visually-hidden">{messages.language}</span>
+            <select
+              aria-label={messages.language}
+              value={locale}
+              onChange={(event) => changeLocale(event.currentTarget.value as WebLocale)}
+            >
+              <option value="en">{messages.english}</option>
+              <option value="ja">{messages.japanese}</option>
+            </select>
+          </label>
           <FileDropZone
             inputRef={fileInputRef}
             onFile={loadFile}
             onValidationError={handleValidationError}
+            messages={messages}
           />
           <button
             type="button"
@@ -420,7 +346,7 @@ export function App() {
             disabled={!isDocfilly || currentValues === null}
             onClick={saveDocfillyDocument}
           >
-            Docfilly形式で保存
+            {messages.saveDocfilly}
           </button>
           <button
             type="button"
@@ -428,7 +354,7 @@ export function App() {
             disabled={outputSource === null}
             onClick={exportRenderedDocument}
           >
-            表示結果を書き出す
+            {messages.exportRendered}
           </button>
           <button
             type="button"
@@ -436,7 +362,7 @@ export function App() {
             disabled={document === null}
             onClick={() => void closeDocument()}
           >
-            文書を閉じる
+            {messages.closeDocument}
           </button>
           {diagnostics.length > 0 && (
             <button
@@ -444,7 +370,7 @@ export function App() {
               className="toolbar-button diagnostic-action secondary-action"
               onClick={() => setOpenDialog("diagnostics")}
             >
-              診断 {diagnostics.length}件
+              {messages.diagnostics(diagnostics.length)}
             </button>
           )}
           <button
@@ -452,17 +378,17 @@ export function App() {
             className="toolbar-button secondary-action"
             onClick={() => setOpenDialog("help")}
           >
-            ヘルプ
+            {messages.help}
           </button>
           <div ref={overflowRef} className="toolbar-overflow">
             <button
               ref={overflowButtonRef}
               type="button"
               className="toolbar-button toolbar-overflow__trigger"
-              aria-label="その他の操作"
+              aria-label={messages.moreActions}
               aria-expanded={isOverflowOpen}
               aria-controls="toolbar-overflow-menu"
-              title="その他の操作"
+              title={messages.moreActions}
               onClick={() => setIsOverflowOpen((isOpen) => !isOpen)}
             >
               <span aria-hidden="true">⋮</span>
@@ -474,35 +400,35 @@ export function App() {
                   disabled={!isDocfilly || currentValues === null}
                   onClick={() => runOverflowAction(saveDocfillyDocument)}
                 >
-                  Docfilly形式で保存
+                  {messages.saveDocfilly}
                 </button>
                 <button
                   type="button"
                   disabled={outputSource === null}
                   onClick={() => runOverflowAction(exportRenderedDocument)}
                 >
-                  表示結果を書き出す
+                  {messages.exportRendered}
                 </button>
                 <button
                   type="button"
                   disabled={document === null}
                   onClick={() => runOverflowAction(() => void closeDocument())}
                 >
-                  文書を閉じる
+                  {messages.closeDocument}
                 </button>
                 {diagnostics.length > 0 && (
                   <button
                     type="button"
                     onClick={() => runOverflowAction(() => setOpenDialog("diagnostics"))}
                   >
-                    診断 {diagnostics.length}件
+                    {messages.diagnostics(diagnostics.length)}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => runOverflowAction(() => setOpenDialog("help"))}
                 >
-                  ヘルプ
+                  {messages.help}
                 </button>
               </div>
             )}
@@ -519,30 +445,32 @@ export function App() {
       <main className={document === null ? "empty-layout" : undefined}>
         {document === null ? (
           <section className="empty-state" aria-labelledby="empty-state-title">
-            <p className="eyebrow">Local document viewer</p>
-            <h1 id="empty-state-title">Docfilly文書を開く</h1>
-            <p>
-              Markdownまたはテキストファイルをブラウザー内で読み込み、フォームから内容を変更できます。
-            </p>
+            <p className="eyebrow">{messages.emptyEyebrow}</p>
+            <h1 id="empty-state-title">{messages.emptyTitle}</h1>
+            <p>{messages.emptyDescription}</p>
             <div className="empty-state__actions">
               <button type="button" className="primary-button" onClick={openFilePicker}>
-                ファイルを開く
+                {messages.openFile}
               </button>
               <button
                 type="button"
                 className="text-button"
-                onClick={() => showDocument(sampleDocument)}
+                onClick={() => showDocument(samples[locale])}
               >
-                サンプルを開く
+                {messages.openSample}
               </button>
             </div>
-            <small>.md、.markdown、.txt に対応。ファイルは外部へ送信されません。</small>
+            <small>
+              {messages.supportedFiles} {messages.filesStayLocal}
+            </small>
           </section>
         ) : (
           <DocumentViewer
             source={document.source}
             sourceType={document.sourceType}
             initialValues={initialValues}
+            locale={locale}
+            messages={messages}
             onStatusChange={setStatus}
             onOutputSourceChange={setOutputSource}
             onDiagnosticsChange={setDiagnostics}
@@ -554,69 +482,57 @@ export function App() {
 
       {openDialog === "help" && (
         <AppDialog
-          title="Docfillyの使い方"
+          title={messages.helpTitle}
+          closeLabel={messages.closeDialog(messages.helpTitle)}
           inactive={isClearConfirmationOpen}
           onClose={() => setOpenDialog(null)}
         >
           <section>
-            <h3>Docfillyとは？</h3>
-            <p>
-              手順書にはしばしば、プロジェクト名や実行環境など、読む人が自分の状況に合わせて読み替える箇所があります。Docfillyでは、それらを書き手があらかじめDocfilly形式に沿って、入力項目や条件分岐としてMarkdown／テキスト文書へ記述します。読み手がその文書を開くと、書き手の設定に基づくフォームが表示されます。自分の環境に合った値を入力することで、置き換え作業ではなく、手順の内容そのものに集中できます。
-            </p>
+            <h3>{messages.helpIntroduction.heading}</h3>
+            <p>{messages.helpIntroduction.body}</p>
           </section>
           <section>
-            <h3>サンプルと詳細仕様</h3>
-            <p>組み込みサンプルでフォームと表示内容の変化を試すことができます。</p>
+            <h3>{messages.helpSample.heading}</h3>
+            <p>{messages.helpSample.body}</p>
             <div className="help-actions">
               <button type="button" className="text-button" onClick={openSample}>
-                サンプル文書を開く
+                {messages.sampleDocument}
               </button>
               <a
                 href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                詳細なDocfillyフォーマット仕様
+                {messages.formatSpecification}
               </a>
             </div>
           </section>
           <section>
-            <h3>文書を開く</h3>
-            <p>
-              「ファイルを開く」で .md、.markdown、.txt
-              を選ぶか、ファイルを画面へドラッグ＆ドロップします。
-            </p>
+            <h3>{messages.helpOpen.heading}</h3>
+            <p>{messages.helpOpen.body}</p>
           </section>
           <section>
-            <h3>フォームと表示内容</h3>
-            <p>
-              Docfilly形式の文書は、先頭部分にフォーム設定を持ちます。フォームは、書き手が文書内に定義した入力項目をもとに生成されます。左側のフォームに値を入力すると、書き手が指定した値の差し込みや条件分岐が処理され、右側に自分向けの本文が表示されます。通常のMarkdown／テキスト文書にはフォームがなく、内容がそのまま表示されます。
-            </p>
+            <h3>{messages.helpForm.heading}</h3>
+            <p>{messages.helpForm.body}</p>
           </section>
           <section>
-            <h3>Docfilly形式で保存</h3>
-            <p>
-              現在のフォーム値を次回開いたときの初期値として、フォーム設定、本文テンプレート、条件分岐を保ったDocfilly形式の文書をダウンロードします。通常のMarkdown／テキスト文書では利用できません。
-            </p>
+            <h3>{messages.helpSave.heading}</h3>
+            <p>{messages.helpSave.body}</p>
           </section>
           <section>
-            <h3>表示結果を書き出す</h3>
-            <p>
-              現在のフォーム値を反映した本文だけを保存します。フォーム設定や処理済みの条件分岐は含まれません。通常のMarkdown／テキスト文書は、内容を変更せずに保存します。
-            </p>
+            <h3>{messages.helpExport.heading}</h3>
+            <p>{messages.helpExport.body}</p>
           </section>
           <section>
-            <h3>プライバシーと端末内の保存</h3>
-            <p>
-              開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。最後に開いた1文書のファイル名、元ソース、形式、フォーム値は現在のブラウザープロファイル内へ保存され、次回起動時に復元されます。共有端末では利用後に保存データを削除してください。インストールとオフライン起動には未対応です。
-            </p>
+            <h3>{messages.helpPrivacy.heading}</h3>
+            <p>{messages.helpPrivacy.body}</p>
             <button
               ref={clearDataButtonRef}
               type="button"
               className="text-button danger-action"
               onClick={openClearConfirmation}
             >
-              この端末の保存データを削除
+              {messages.clearDeviceData}
             </button>
           </section>
         </AppDialog>
@@ -624,16 +540,13 @@ export function App() {
 
       {isClearConfirmationOpen && (
         <AppDialog
-          title="この端末の保存データを削除しますか？"
+          title={messages.clearTitle}
+          closeLabel={messages.closeDialog(messages.clearTitle)}
           initialFocusRef={cancelClearButtonRef}
           onClose={closeClearConfirmation}
         >
-          <p>
-            前回の文書を復元するために保存された、ファイル名、元ソース、形式、フォーム値を削除します。
-          </p>
-          <p>
-            現在表示している文書と元のローカルファイルは削除されません。オフライン起動用のアプリデータも対象外です。
-          </p>
+          <p>{messages.clearDescription}</p>
+          <p>{messages.clearSafety}</p>
           <div className="dialog-actions">
             <button
               ref={cancelClearButtonRef}
@@ -641,14 +554,14 @@ export function App() {
               className="toolbar-button dialog-cancel-action"
               onClick={closeClearConfirmation}
             >
-              キャンセル
+              {messages.cancel}
             </button>
             <button
               type="button"
               className="toolbar-button danger-action"
               onClick={() => void clearSavedDocument()}
             >
-              保存データを削除
+              {messages.clearSavedData}
             </button>
           </div>
         </AppDialog>
@@ -656,12 +569,11 @@ export function App() {
 
       {openDialog === "diagnostics" && diagnostics.length > 0 && (
         <AppDialog
-          title={`文書の診断（${diagnostics.length}件）`}
+          title={messages.diagnosticsTitle(diagnostics.length)}
+          closeLabel={messages.closeDialog(messages.diagnosticsTitle(diagnostics.length))}
           onClose={() => setOpenDialog(null)}
         >
-          <p className="diagnostic-summary">
-            文書は表示を継続しています。次の箇所を必要に応じて確認してください。
-          </p>
+          <p className="diagnostic-summary">{messages.diagnosticsSummary}</p>
           <ol className="diagnostic-list">
             {diagnostics.map((diagnostic, index) => (
               <li key={`${diagnostic.code}-${diagnostic.line ?? "unknown"}-${index}`}>
@@ -669,13 +581,13 @@ export function App() {
                 <dl>
                   {diagnostic.line !== undefined && (
                     <>
-                      <dt>行</dt>
+                      <dt>{messages.line}</dt>
                       <dd>{diagnostic.line}</dd>
                     </>
                   )}
                   {diagnostic.source !== undefined && (
                     <>
-                      <dt>ソース</dt>
+                      <dt>{messages.source}</dt>
                       <dd>
                         <code>{diagnostic.source}</code>
                       </dd>

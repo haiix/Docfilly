@@ -2,6 +2,7 @@ import {
   updateDocfillyDefaults,
   type DocfillyInitialValues,
   type DocfillySourceType,
+  type SupportedLocale,
 } from "docfilly";
 
 export interface DocumentExport {
@@ -35,8 +36,9 @@ export function createDocfillyDocumentExport(
   values: DocfillyInitialValues,
   sourceType: DocfillySourceType,
   originalFileName: string,
+  locale?: SupportedLocale,
 ): DocumentExport {
-  const updated = updateDocfillyDefaults(source, values);
+  const updated = updateDocfillyDefaults(source, values, { locale });
   if (!updated.isDocfilly) throw new OrdinaryDocumentExportError();
 
   const { extension: fallbackExtension, mimeType } = exportTypes[sourceType];

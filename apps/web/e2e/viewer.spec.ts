@@ -245,3 +245,38 @@ test("表示結果とDocfilly形式のダウンロードを開始できる", asy
   const sourceDownload = await sourceDownloadPromise;
   expect(sourceDownload.suggestedFilename()).toBe("サンプル.md");
 });
+
+test.describe("English and Japanese locales", () => {
+  test.use({ locale: "en-US" });
+
+  test("uses the browser locale, switches language, localizes the sample and Core diagnostics", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await expect(page.getByRole("heading", { name: "Open a Docfilly document" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+    await page.getByRole("button", { name: "Open sample" }).click();
+    await expect(page.getByLabel("Project name")).toBeVisible();
+    await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
+
+    await page.getByLabel("Open file").setInputFiles({
+      name: "warning.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from("#!docfilly\nbroken setting\n---\nBody"),
+    });
+    await page.getByRole("button", { name: "Diagnostics (1)", exact: true }).first().click();
+    await expect(page.getByRole("dialog", { name: "Document diagnostics (1)" })).toContainText(
+      "Line 2 was skipped as a setting",
+    );
+    await page.keyboard.press("Escape");
+
+    await page.getByLabel("Language").selectOption("ja");
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.getByRole("navigation", { name: "文書操作" })).toBeVisible();
+    await page.getByRole("button", { name: "診断 1件", exact: true }).first().click();
+    await expect(page.getByRole("dialog", { name: "文書の診断（1件）" })).toContainText(
+      "2行目は「=」がないため",
+    );
+  });
+});

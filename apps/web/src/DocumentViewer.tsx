@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { DocfillyView, type DocfillyRenderState } from "@docfilly/react";
 import type { DocfillyDiagnostic, DocfillySourceType } from "docfilly";
+import type { WebLocale, WebMessages } from "./locale";
 
 export interface ViewerStatus {
   message: string;
@@ -11,6 +12,8 @@ interface DocumentViewerProps {
   source: string;
   sourceType: DocfillySourceType;
   initialValues?: ReadonlyMap<string, string>;
+  locale: WebLocale;
+  messages: WebMessages;
   onStatusChange: (status: ViewerStatus) => void;
   onOutputSourceChange: (outputSource: string) => void;
   onDiagnosticsChange: (diagnostics: readonly DocfillyDiagnostic[]) => void;
@@ -22,6 +25,8 @@ export function DocumentViewer({
   source,
   sourceType,
   initialValues,
+  locale,
+  messages,
   onStatusChange,
   onOutputSourceChange,
   onDiagnosticsChange,
@@ -35,9 +40,9 @@ export function DocumentViewer({
       onDocumentTypeChange(state.isDocfilly);
 
       if (!state.isDocfilly) {
-        const formatName = sourceType === "md" ? "Markdown" : "テキスト";
+        const formatName = sourceType === "md" ? "Markdown" : messages.textFormat;
         onStatusChange({
-          message: `#!docfilly識別子がないため、通常の${formatName}として表示しています。`,
+          message: messages.ordinaryDocument(formatName),
           isWarning: false,
         });
         onValuesChange(state.values);
@@ -47,7 +52,7 @@ export function DocumentViewer({
       const warningCount = state.diagnostics.length;
       if (warningCount > 0) {
         onStatusChange({
-          message: `${state.values.size}個の設定項目を読み込みました。文書に${warningCount}件の診断があります。`,
+          message: messages.loadedWithDiagnostics(state.values.size, warningCount),
           isWarning: false,
         });
         onValuesChange(state.values);
@@ -55,7 +60,7 @@ export function DocumentViewer({
       }
 
       onStatusChange({
-        message: `${state.values.size}個の設定項目を読み込みました。`,
+        message: messages.loaded(state.values.size),
         isWarning: false,
       });
       onValuesChange(state.values);
@@ -66,6 +71,7 @@ export function DocumentViewer({
       onOutputSourceChange,
       onStatusChange,
       onValuesChange,
+      messages,
       sourceType,
     ],
   );
@@ -74,7 +80,7 @@ export function DocumentViewer({
     <DocfillyView
       source={source}
       sourceType={sourceType}
-      options={{ initialValues }}
+      options={{ initialValues, locale }}
       onRender={handleRender}
     />
   );
