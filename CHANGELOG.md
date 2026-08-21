@@ -1,15 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Added
-
-* add English and Japanese locales for Core diagnostics and the React wrapper
-
-### Changed
-
-* diagnostics now default to English; pass `locale: "ja"` to preserve Japanese messages
-
 ## 0.1.0 (2026-08-20)
 
 
