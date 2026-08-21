@@ -567,16 +567,18 @@ export function App() {
           <section>
             <h3>サンプルと詳細仕様</h3>
             <p>組み込みサンプルでフォームと表示内容の変化を試すことができます。</p>
-            <button type="button" className="text-button" onClick={openSample}>
-              サンプル文書を開く
-            </button>
-            <a
-              href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              詳細なDocfillyフォーマット仕様
-            </a>
+            <div className="help-actions">
+              <button type="button" className="text-button" onClick={openSample}>
+                サンプル文書を開く
+              </button>
+              <a
+                href="https://github.com/haiix/Docfilly/blob/main/documents/03-source-format.md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                詳細なDocfillyフォーマット仕様
+              </a>
+            </div>
           </section>
           <section>
             <h3>文書を開く</h3>
@@ -588,14 +590,19 @@ export function App() {
           <section>
             <h3>フォームと表示内容</h3>
             <p>
-              フォームは、書き手が文書内に定義した入力項目から生成されます。左側のフォームへ値を入力すると、書き手が指定した値の差し込みや条件分岐が処理され、右側に自分向けの本文が表示されます。
+              Docfilly形式の文書は、先頭部分にフォーム設定を持ちます。フォームは、書き手が文書内に定義した入力項目をもとに生成されます。左側のフォームに値を入力すると、書き手が指定した値の差し込みや条件分岐が処理され、右側に自分向けの本文が表示されます。通常のMarkdown／テキスト文書にはフォームがなく、内容がそのまま表示されます。
             </p>
           </section>
           <section>
-            <h3>形式と2種類の保存／書き出し</h3>
+            <h3>Docfilly形式で保存</h3>
             <p>
-              Docfilly形式は先頭のHeaderにフォーム設定を持つ文書です。通常のMarkdown／テキストにはフォームがなく、そのまま表示されます。
-              「Docfilly形式で保存」は現在のフォーム値を次回の初期値にして、Header、本文テンプレート、条件ディレクティブを保った文書をダウンロードします。通常文書では利用できません。「表示結果を書き出す」はHeaderを除いた現在の本文を保存します。
+              現在のフォーム値を次回開いたときの初期値として、フォーム設定、本文テンプレート、条件分岐を保ったDocfilly形式の文書をダウンロードします。通常のMarkdown／テキスト文書では利用できません。
+            </p>
+          </section>
+          <section>
+            <h3>表示結果を書き出す</h3>
+            <p>
+              現在のフォーム値を反映した本文だけを保存します。フォーム設定や処理済みの条件分岐は含まれません。通常のMarkdown／テキスト文書は、内容を変更せずに保存します。
             </p>
           </section>
           <section>
