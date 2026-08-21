@@ -14,7 +14,7 @@ on:
       - labeled
 
 permissions:
-  actions: read
+  actions: write
   contents: write
   pull-requests: write
 
@@ -36,6 +36,32 @@ jobs:
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Detect Pages-impacting changes
+        id: pages
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        shell: bash
+        run: |
+          required=false
+
+          while IFS= read -r path; do
+            case "$path" in
+              apps/web/package.json|packages/*/package.json)
+                ;;
+              .github/workflows/deploy-pages.yml|apps/web/*|package.json|packages/*|pnpm-lock.yaml|pnpm-workspace.yaml|tsconfig.base.json)
+                required=true
+                break
+                ;;
+            esac
+          done < <(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')
+
+          echo "required=$required" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Wait for CI to succeed
         if: >-
@@ -77,3 +103,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+
+      - name: Deploy updated web app
+        if: steps.pages.outputs.required == 'true'
+        run: gh workflow run deploy-pages.yml --ref "$BASE_REF"
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GH_TOKEN: ${{ github.token }}
