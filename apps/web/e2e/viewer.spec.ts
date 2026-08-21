@@ -184,6 +184,53 @@ test.describe("狭い画面のオーバーフローメニュー", () => {
   });
 });
 
+test.describe("狭い画面のレイアウト", () => {
+  test.use({ viewport: { width: 240, height: 800 }, hasTouch: true });
+
+  test("ステータスを表示しても空画面に不要な縦スクロールを作らない", async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 800 });
+    await page.goto("./");
+    const heightWithoutStatus = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.getByLabel("ファイルを開く").setInputFiles({
+      name: "unsupported.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("unsupported"),
+    });
+
+    await expect(page.getByRole("status")).toBeVisible();
+    const pageSize = await page.evaluate(() => ({
+      viewportHeight: window.innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+    }));
+    expect(heightWithoutStatus).toBeLessThanOrEqual(pageSize.viewportHeight);
+    expect(pageSize.documentHeight).toBeLessThanOrEqual(pageSize.viewportHeight);
+  });
+
+  test("極端に狭い画面でも長い本文を折り返して画面内に収める", async ({ page }) => {
+    await page.goto("./");
+    await page.getByLabel("ファイルを開く").setInputFiles({
+      name: "narrow.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from(`# ${"very-long-heading-".repeat(12)}\n`),
+    });
+
+    const output = page.locator(".docfilly__output");
+    await expect(output).toBeVisible();
+    const layout = await page.evaluate(() => {
+      const outputElement = document.querySelector<HTMLElement>(".docfilly__output");
+      if (outputElement === null) throw new Error("本文エリアが見つかりません。");
+      return {
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        outputClientWidth: outputElement.clientWidth,
+        outputScrollWidth: outputElement.scrollWidth,
+      };
+    });
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.outputScrollWidth).toBeLessThanOrEqual(layout.outputClientWidth);
+  });
+});
+
 test("表示結果とDocfilly形式のダウンロードを開始できる", async ({ page }) => {
   await openSample(page);
   await page.getByLabel("作成者").fill("保存する名前");

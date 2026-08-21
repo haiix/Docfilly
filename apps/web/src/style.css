@@ -11,7 +11,6 @@
 }
 
 body {
-  min-width: 320px;
   min-height: 100vh;
   margin: 0;
 }
@@ -29,6 +28,8 @@ summary,
 }
 
 .app-shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
@@ -363,13 +364,14 @@ button.toolbar-button:not(:disabled),
 }
 
 main {
+  flex: 1 1 auto;
   width: min(1180px, calc(100% - 3rem));
   margin: 2.5rem auto 5rem;
 }
 
 .empty-layout {
   display: grid;
-  min-height: calc(100vh - 8.5rem);
+  min-height: 0;
   place-items: center;
 }
 
@@ -524,6 +526,7 @@ main {
 }
 
 .docfilly__form {
+  min-width: 0;
   padding: 1.5rem;
   border-right: 1px solid #e4e8ee;
   background: #fafbfc;
@@ -578,6 +581,7 @@ main {
 }
 
 .docfilly__output {
+  min-width: 0;
   min-height: 28rem;
   padding: clamp(1.5rem, 4vw, 3rem);
   overflow-wrap: anywhere;
@@ -639,10 +643,6 @@ main {
   .app-status,
   main {
     width: min(100% - 2rem, 1180px);
-  }
-
-  .empty-layout {
-    min-height: calc(100vh - 7rem);
   }
 
   .empty-state__actions {
