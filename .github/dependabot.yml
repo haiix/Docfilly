@@ -5,6 +5,8 @@ updates:
     schedule:
       interval: weekly
     target-branch: main
+    labels:
+      - dependencies
 
     groups:
       production-dependencies:
@@ -28,6 +30,8 @@ updates:
     schedule:
       interval: weekly
     target-branch: main
+    labels:
+      - dependencies
     groups:
       actions-dependencies:
         patterns:

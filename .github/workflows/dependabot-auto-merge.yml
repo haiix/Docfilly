@@ -2,10 +2,16 @@ name: Dependabot auto-merge
 
 on:
   pull_request_target:
+    branches:
+      - main
+    paths:
+      - .github/workflows/**
+      - apps/*/package.json
+      - package.json
+      - packages/*/package.json
+      - pnpm-lock.yaml
     types:
-      - opened
-      - synchronize
-      - reopened
+      - labeled
 
 permissions:
   actions: read
@@ -21,7 +27,8 @@ jobs:
     name: Enable auto-merge
     if: >-
       github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.event.pull_request.base.ref == 'main'
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.label.name == 'dependencies'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
