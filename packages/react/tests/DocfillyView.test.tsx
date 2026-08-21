@@ -92,6 +92,37 @@ describe("DocfillyView", () => {
     expect(destroy).toHaveBeenCalledTimes(3);
   });
 
+  it("passes locale to Core and recreates the instance when it changes", () => {
+    const onRender = vi.fn<(state: DocfillyRenderState) => void>();
+    const destroy = vi.spyOn(Docfilly.prototype, "destroy");
+    const source = "#!docfilly\ninvalid row\n---\nBody";
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={source}
+          sourceType="text"
+          options={{ locale: "ja-JP" }}
+          onRender={onRender}
+        />,
+      );
+    });
+    expect(onRender.mock.lastCall?.[0].diagnostics[0]?.message).toContain("2行目");
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={source}
+          sourceType="text"
+          options={{ locale: "en-US" }}
+          onRender={onRender}
+        />,
+      );
+    });
+    expect(destroy).toHaveBeenCalledOnce();
+    expect(onRender.mock.lastCall?.[0].diagnostics[0]?.message).toContain("Line 2");
+  });
+
   it("does not reset form input when only onRender changes", () => {
     vi.useFakeTimers();
     const firstCallback = vi.fn<(state: DocfillyRenderState) => void>();

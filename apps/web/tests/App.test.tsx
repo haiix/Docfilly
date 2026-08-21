@@ -497,8 +497,8 @@ describe("App", () => {
 
     const dialog = screen.getByRole("dialog", { name: "文書の診断（2件）" });
     expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
-    expect(dialog.textContent).toContain("2行目は「=」がないため");
-    expect(dialog.textContent).toContain("3行目は「=」がないため");
+    expect(dialog.textContent).toContain("Line 2 was skipped as a setting");
+    expect(dialog.textContent).toContain("Line 3 was skipped as a setting");
     expect(dialog.textContent).toContain("broken setting");
     expect(dialog.textContent).toContain("also broken");
     expect(screen.getByText("Body")).toBeTruthy();

@@ -1,5 +1,11 @@
 export type DocfillySourceType = "md" | "text";
 
+export type SupportedLocale = "en" | "ja";
+
+export interface DocfillyLocaleOptions {
+  locale?: string;
+}
+
 export type DocfillyInitialValues = ReadonlyMap<string, string>;
 
 export type DocfillyVariable =
@@ -27,7 +33,7 @@ export type DocfillyVariable =
 export type DocfillyFormItem =
   { kind: "variable"; variable: DocfillyVariable } | { kind: "description"; text: string };
 
-export interface DocfillyOptions {
+export interface DocfillyOptions extends DocfillyLocaleOptions {
   debounceMs?: number;
   initialValues?: DocfillyInitialValues;
 }

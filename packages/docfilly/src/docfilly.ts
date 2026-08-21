@@ -1,6 +1,7 @@
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 import { createControl } from "./controls";
+import { diagnosticMessage, resolveLocale } from "./messages";
 import { parseDocfillyDocument } from "./parser";
 import { escapeHtml, type CompiledTemplate } from "./template";
 import type {
@@ -8,6 +9,7 @@ import type {
   DocfillyOptions,
   DocfillySourceType,
   DocfillyVariable,
+  SupportedLocale,
 } from "./types";
 
 /**
@@ -23,6 +25,7 @@ export class Docfilly {
 
   private readonly compiledTemplate: CompiledTemplate;
   private readonly debounceMs: number;
+  private readonly locale: SupportedLocale;
   private readonly parseDiagnostics: readonly DocfillyDiagnostic[];
   private readonly diagnosticList: DocfillyDiagnostic[];
   private debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -36,7 +39,8 @@ export class Docfilly {
    * @param options - Optional rendering behavior.
    */
   constructor(source: string, sourceType: DocfillySourceType, options: DocfillyOptions = {}) {
-    const parsed = parseDocfillyDocument(source);
+    this.locale = resolveLocale(options.locale);
+    const parsed = parseDocfillyDocument(source, { locale: this.locale });
     this.isDocfilly = parsed.isDocfilly;
     this.variables = parsed.variables;
     this.compiledTemplate = parsed.compiledTemplate;
@@ -142,7 +146,7 @@ export class Docfilly {
           this.diagnosticList.push({
             code: "markdown-render-fallback",
             severity: "warning",
-            message: "Markdownとして表示できなかったため、内容をプレーンテキストで表示しました。",
+            message: diagnosticMessage(this.locale, "markdown-render-fallback", {}),
           });
         }
       }

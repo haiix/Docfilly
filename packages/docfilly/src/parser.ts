@@ -1,9 +1,12 @@
 import { compileTemplate, type CompiledTemplate } from "./template";
+import { diagnosticMessage, resolveLocale } from "./messages";
 import type {
   DocfillyDiagnostic,
   DocfillyFormItem,
+  DocfillyLocaleOptions,
   DocfillyVariable,
   ParsedDocfillySource,
+  SupportedLocale,
 } from "./types";
 
 interface SplitSource {
@@ -28,7 +31,7 @@ type ScanResult<T> = { ok: true; value: T } | { ok: false };
  * @param source - The complete document source.
  * @returns The split source and any delimiter diagnostic.
  */
-function splitAtDelimiterLine(source: string): SplitSource {
+function splitAtDelimiterLine(source: string, locale: SupportedLocale): SplitSource {
   const lines = source.replace(/^\uFEFF/, "").split(/\r?\n/);
   const isDocfilly = lines[0]?.trim().toLowerCase() === "#!docfilly";
 
@@ -54,8 +57,7 @@ function splitAtDelimiterLine(source: string): SplitSource {
       diagnostic: {
         code: "missing-delimiter",
         severity: "warning",
-        message:
-          "区切り行（---）が見つからなかったため、識別子より後の内容を本文として表示しました。",
+        message: diagnosticMessage(locale, "missing-delimiter", {}),
       },
     };
   }
@@ -163,11 +165,15 @@ function decodeField(rawField: string): ScanResult<string> {
 /**
  * Creates a diagnostic for a variable row with invalid CSV-style quoting.
  */
-function invalidQuotingDiagnostic(row: string, lineNumber: number): DocfillyDiagnostic {
+function invalidQuotingDiagnostic(
+  row: string,
+  lineNumber: number,
+  locale: SupportedLocale,
+): DocfillyDiagnostic {
   return {
     code: "invalid-quoting",
     severity: "warning",
-    message: `${lineNumber}行目の引用符の使い方が不正なため、設定項目として読み飛ばしました。値を引用する場合は全体を「"」で囲み、値に含む「"」は「""」と記述してください。`,
+    message: diagnosticMessage(locale, "invalid-quoting", { line: lineNumber }),
     line: lineNumber,
     source: row,
   };
@@ -180,10 +186,14 @@ function invalidQuotingDiagnostic(row: string, lineNumber: number): DocfillyDiag
  * @param lineNumber - The one-based source line number.
  * @returns The parsed variable and any associated diagnostic.
  */
-function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
+function parseVariable(
+  row: string,
+  lineNumber: number,
+  locale: SupportedLocale,
+): ParsedVariableRow {
   const equals = findFirstOutsideQuotes(row, "=");
   if (!equals.ok) {
-    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
   }
 
   if (equals.value === -1) {
@@ -191,7 +201,7 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
       diagnostic: {
         code: "missing-equals",
         severity: "warning",
-        message: `${lineNumber}行目は「=」がないため、設定項目として読み飛ばしました。`,
+        message: diagnosticMessage(locale, "missing-equals", { line: lineNumber }),
         line: lineNumber,
         source: row,
       },
@@ -202,17 +212,17 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   const rawValue = row.slice(equals.value + 1);
   const nameAndLabelFields = splitOutsideQuotes(nameAndLabel, "|");
   if (!nameAndLabelFields.ok) {
-    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
   }
 
   const [rawName, rawLabel = ""] = nameAndLabelFields.value;
   const name = rawName.trim();
   if (rawName.includes('"')) {
-    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
   }
   const decodedLabel = decodeField(rawLabel);
   if (!decodedLabel.ok) {
-    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
   }
   const label = decodedLabel.value || name;
   const value = rawValue.trim();
@@ -222,7 +232,10 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
       diagnostic: {
         code: "invalid-variable-name",
         severity: "warning",
-        message: `${lineNumber}行目の変数名「${name}」は使用できないため、読み飛ばしました。変数名には文字、数字、_を使用できます。`,
+        message: diagnosticMessage(locale, "invalid-variable-name", {
+          line: lineNumber,
+          name,
+        }),
         line: lineNumber,
         source: row,
       },
@@ -243,7 +256,7 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
   if (value.startsWith("[") && value.endsWith("]")) {
     const splitCandidates = splitOutsideQuotes(value.slice(1, -1), ",");
     if (!splitCandidates.ok) {
-      return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+      return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
     }
 
     const entries: { selected: boolean; value: string }[] = [];
@@ -252,7 +265,7 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
       const selected = candidate.startsWith("*");
       const decoded = decodeField(selected ? candidate.slice(1) : candidate);
       if (!decoded.ok) {
-        return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+        return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
       }
       if (decoded.value.length > 0) entries.push({ selected, value: decoded.value });
     }
@@ -263,7 +276,9 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
         : {
             code: "invalid-dropdown" as const,
             severity: "warning" as const,
-            message: `${lineNumber}行目の空の選択肢を読み飛ばしました。`,
+            message: diagnosticMessage(locale, "invalid-dropdown-empty-options", {
+              line: lineNumber,
+            }),
             line: lineNumber,
             source: row,
           };
@@ -274,7 +289,9 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
         diagnostic: {
           code: "invalid-dropdown",
           severity: "warning",
-          message: `${lineNumber}行目には有効な選択肢がないため、テキスト入力として表示しました。`,
+          message: diagnosticMessage(locale, "invalid-dropdown-no-options", {
+            line: lineNumber,
+          }),
           line: lineNumber,
           source: row,
         },
@@ -296,7 +313,7 @@ function parseVariable(row: string, lineNumber: number): ParsedVariableRow {
 
   const decodedValue = decodeField(value);
   if (!decodedValue.ok) {
-    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber) };
+    return { diagnostic: invalidQuotingDiagnostic(row, lineNumber, locale) };
   }
 
   return { variable: { type: "text", name, label, initialValue: decodedValue.value } };
@@ -309,8 +326,12 @@ export interface ParsedDocfillyDocument extends ParsedDocfillySource {
 }
 
 /** Parses source and compiles its body for use by the interactive renderer. */
-export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
-  const split = splitAtDelimiterLine(source);
+export function parseDocfillyDocument(
+  source: string,
+  options: DocfillyLocaleOptions = {},
+): ParsedDocfillyDocument {
+  const locale = resolveLocale(options.locale);
+  const split = splitAtDelimiterLine(source, locale);
   const variables: DocfillyVariable[] = [];
   const formItems: DocfillyFormItem[] = [];
   const diagnostics: DocfillyDiagnostic[] = split.diagnostic ? [split.diagnostic] : [];
@@ -328,7 +349,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
     }
 
     const lineNumber = index + split.definitionLineOffset;
-    const parsed = parseVariable(row, lineNumber);
+    const parsed = parseVariable(row, lineNumber, locale);
     if (parsed.diagnostic) diagnostics.push(parsed.diagnostic);
     const variable = parsed.variable;
     if (!variable) return;
@@ -337,7 +358,10 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
       diagnostics.push({
         code: "duplicate-variable",
         severity: "warning",
-        message: `${lineNumber}行目の「${variable.name}」はすでに定義されているため、最初の設定を使用しました。`,
+        message: diagnosticMessage(locale, "duplicate-variable", {
+          line: lineNumber,
+          name: variable.name,
+        }),
         line: lineNumber,
         source: row,
       });
@@ -355,6 +379,7 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
     variables,
     split.templateLineOffset,
     split.isDocfilly,
+    locale,
   );
   diagnostics.push(...compiledTemplate.diagnostics);
 
@@ -376,8 +401,11 @@ export function parseDocfillyDocument(source: string): ParsedDocfillyDocument {
  * @param source - The complete document source.
  * @returns The parsed Docfilly source model.
  */
-export function parseDocfillySource(source: string): ParsedDocfillySource {
-  const parsed = parseDocfillyDocument(source);
+export function parseDocfillySource(
+  source: string,
+  options: DocfillyLocaleOptions = {},
+): ParsedDocfillySource {
+  const parsed = parseDocfillyDocument(source, options);
   return {
     isDocfilly: parsed.isDocfilly,
     variables: parsed.variables,
