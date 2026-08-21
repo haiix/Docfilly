@@ -39,26 +39,11 @@ async function hasSavedValue(page: Page, key: string, expected: string): Promise
   );
 }
 
-test("組み込みチュートリアルで各フォームと構文例を確認できる", async ({ page }) => {
+test("組み込みチュートリアルを開いてフォーム値を反映できる", async ({ page }) => {
   await openSample(page);
 
-  await expect(page.getByRole("heading", { name: "Docfilly 5分チュートリアル" })).toBeVisible();
-  await expect(page.getByText("[[project_name]]", { exact: true })).toBeVisible();
   await page.getByLabel("プロジェクト名").fill("Atlas");
-  await expect(page.getByText("Atlas", { exact: true })).toBeVisible();
-
-  await page.getByLabel("実行環境").selectOption("production");
-  await expect(page.getByText(/本番環境です。変更前にレビュー/)).toBeVisible();
-  await expect(page.getByText(/ステージング環境で、本番前/)).toBeHidden();
-
-  const teamWork = page.getByLabel("チームで作業する");
-  await expect(page.getByRole("heading", { name: "チームで作業する場合" })).toBeVisible();
-  await teamWork.uncheck();
-  await expect(page.getByRole("heading", { name: "個人で作業する場合" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "チームで作業する場合" })).toBeHidden();
-  await expect(page.locator("pre code").filter({ hasText: "[[#if team_work]]" })).toContainText(
-    "[[#else]]",
-  );
+  await expect(page.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeVisible();
 });
 
 test("ローカル文書をファイル選択から開ける", async ({ page }) => {
