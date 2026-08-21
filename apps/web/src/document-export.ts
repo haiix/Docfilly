@@ -23,7 +23,7 @@ const sourceTypeExtensions: Record<DocfillySourceType, readonly string[]> = {
 /** Raised when Docfilly-format saving is requested for an ordinary document. */
 export class OrdinaryDocumentExportError extends Error {
   constructor() {
-    super("通常文書はDocfilly形式で保存できません。");
+    super("Ordinary documents cannot be saved in Docfilly format.");
     this.name = "OrdinaryDocumentExportError";
   }
 }

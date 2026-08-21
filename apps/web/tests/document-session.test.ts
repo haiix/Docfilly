@@ -56,14 +56,14 @@ describe("document session storage", () => {
     const connection = await new Promise<IDBDatabase>((resolve, reject) => {
       openRequest.onsuccess = () => resolve(openRequest.result);
       openRequest.onerror = () =>
-        reject(openRequest.error ?? new Error("テスト用データベースを開けませんでした。"));
+        reject(openRequest.error ?? new Error("The test database failed to open."));
     });
     const transaction = connection.transaction("document-session", "readwrite");
     transaction.objectStore("document-session").put(invalidRecord);
     await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
-        reject(transaction.error ?? new Error("テストデータを書き込めませんでした。"));
+        reject(transaction.error ?? new Error("The test data could not be written."));
     });
     connection.close();
 

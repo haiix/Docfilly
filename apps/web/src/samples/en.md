@@ -74,8 +74,14 @@ team_work | Working with a team = [x]
 
 \[[#if team_work]]
 ### Team workflow
+
+1. Create a working branch.
+2. Request a review after making your changes.
 \[[#else]]
 ### Individual workflow
+
+1. Review your changes locally.
+2. Record what you changed.
 \[[#endif]]
 ```
 

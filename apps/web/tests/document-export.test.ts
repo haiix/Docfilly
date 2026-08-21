@@ -13,11 +13,11 @@ function readBlob(blob: Blob): Promise<string> {
       if (typeof reader.result === "string") {
         resolve(reader.result);
       } else {
-        reject(new Error("Blobをテキストとして読み取れませんでした。"));
+        reject(new Error("The Blob could not be read as text."));
       }
     });
     reader.addEventListener("error", () =>
-      reject(reader.error ?? new Error("Blobの読み取りに失敗しました。")),
+      reject(reader.error ?? new Error("Reading the Blob failed.")),
     );
     reader.readAsText(blob);
   });
@@ -89,6 +89,9 @@ describe("createDocfillyDocumentExport", () => {
     expect(() =>
       createDocfillyDocumentExport("# Ordinary", new Map(), "md", "ordinary.md"),
     ).toThrow(OrdinaryDocumentExportError);
+    expect(() =>
+      createDocfillyDocumentExport("# Ordinary", new Map(), "md", "ordinary.md"),
+    ).toThrow("Ordinary documents cannot be saved in Docfilly format.");
   });
 
   it("uses a source-type fallback when the original file name has no usable base", () => {

@@ -29,7 +29,7 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
     request.addEventListener("success", () => resolve(request.result), { once: true });
     request.addEventListener(
       "error",
-      () => reject(request.error ?? new Error("IndexedDBの操作に失敗しました。")),
+      () => reject(request.error ?? new Error("The IndexedDB operation failed.")),
       { once: true },
     );
   });
@@ -40,12 +40,12 @@ function transactionComplete(transaction: IDBTransaction): Promise<void> {
     transaction.addEventListener("complete", () => resolve(), { once: true });
     transaction.addEventListener(
       "error",
-      () => reject(transaction.error ?? new Error("文書データを保存できませんでした。")),
+      () => reject(transaction.error ?? new Error("The document data could not be saved.")),
       { once: true },
     );
     transaction.addEventListener(
       "abort",
-      () => reject(transaction.error ?? new Error("文書データの保存が中断されました。")),
+      () => reject(transaction.error ?? new Error("Saving the document data was interrupted.")),
       { once: true },
     );
   });

@@ -27,6 +27,8 @@ describe("document files", () => {
   it("reports supported extensions for an unsupported document", async () => {
     const file = new File(["content"], "document.pdf", { type: "application/pdf" });
 
-    await expect(readDocumentFile(file)).rejects.toThrow(".md、.markdown、.txt");
+    await expect(readDocumentFile(file)).rejects.toThrow(
+      "Supported file types are .md, .markdown, and .txt.",
+    );
   });
 });

@@ -11,14 +11,15 @@ async function hasSavedValue(page: Page, key: string, expected: string): Promise
     ([valueKey, expectedValue]) =>
       new Promise<boolean>((resolve, reject) => {
         const request = indexedDB.open("docfilly-web");
-        request.onerror = () => reject(request.error ?? new Error("IndexedDBを開けませんでした。"));
+        request.onerror = () =>
+          reject(request.error ?? new Error("The IndexedDB database failed to open."));
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("document-session", "readonly");
           const sessionRequest = transaction.objectStore("document-session").get("latest");
           let matches = false;
           sessionRequest.onerror = () =>
-            reject(sessionRequest.error ?? new Error("保存済みセッションを読み取れませんでした。"));
+            reject(sessionRequest.error ?? new Error("The saved session could not be read."));
           sessionRequest.onsuccess = () => {
             const session: unknown = sessionRequest.result;
             if (typeof session !== "object" || session === null || !("values" in session)) return;
@@ -218,7 +219,7 @@ test.describe("狭い画面のレイアウト", () => {
     await expect(output).toBeVisible();
     const layout = await page.evaluate(() => {
       const outputElement = document.querySelector<HTMLElement>(".docfilly__output");
-      if (outputElement === null) throw new Error("本文エリアが見つかりません。");
+      if (outputElement === null) throw new Error("The document output element was not found.");
       return {
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
