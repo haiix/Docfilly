@@ -1,9 +1,9 @@
 name: Prepare release
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    # Run at midnight in Japan (15:00 UTC) to batch main branch changes.
+    - cron: "0 15 * * *"
   workflow_dispatch:
 
 permissions:

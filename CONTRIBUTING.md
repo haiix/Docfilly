@@ -2,7 +2,7 @@
 
 ## 開発フロー
 
-変更はissue単位でブランチとPull Requestを作成し、CIとレビューを通して`main`へマージします。`main`へのマージはGitHub Pagesへ自動デプロイされますが、それ自体を正式なリリースとは扱いません。Pages上のアプリは常に最新の開発スナップショットです。
+変更はissue単位でブランチとPull Requestを作成し、CIとレビューを通して`main`へマージします。Webアプリや関連パッケージの変更はGitHub Pagesへ自動デプロイされますが、それ自体を正式なリリースとは扱いません。Pages上のアプリは常に最新の開発スナップショットです。
 
 通常のPull Requestでは、`version.txt`や各`package.json`の`version`を変更しないでください。バージョン更新はリリースPull Requestに集約します。
 
@@ -52,10 +52,10 @@ feat!: テンプレート構文を変更する
 
 ## リリースフロー
 
-1. 通常のPull Requestを`main`へマージすると、Release PleaseがリリースPull Requestを作成または更新します。
+1. 通常のPull Requestを`main`へマージすると、日本時間の毎日0時にRelease Pleaseが変更をまとめ、リリースPull Requestを作成または更新します。必要な場合は`Prepare release` workflowを手動実行できます。
 2. リリースPull Requestで、提案されたバージョン、`CHANGELOG.md`、各バージョンファイルを確認します。
 3. リリースする節目でそのPull Requestをマージします。
-4. Release Pleaseが`v0.1.0`形式のタグとGitHub Releaseを作成します。
+4. 次回の定期実行時、または`Prepare release` workflowの手動実行時に、Release Pleaseが`v0.1.0`形式のタグとGitHub Releaseを作成します。
 5. npmへの公開は、公開方針が決まるまで自動では行いません。
 
 次のバージョンは、前回のタグ以降にマージされた変更から決まります。バージョンを例外的に指定する場合は、対象コミットの本文に`Release-As: 0.4.0`のようなフッターを記載します。
