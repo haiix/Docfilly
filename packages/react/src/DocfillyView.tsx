@@ -64,13 +64,14 @@ export function DocfillyView({
   }, [onRender]);
 
   const debounceMs = options?.debounceMs;
+  const locale = options?.locale;
   const initialValues = useStableInitialValues(options?.initialValues);
 
   useEffect(() => {
     const container = containerRef.current;
     if (container === null) return;
 
-    const view = createDocfilly(source, sourceType, { debounceMs, initialValues });
+    const view = createDocfilly(source, sourceType, { debounceMs, initialValues, locale });
     const notify = (): void => {
       onRenderRef.current?.({
         outputSource: view.outputSource,
@@ -88,7 +89,7 @@ export function DocfillyView({
       view.element.removeEventListener("docfilly:render", notify);
       view.destroy();
     };
-  }, [source, sourceType, debounceMs, initialValues]);
+  }, [source, sourceType, debounceMs, initialValues, locale]);
 
   return <div {...containerProps} ref={containerRef} />;
 }

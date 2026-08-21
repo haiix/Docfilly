@@ -93,7 +93,7 @@ const source = `#!docfilly
 # [[プロジェクト名]]
 `;
 
-const view = createDocfilly(source, "md");
+const view = createDocfilly(source, "md", { locale: "ja" });
 document.body.append(view.element);
 
 view.form; // 読者が入力するフォーム
@@ -111,7 +111,7 @@ view.diagnostics; // 読み飛ばしや自動補正に関する執筆者向け�
 ```ts
 import { updateDocfillyDefaults } from "docfilly";
 
-const updated = updateDocfillyDefaults(source, view.values);
+const updated = updateDocfillyDefaults(source, view.values, { locale: "ja" });
 
 if (updated.isDocfilly) {
   await saveTextFile(updated.source);
@@ -137,6 +137,7 @@ import { DocfillyView } from "@docfilly/react";
   source={source}
   sourceType="md"
   options={{
+    locale: "ja",
     debounceMs: 200,
     initialValues: new Map([
       ["title", "保存済みのタイトル"],
@@ -150,7 +151,7 @@ import { DocfillyView } from "@docfilly/react";
 />;
 ```
 
-`DocfillyView`はマウント時にDocfillyを生成し、`source`、`sourceType`、`options.debounceMs`、または`options.initialValues`の内容が変わると再生成します。アンマウント時には破棄します。`onRender`は初期表示と、その後フォーム入力によって出力が更新されるたびに呼び出されます。コールバックだけを変更した場合や、同じ内容の`initialValues` Mapを渡し直した場合は、フォームの入力状態を維持します。
+`DocfillyView`はマウント時にDocfillyを生成し、`source`、`sourceType`、`options.locale`、`options.debounceMs`、または`options.initialValues`の内容が変わると再生成します。アンマウント時には破棄します。`onRender`は初期表示と、その後フォーム入力によって出力が更新されるたびに呼び出されます。コールバックだけを変更した場合や、同じ内容の`initialValues` Mapを渡し直した場合は、フォームの入力状態を維持します。diagnosticsは既定で英語になり、`locale: "ja"`で日本語を指定できます。詳細は[Diagnostic localization](./documents/08-diagnostic-localization.md)を参照してください。
 
 `className`、`id`、`aria-*`などの`HTMLAttributes<HTMLDivElement>`は外側のラッパー要素へ渡されます。`onRender`には現在の`outputSource`、`ReadonlyMap`形式の`values`、`diagnostics`、Docfilly文書かどうかを示す`isDocfilly`が渡されます。
 

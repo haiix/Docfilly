@@ -1,9 +1,12 @@
 import { parseDocfillyDocument } from "./parser";
+import { diagnosticMessage, resolveLocale } from "./messages";
 import type {
   DocfillyDiagnostic,
   DocfillyInitialValues,
+  DocfillyLocaleOptions,
   DocfillySourceUpdateResult,
   DocfillyVariable,
+  SupportedLocale,
 } from "./types";
 
 /** Returns the first equals sign outside a CSV-style quoted field. */
@@ -72,18 +75,19 @@ function invalidDefaultDiagnostic(
   value: string,
   line: number,
   source: string,
+  locale: SupportedLocale,
 ): DocfillyDiagnostic {
-  const reason =
+  const key =
     variable.type === "select"
-      ? "選択肢に存在しません"
+      ? "invalid-select-default"
       : variable.type === "checkbox"
-        ? "trueまたはfalseではありません"
-        : "改行を含むため1行の設定値として保存できません";
+        ? "invalid-checkbox-default"
+        : "invalid-text-default";
 
   return {
     code: "invalid-default-value",
     severity: "warning",
-    message: `${line}行目の「${variable.name}」の値「${value}」は${reason}。元の初期値を維持しました。`,
+    message: diagnosticMessage(locale, key, { line, name: variable.name, value }),
     line,
     source,
   };
@@ -97,8 +101,10 @@ function invalidDefaultDiagnostic(
 export function updateDocfillyDefaults(
   source: string,
   values: DocfillyInitialValues,
+  options: DocfillyLocaleOptions = {},
 ): DocfillySourceUpdateResult {
-  const parsed = parseDocfillyDocument(source);
+  const locale = resolveLocale(options.locale);
+  const parsed = parseDocfillyDocument(source, { locale });
   if (!parsed.isDocfilly) {
     return { source, isDocfilly: false, diagnostics: parsed.diagnostics };
   }
@@ -126,7 +132,7 @@ export function updateDocfillyDefaults(
 
     const encodedValue = encodeVariableValue(variable, value);
     if (encodedValue === undefined) {
-      diagnostics.push(invalidDefaultDiagnostic(variable, value, lineNumber, line.trim()));
+      diagnostics.push(invalidDefaultDiagnostic(variable, value, lineNumber, line.trim(), locale));
       continue;
     }
 

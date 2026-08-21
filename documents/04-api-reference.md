@@ -11,6 +11,7 @@ import {
   updateDocfillyDefaults,
   Docfilly,
   type DocfillyInitialValues,
+  type DocfillyLocaleOptions,
   type DocfillyOptions,
   type DocfillyDiagnostic,
   type DocfillyDiagnosticCode,
@@ -18,6 +19,7 @@ import {
   type DocfillySourceUpdateResult,
   type DocfillyVariable,
   type ParsedDocfillySource,
+  type SupportedLocale,
 } from "docfilly";
 ```
 
@@ -47,6 +49,7 @@ const savedValues = new Map([
   ["published", "true"],
 ]);
 const view = createDocfilly(source, "md", {
+  locale: "ja",
   debounceMs: 100,
   initialValues: savedValues,
 });
@@ -72,7 +75,7 @@ container.append(view.element);
 DOMを生成せず、変数定義と本文だけを解析します。
 
 ```ts
-function parseDocfillySource(source: string): ParsedDocfillySource;
+function parseDocfillySource(source: string, options?: DocfillyLocaleOptions): ParsedDocfillySource;
 ```
 
 ```ts
@@ -95,6 +98,7 @@ console.log(parsed.diagnostics);
 function updateDocfillyDefaults(
   source: string,
   values: DocfillyInitialValues,
+  options?: DocfillyLocaleOptions,
 ): DocfillySourceUpdateResult;
 ```
 
@@ -231,14 +235,27 @@ type DocfillySourceType = "md" | "text";
 ### `DocfillyOptions`
 
 ```ts
-interface DocfillyOptions {
+interface DocfillyOptions extends DocfillyLocaleOptions {
   debounceMs?: number;
   initialValues?: ReadonlyMap<string, string>;
 }
 ```
 
+- `locale`: diagnosticの言語タグ。`en`と`ja`に対応し、地域付きタグも正規化します。明示しない場合はブラウザー言語、ブラウザー外では英語を使用します
 - `debounceMs`: フォーム操作から再描画までの待機時間。既定値は200ミリ秒です
 - `initialValues`: 初期表示へ適用する、変数名とシリアライズ済み値のMapです。`values` getterの戻り値をそのまま次回の生成に渡せます
+
+### `DocfillyLocaleOptions` / `SupportedLocale`
+
+```ts
+interface DocfillyLocaleOptions {
+  locale?: string;
+}
+
+type SupportedLocale = "en" | "ja";
+```
+
+解決順序と言語追加手順は[Diagnostic localization](./08-diagnostic-localization.md)を参照してください。
 
 ### `DocfillyInitialValues`
 

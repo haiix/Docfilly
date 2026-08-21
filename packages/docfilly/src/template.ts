@@ -1,4 +1,5 @@
-import type { DocfillyDiagnostic, DocfillyVariable } from "./types";
+import { diagnosticMessage } from "./messages";
+import type { DocfillyDiagnostic, DocfillyVariable, SupportedLocale } from "./types";
 
 type DiagnosticReporter = (diagnostic: DocfillyDiagnostic) => void;
 type ValueTransform = (value: string) => string;
@@ -116,6 +117,7 @@ export function interpolate(
   transform: ValueTransform = (value) => value,
   reportDiagnostic?: DiagnosticReporter,
   lineOffset = 0,
+  locale: SupportedLocale = "en",
 ): string {
   return template.replace(
     /(\\)?\[\[((?:(?!\[\[|\]\])[^\r\n])*)\]\]/gu,
@@ -131,7 +133,10 @@ export function interpolate(
         reportDiagnostic?.({
           code: "invalid-placeholder",
           severity: "warning",
-          message: `${line}行目のプレースホルダー「${match}」の構文が不正なため、原文を保持しました。`,
+          message: diagnosticMessage(locale, "invalid-placeholder", {
+            line,
+            placeholder: match,
+          }),
           line,
           source: match,
         });
@@ -143,7 +148,11 @@ export function interpolate(
         reportDiagnostic?.({
           code: "undefined-variable",
           severity: "warning",
-          message: `${line}行目のプレースホルダー「${match}」が参照する変数「${name}」は定義されていないため、原文を保持しました。`,
+          message: diagnosticMessage(locale, "undefined-variable", {
+            line,
+            placeholder: match,
+            name,
+          }),
           line,
           source: match,
         });
@@ -157,7 +166,11 @@ export function interpolate(
           reportDiagnostic?.({
             code: "unknown-filter",
             severity: "warning",
-            message: `${line}行目のプレースホルダー「${match}」に未知のフィルター「${filterName}」があるため、原文を保持しました。`,
+            message: diagnosticMessage(locale, "unknown-filter", {
+              line,
+              placeholder: match,
+              filter: filterName,
+            }),
             line,
             source: match,
           });
@@ -240,6 +253,7 @@ function parseCondition(
   token: TemplateLine,
   variables: ReadonlyMap<string, DocfillyVariable>,
   lineOffset: number,
+  locale: SupportedLocale,
 ): ConditionResult {
   const line = token.line + lineOffset;
   const match = /^([\p{L}\p{N}_]+)(?:\s*(!=|=)\s*(.*))?$/u.exec(expression.trim());
@@ -247,7 +261,7 @@ function parseCondition(
     return {
       diagnostic: conditionDiagnostic(
         "invalid-if-condition",
-        `${line}行目のif条件が不正なため、ifブロックの原文を保持しました。`,
+        diagnosticMessage(locale, "invalid-if-condition", { line }),
         token,
         lineOffset,
       ),
@@ -260,7 +274,7 @@ function parseCondition(
     return {
       diagnostic: conditionDiagnostic(
         "undefined-condition-variable",
-        `${line}行目のif条件が未定義の変数「${name}」を参照しているため、ifブロックの原文を保持しました。`,
+        diagnosticMessage(locale, "undefined-condition-variable", { line, name }),
         token,
         lineOffset,
       ),
@@ -272,7 +286,7 @@ function parseCondition(
     return {
       diagnostic: conditionDiagnostic(
         "invalid-condition-type",
-        `${line}行目の変数「${name}」はチェックボックスではないため、= または != で比較してください。ifブロックの原文を保持しました。`,
+        diagnosticMessage(locale, "condition-requires-comparison", { line, name }),
         token,
         lineOffset,
       ),
@@ -283,7 +297,7 @@ function parseCondition(
     return {
       diagnostic: conditionDiagnostic(
         "invalid-condition-type",
-        `${line}行目の変数「${name}」はチェックボックスのため、変数名だけで条件を記述してください。ifブロックの原文を保持しました。`,
+        diagnosticMessage(locale, "checkbox-condition-requires-name", { line, name }),
         token,
         lineOffset,
       ),
@@ -295,7 +309,7 @@ function parseCondition(
     return {
       diagnostic: conditionDiagnostic(
         "invalid-if-condition",
-        `${line}行目のif条件の比較値が不正なため、ifブロックの原文を保持しました。`,
+        diagnosticMessage(locale, "invalid-condition-value", { line }),
         token,
         lineOffset,
       ),
@@ -318,6 +332,7 @@ function renderNodes(
   transform: ValueTransform,
   reportDiagnostic: DiagnosticReporter | undefined,
   lineOffset: number,
+  locale: SupportedLocale,
 ): string {
   return nodes
     .map((node) => {
@@ -329,10 +344,11 @@ function renderNodes(
           transform,
           reportDiagnostic,
           lineOffset + node.line - 1,
+          locale,
         );
       }
       const branch = evaluateCondition(node.condition, values) ? node.thenNodes : node.elseNodes;
-      return renderNodes(branch, values, transform, reportDiagnostic, lineOffset);
+      return renderNodes(branch, values, transform, reportDiagnostic, lineOffset, locale);
     })
     .join("");
 }
@@ -343,6 +359,7 @@ export function compileTemplate(
   variables: readonly DocfillyVariable[],
   lineOffset = 0,
   enabled = true,
+  locale: SupportedLocale = "en",
 ): CompiledTemplate {
   if (!enabled) {
     return { diagnostics: [], render: () => template };
@@ -385,7 +402,10 @@ export function compileTemplate(
         diagnostics.push({
           code: "unexpected-directive",
           severity: "warning",
-          message: `${token.line + lineOffset}行目の${directive.type === "else" ? "#else" : "#endif"}に対応する#ifがないため、原文を保持しました。`,
+          message: diagnosticMessage(locale, "unexpected-directive", {
+            line: token.line + lineOffset,
+            directive: directive.type === "else" ? "#else" : "#endif",
+          }),
           line: token.line + lineOffset,
           source: token.trimmed,
         });
@@ -406,7 +426,10 @@ export function compileTemplate(
         diagnostics.push({
           code: "if-nesting-too-deep",
           severity: "warning",
-          message: `${token.line + lineOffset}行目のifブロックはネストの上限（${MAX_IF_NESTING_DEPTH}階層）を超えたため、原文を保持しました。`,
+          message: diagnosticMessage(locale, "if-nesting-too-deep", {
+            line: token.line + lineOffset,
+            depth: MAX_IF_NESTING_DEPTH,
+          }),
           line: token.line + lineOffset,
           source: token.trimmed,
         });
@@ -421,6 +444,7 @@ export function compileTemplate(
         token,
         variablesByName,
         lineOffset,
+        locale,
       );
       if (conditionResult.diagnostic) diagnostics.push(conditionResult.diagnostic);
 
@@ -440,7 +464,9 @@ export function compileTemplate(
           diagnostics.push({
             code: "duplicate-else",
             severity: "warning",
-            message: `${duplicate.line + lineOffset}行目の#elseは同じifブロック内で重複しているため、ifブロックの原文を保持しました。`,
+            message: diagnosticMessage(locale, "duplicate-else", {
+              line: duplicate.line + lineOffset,
+            }),
             line: duplicate.line + lineOffset,
             source: duplicate.trimmed,
           });
@@ -455,7 +481,9 @@ export function compileTemplate(
           diagnostics.push({
             code: "unclosed-if",
             severity: "warning",
-            message: `${token.line + lineOffset}行目の#ifに対応する#endifがないため、原文を保持しました。`,
+            message: diagnosticMessage(locale, "unclosed-if", {
+              line: token.line + lineOffset,
+            }),
             line: token.line + lineOffset,
             source: token.trimmed,
           });
@@ -486,6 +514,6 @@ export function compileTemplate(
   return {
     diagnostics,
     render: (values, transform = (value) => value, reportDiagnostic) =>
-      renderNodes(nodes, values, transform, reportDiagnostic, lineOffset),
+      renderNodes(nodes, values, transform, reportDiagnostic, lineOffset, locale),
   };
 }
