@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.2.0](https://github.com/haiix/Docfilly/compare/v0.1.0...v0.2.0) (2026-08-22)
+
+
+### Added
+
+* **core:** localize diagnostics ([#88](https://github.com/haiix/Docfilly/issues/88)) ([5e33f9e](https://github.com/haiix/Docfilly/commit/5e33f9e711636e5c2b8a313e8b57b80ad38642b8))
+* **web:** add document close and delete confirmation ([9835cfd](https://github.com/haiix/Docfilly/commit/9835cfd1aabc8459eb5c82f783715155bc130913))
+* **web:** improve overflow menu interactions ([7c624bf](https://github.com/haiix/Docfilly/commit/7c624bf6fee84b28c39062ccdad5e266b9b19d7a))
+* **web:** localize viewer in English and Japanese ([#89](https://github.com/haiix/Docfilly/issues/89)) ([00afbe9](https://github.com/haiix/Docfilly/commit/00afbe9bc9fe3fff47679fa6fb262bc8b5c0aa68))
+
+
+### Fixed
+
+* **web:** emphasize destructive data action ([4a1cbed](https://github.com/haiix/Docfilly/commit/4a1cbedd08730e6b0bf3a17c69dfea7ccd905b96))
+* **web:** prevent layout overflow on narrow screens ([#87](https://github.com/haiix/Docfilly/issues/87)) ([03b5988](https://github.com/haiix/Docfilly/commit/03b598832574d82f9485cfc7ebe10d57e1d36f2e))
+* **web:** style dialog cancel action ([99671c3](https://github.com/haiix/Docfilly/commit/99671c3cfd25b02247ce274b2d5e1eef4b19ca8d))
+
+
+### Documentation
+
+* **web:** add Docfilly overview to help ([0b0018d](https://github.com/haiix/Docfilly/commit/0b0018d340fd0b097a445e9d04a88714a45f0b8e))
+* **web:** refine built-in sample tutorial ([#80](https://github.com/haiix/Docfilly/issues/80)) ([24a81c4](https://github.com/haiix/Docfilly/commit/24a81c4130d8d2c265166b25644b012b470846d1))
+* **web:** refine help content and actions ([#86](https://github.com/haiix/Docfilly/issues/86)) ([3c6f2be](https://github.com/haiix/Docfilly/commit/3c6f2bee1c7261d3a522b1ddf9ecfb5d24dc46f0))
+* **web:** turn built-in sample into tutorial ([#79](https://github.com/haiix/Docfilly/issues/79)) ([d3f2b79](https://github.com/haiix/Docfilly/commit/d3f2b79c1c18dcd5b3b610a666dab0d4623d4e6e))
+
 ## 0.1.0 (2026-08-20)
 
 
