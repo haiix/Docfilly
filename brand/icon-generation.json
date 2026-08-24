@@ -1,8 +1,8 @@
 {
   "trim": {
-    "top": 128,
-    "right": 128,
-    "bottom": 128,
-    "left": 128
+    "top": 0,
+    "right": 0,
+    "bottom": 0,
+    "left": 0
   }
 }
