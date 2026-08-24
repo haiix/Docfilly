@@ -251,6 +251,34 @@ describe("App", () => {
     await waitFor(() => expect(screen.queryByText("previous.txt")).toBeNull());
   });
 
+  it("continues startup restoration while a selected file fails to load", async () => {
+    await saveDocumentSession(
+      { name: "previous.txt", source: "Previous", sourceType: "text" },
+      new Map(),
+    );
+    let rejectFileRead!: (reason?: unknown) => void;
+    const fileRead = new Promise<string>((_resolve, reject) => {
+      rejectFileRead = reject;
+    });
+    const file = new File(["content"], "broken.md", { type: "text/plain" });
+    Object.defineProperty(file, "text", { value: () => fileRead });
+    render(<App />);
+
+    fireEvent.change(screen.getByLabelText("ファイルを開く"), {
+      target: { files: [file] },
+    });
+
+    expect(await screen.findByText("previous.txt")).toBeTruthy();
+    rejectFileRead(new Error("read failed"));
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain(
+        "ファイルを読み込めませんでした。もう一度選択してください。",
+      ),
+    );
+    expect(screen.getByText("previous.txt")).toBeTruthy();
+    expect(screen.getByText("Previous")).toBeTruthy();
+  });
+
   it("closes the document, cancels its pending save, and can open another document", async () => {
     const user = userEvent.setup();
     const firstRender = render(<App />);

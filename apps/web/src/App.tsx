@@ -158,9 +158,10 @@ export function App() {
 
   const loadFile = useCallback(
     async (file: File): Promise<void> => {
-      beginDocumentSelection();
       try {
-        showDocument(await readDocumentFile(file));
+        const nextDocument = await readDocumentFile(file);
+        beginDocumentSelection();
+        showDocument(nextDocument);
       } catch (error) {
         setStatus({
           message:
