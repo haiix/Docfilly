@@ -4,21 +4,12 @@ import {
   type DocfillySourceType,
   type SupportedLocale,
 } from "docfilly";
+import { getDocumentFormat } from "./document-format";
 
 export interface DocumentExport {
   blob: Blob;
   fileName: string;
 }
-
-const exportTypes: Record<DocfillySourceType, { extension: string; mimeType: string }> = {
-  md: { extension: "md", mimeType: "text/markdown;charset=utf-8" },
-  text: { extension: "txt", mimeType: "text/plain;charset=utf-8" },
-};
-
-const sourceTypeExtensions: Record<DocfillySourceType, readonly string[]> = {
-  md: ["md", "markdown"],
-  text: ["txt"],
-};
 
 /** Raised when Docfilly-format saving is requested for an ordinary document. */
 export class OrdinaryDocumentExportError extends Error {
@@ -41,12 +32,12 @@ export function createDocfillyDocumentExport(
   const updated = updateDocfillyDefaults(source, values, { locale });
   if (!updated.isDocfilly) throw new OrdinaryDocumentExportError();
 
-  const { extension: fallbackExtension, mimeType } = exportTypes[sourceType];
+  const { inputExtensions, outputExtension, mimeType } = getDocumentFormat(sourceType);
   const originalExtension = /\.([^.]+)$/u.exec(originalFileName)?.[1].toLowerCase();
   const extension =
-    originalExtension !== undefined && sourceTypeExtensions[sourceType].includes(originalExtension)
+    originalExtension !== undefined && inputExtensions.includes(originalExtension)
       ? originalExtension
-      : fallbackExtension;
+      : outputExtension;
   const fileNameWithoutExtension = originalFileName.replace(/\.[^.]+$/u, "").trim();
   const baseName = fileNameWithoutExtension || "document";
 
@@ -69,13 +60,13 @@ export function createDocumentExport(
   sourceType: DocfillySourceType,
   originalFileName: string,
 ): DocumentExport {
-  const { extension, mimeType } = exportTypes[sourceType];
+  const { outputExtension, mimeType } = getDocumentFormat(sourceType);
   const fileNameWithoutExtension = originalFileName.replace(/\.[^.]+$/, "").trim();
   const baseName = fileNameWithoutExtension || "document";
 
   return {
     blob: new Blob([source], { type: mimeType }),
-    fileName: `${baseName}-output.${extension}`,
+    fileName: `${baseName}-output.${outputExtension}`,
   };
 }
 

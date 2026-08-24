@@ -43,6 +43,10 @@ describe("createDocumentExport", () => {
   it("uses a safe fallback when the original base name is empty", () => {
     expect(createDocumentExport("content", "md", ".md").fileName).toBe("document-output.md");
   });
+
+  it("uses the source-type extension for an extensionless file name", () => {
+    expect(createDocumentExport("content", "text", "notes").fileName).toBe("notes-output.txt");
+  });
 });
 
 describe("createDocfillyDocumentExport", () => {
@@ -98,5 +102,27 @@ describe("createDocfillyDocumentExport", () => {
     const result = createDocfillyDocumentExport("#!docfilly\n---\nBody", new Map(), "text", ".txt");
 
     expect(result.fileName).toBe("document.txt");
+  });
+
+  it("preserves a valid extension after multiple dots and normalizes its case", () => {
+    const result = createDocfillyDocumentExport(
+      "#!docfilly\n---\nBody",
+      new Map(),
+      "md",
+      "draft.guide.MARKDOWN",
+    );
+
+    expect(result.fileName).toBe("draft.guide.markdown");
+  });
+
+  it("uses the source-type extension when the original extension is unsupported", () => {
+    const result = createDocfillyDocumentExport(
+      "#!docfilly\n---\nBody",
+      new Map(),
+      "md",
+      "guide.pdf",
+    );
+
+    expect(result.fileName).toBe("guide.md");
   });
 });

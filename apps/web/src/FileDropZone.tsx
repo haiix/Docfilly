@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type RefObject } from "react";
+import { documentFileAccept } from "./document-format";
 import type { WebMessages } from "./locale";
 
 interface FileDropZoneProps {
@@ -84,7 +85,7 @@ export function FileDropZone({ inputRef, onFile, onValidationError, messages }: 
           ref={inputRef}
           type="file"
           aria-label={messages.openFile}
-          accept=".md,.markdown,.txt,text/markdown,text/plain"
+          accept={documentFileAccept}
           onChange={handleChange}
         />
       </label>

@@ -1,6 +1,7 @@
 import type { DocfillySourceType } from "docfilly";
+import { getSourceTypeForExtension, supportedFileDescription } from "./document-format";
 
-export const supportedFileDescription = ".md, .markdown, and .txt";
+export { supportedFileDescription } from "./document-format";
 
 export interface LoadedDocument {
   name: string;
@@ -22,10 +23,8 @@ export class UnsupportedDocumentFileError extends Error {
  * @returns The source type, or `undefined` when the extension is unsupported.
  */
 export function detectSourceType(fileName: string): DocfillySourceType | undefined {
-  const extension = fileName.toLowerCase().split(".").pop();
-  if (extension === "md" || extension === "markdown") return "md";
-  if (extension === "txt") return "text";
-  return undefined;
+  const extension = /\.([^.]+)$/u.exec(fileName)?.[1].toLowerCase();
+  return extension === undefined ? undefined : getSourceTypeForExtension(extension);
 }
 
 /**
