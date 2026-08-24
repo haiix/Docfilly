@@ -85,6 +85,8 @@ describe("FileDropZone", () => {
   it("keeps a keyboard-accessible file input", () => {
     renderDropZone();
 
-    expect(screen.getByLabelText("ファイルを開く").getAttribute("type")).toBe("file");
+    const input = screen.getByLabelText("ファイルを開く");
+    expect(input.getAttribute("type")).toBe("file");
+    expect(input.getAttribute("accept")).toBe(".md,.markdown,.txt,text/markdown,text/plain");
   });
 });

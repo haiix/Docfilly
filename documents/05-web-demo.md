@@ -132,6 +132,7 @@ UIリソースは`apps/web/src/locale.ts`の共通TypeScript型でキーと補�
 - `FileDropZone`: キーボード操作可能なファイル選択、ウィンドウ全体のドラッグ＆ドロップ、複数ファイルの検証を担当
 - `DocumentViewer`: `DocfillyView`とアプリ固有のステータス表示を接続
 - `AppDialog`: ヘルプと診断一覧に共通するフォーカス管理とキーボード操作を担当
+- `document-format`: 対応拡張子、標準の出力拡張子、MIME typeの型付き定義を担当
 - `document-file`: 拡張子による形式判定とFile APIによる読み込みを担当
 - `document-export`: Docfilly形式と表示結果のBlob、MIME type、出力ファイル名とブラウザーダウンロードを担当
 - `document-session`: IndexedDBへの最新文書の保存、検証、復元、削除を担当

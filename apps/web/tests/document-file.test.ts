@@ -6,13 +6,18 @@ describe("document files", () => {
     ["document.md", "md"],
     ["DOCUMENT.MARKDOWN", "md"],
     ["notes.txt", "text"],
+    ["archive.guide.MarkDown", "md"],
+    [".txt", "text"],
   ] as const)("detects %s as %s", (fileName, expected) => {
     expect(detectSourceType(fileName)).toBe(expected);
   });
 
-  it("rejects unsupported extensions", () => {
-    expect(detectSourceType("document.pdf")).toBeUndefined();
-  });
+  it.each(["document.pdf", "document", "document."])(
+    "rejects unsupported file name %s",
+    (fileName) => {
+      expect(detectSourceType(fileName)).toBeUndefined();
+    },
+  );
 
   it("reads a supported document", async () => {
     const file = new File(["# Hello"], "hello.md", { type: "text/markdown" });
