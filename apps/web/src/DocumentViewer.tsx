@@ -1,7 +1,8 @@
 import { useCallback, useRef, type FormEvent } from "react";
 import { DocfillyView, type DocfillyRenderState } from "@docfilly/react";
-import type { DocfillyDiagnostic, DocfillySourceType } from "docfilly";
+import type { DocfillySourceType } from "docfilly";
 import type { WebLocale, WebMessages } from "./locale";
+import type { DocumentRenderResult } from "./use-document-workspace";
 
 export interface ViewerStatus {
   message: string;
@@ -15,10 +16,8 @@ interface DocumentViewerProps {
   locale: WebLocale;
   messages: WebMessages;
   onStatusChange: (status: ViewerStatus) => void;
-  onOutputSourceChange: (outputSource: string) => void;
-  onDiagnosticsChange: (diagnostics: readonly DocfillyDiagnostic[]) => void;
+  onRenderStateChange: (result: DocumentRenderResult) => void;
   onValuesChange: (values: ReadonlyMap<string, string>) => void;
-  onDocumentTypeChange: (isDocfilly: boolean) => void;
 }
 
 export function DocumentViewer({
@@ -28,19 +27,15 @@ export function DocumentViewer({
   locale,
   messages,
   onStatusChange,
-  onOutputSourceChange,
-  onDiagnosticsChange,
+  onRenderStateChange,
   onValuesChange,
-  onDocumentTypeChange,
 }: DocumentViewerProps) {
   const latestValuesRef = useRef<ReadonlyMap<string, string>>(initialValues ?? new Map());
 
   const handleRender = useCallback(
     (state: DocfillyRenderState): void => {
       latestValuesRef.current = state.values;
-      onOutputSourceChange(state.outputSource);
-      onDiagnosticsChange(state.diagnostics);
-      onDocumentTypeChange(state.isDocfilly);
+      onRenderStateChange(state);
 
       if (!state.isDocfilly) {
         const formatName = sourceType === "md" ? "Markdown" : messages.textFormat;
@@ -68,15 +63,7 @@ export function DocumentViewer({
       });
       onValuesChange(state.values);
     },
-    [
-      onDiagnosticsChange,
-      onDocumentTypeChange,
-      onOutputSourceChange,
-      onStatusChange,
-      onValuesChange,
-      messages,
-      sourceType,
-    ],
+    [onRenderStateChange, onStatusChange, onValuesChange, messages, sourceType],
   );
 
   const handleInput = useCallback(

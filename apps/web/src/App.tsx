@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DocfillyDiagnostic } from "docfilly";
 import { AppDialog } from "./AppDialog";
 import {
   readDocumentFile,
@@ -13,8 +12,9 @@ import {
 } from "./document-export";
 import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
-import { clearDocumentSession, loadDocumentSession, saveDocumentSession } from "./document-session";
 import { resolveWebLocale, webMessages, type WebLocale } from "./locale";
+import { useDocumentPersistence } from "./use-document-persistence";
+import { useDocumentWorkspace } from "./use-document-workspace";
 import englishSample from "./samples/en.md?raw";
 import japaneseSample from "./samples/ja.md?raw";
 
@@ -23,19 +23,18 @@ const samples: Record<WebLocale, LoadedDocument> = {
   ja: { name: "サンプル.md", source: japaneseSample, sourceType: "md" },
 };
 
-const sessionSaveDelayMs = 500;
-
 export function App() {
   const [locale, setLocale] = useState<WebLocale>(resolveWebLocale);
   const messages = webMessages[locale];
-  const initialMessagesRef = useRef(messages);
-  const [document, setDocument] = useState<LoadedDocument | null>(null);
-  const [initialValues, setInitialValues] = useState<ReadonlyMap<string, string> | undefined>();
-  const [outputSource, setOutputSource] = useState<string | null>(null);
-  const [currentValues, setCurrentValues] = useState<ReadonlyMap<string, string> | null>(null);
-  const [isDocfilly, setIsDocfilly] = useState(false);
+  const {
+    state: { document, initialValues, outputSource, currentValues, isDocfilly, diagnostics },
+    openDocument,
+    updateRender,
+    updateValues,
+    prepareLocaleChange,
+    closeDocument: resetDocumentWorkspace,
+  } = useDocumentWorkspace();
   const [status, setStatus] = useState<ViewerStatus | null>(null);
-  const [diagnostics, setDiagnostics] = useState<readonly DocfillyDiagnostic[]>([]);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
   const [isClearConfirmationOpen, setIsClearConfirmationOpen] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
@@ -44,45 +43,24 @@ export function App() {
   const overflowButtonRef = useRef<HTMLButtonElement>(null);
   const clearDataButtonRef = useRef<HTMLButtonElement>(null);
   const cancelClearButtonRef = useRef<HTMLButtonElement>(null);
-  const documentRef = useRef<LoadedDocument | null>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const restoredNoticeRef = useRef(false);
-  const restoreCancelledRef = useRef(false);
-  const persistenceSuppressedRef = useRef(false);
   const restoreClearDataFocusRef = useRef(false);
+
+  const {
+    beginDocumentSelection,
+    activateDocument,
+    persistValues,
+    clearSavedDocument: clearPersistedDocument,
+    closeDocument: closePersistedDocument,
+  } = useDocumentPersistence({
+    onRestore: (session) => openDocument(session, session.values),
+    onRestoreComplete: () => setStatus({ message: messages.restored, isWarning: false }),
+    onRestoreFailure: () => setStatus({ message: messages.restoreFailed, isWarning: true }),
+    onSaveFailure: () => setStatus({ message: messages.sessionSaveFailed, isWarning: true }),
+  });
 
   useEffect(() => {
     globalThis.document.documentElement.lang = locale;
   }, [locale]);
-
-  useEffect(() => {
-    let active = true;
-    void loadDocumentSession()
-      .then((session) => {
-        if (!active || restoreCancelledRef.current || session === null) return;
-        const restoredDocument: LoadedDocument = {
-          name: session.name,
-          source: session.source,
-          sourceType: session.sourceType,
-        };
-        documentRef.current = restoredDocument;
-        restoredNoticeRef.current = true;
-        setInitialValues(session.values);
-        setDocument(restoredDocument);
-      })
-      .catch(() => {
-        if (!active) return;
-        setStatus({
-          message: initialMessagesRef.current.restoreFailed,
-          isWarning: true,
-        });
-      });
-
-    return () => {
-      active = false;
-      if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     if (!isOverflowOpen) return;
@@ -115,96 +93,51 @@ export function App() {
 
   const showDocument = useCallback(
     (nextDocument: LoadedDocument): void => {
-      if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
-      restoreCancelledRef.current = true;
-      documentRef.current = nextDocument;
-      persistenceSuppressedRef.current = false;
+      activateDocument(nextDocument);
       setStatus({ message: messages.loading, isWarning: false });
-      setOutputSource(null);
-      setCurrentValues(null);
-      setIsDocfilly(false);
-      setDiagnostics([]);
-      setInitialValues(undefined);
-      setDocument(nextDocument);
+      openDocument(nextDocument);
     },
-    [messages.loading],
+    [activateDocument, messages.loading, openDocument],
   );
 
   const changeLocale = (nextLocale: WebLocale): void => {
-    if (currentValues !== null) setInitialValues(new Map(currentValues));
+    prepareLocaleChange();
     setStatus(null);
     setLocale(nextLocale);
   };
 
   const handleValuesChange = useCallback(
     (values: ReadonlyMap<string, string>): void => {
-      setCurrentValues(new Map(values));
-      if (restoredNoticeRef.current) {
-        restoredNoticeRef.current = false;
-        setStatus({ message: messages.restored, isWarning: false });
-        return;
-      }
-      if (persistenceSuppressedRef.current || documentRef.current === null) return;
-      if (saveTimerRef.current !== undefined) clearTimeout(saveTimerRef.current);
-      const documentToSave = documentRef.current;
-      const valuesToSave = new Map(values);
-      saveTimerRef.current = setTimeout(() => {
-        saveTimerRef.current = undefined;
-        void saveDocumentSession(documentToSave, valuesToSave).catch(() => {
-          setStatus({
-            message: messages.sessionSaveFailed,
-            isWarning: true,
-          });
-        });
-      }, sessionSaveDelayMs);
+      updateValues(values);
+      persistValues(values);
     },
-    [messages.restored, messages.sessionSaveFailed],
+    [persistValues, updateValues],
   );
 
   const clearSavedDocument = useCallback(async (): Promise<void> => {
-    restoreCancelledRef.current = true;
-    if (saveTimerRef.current !== undefined) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = undefined;
-    }
-    persistenceSuppressedRef.current = true;
     try {
-      await clearDocumentSession();
+      await clearPersistedDocument();
       setIsClearConfirmationOpen(false);
       setStatus({
         message: messages.cleared,
         isWarning: false,
       });
     } catch {
-      persistenceSuppressedRef.current = false;
       setStatus({
         message: messages.clearFailed,
         isWarning: true,
       });
     }
-  }, [messages.clearFailed, messages.cleared]);
+  }, [clearPersistedDocument, messages.clearFailed, messages.cleared]);
 
   const closeDocument = useCallback(async (): Promise<void> => {
-    if (documentRef.current === null) return;
-    restoreCancelledRef.current = true;
-    restoredNoticeRef.current = false;
-    if (saveTimerRef.current !== undefined) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = undefined;
-    }
-    persistenceSuppressedRef.current = true;
-    documentRef.current = null;
-    setDocument(null);
-    setInitialValues(undefined);
-    setOutputSource(null);
-    setCurrentValues(null);
-    setIsDocfilly(false);
-    setDiagnostics([]);
+    if (document === null) return;
+    resetDocumentWorkspace();
     setOpenDialog(null);
     setIsOverflowOpen(false);
 
     try {
-      await clearDocumentSession();
+      await closePersistedDocument();
       setStatus({
         message: messages.closed,
         isWarning: false,
@@ -215,12 +148,20 @@ export function App() {
         isWarning: true,
       });
     }
-  }, [messages.closeCleanupFailed, messages.closed]);
+  }, [
+    closePersistedDocument,
+    document,
+    messages.closeCleanupFailed,
+    messages.closed,
+    resetDocumentWorkspace,
+  ]);
 
   const loadFile = useCallback(
     async (file: File): Promise<void> => {
       try {
-        showDocument(await readDocumentFile(file));
+        const nextDocument = await readDocumentFile(file);
+        beginDocumentSelection();
+        showDocument(nextDocument);
       } catch (error) {
         setStatus({
           message:
@@ -231,7 +172,7 @@ export function App() {
         });
       }
     },
-    [messages.fileReadFailed, messages.unsupportedFile, showDocument],
+    [beginDocumentSelection, messages.fileReadFailed, messages.unsupportedFile, showDocument],
   );
 
   const handleValidationError = useCallback((message: string): void => {
@@ -460,10 +401,8 @@ export function App() {
             locale={locale}
             messages={messages}
             onStatusChange={setStatus}
-            onOutputSourceChange={setOutputSource}
-            onDiagnosticsChange={setDiagnostics}
+            onRenderStateChange={updateRender}
             onValuesChange={handleValuesChange}
-            onDocumentTypeChange={setIsDocfilly}
           />
         )}
       </main>
