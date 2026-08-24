@@ -18,7 +18,7 @@ Docfillyは、手順書にある「この値は自分の環境に合わせて読
 3. [ソースフォーマット仕様](./03-source-format.md) — 入力項目、参照記法、記述ミスからの復旧
 4. [APIリファレンス](./04-api-reference.md) — 関数、クラス、型、イベント
 5. [Webデモ](./05-web-demo.md) — 読者向けビューアーの仕様と実装
-6. [開発とテスト](./06-development-and-testing.md) — コマンド、ビルド、Vitest
+6. [開発とテスト](./06-development-and-testing.md) — コマンド、ビルド、Vitest、Playwright、CI
 7. [セキュリティと制約](./07-security-and-limitations.md) — サニタイズ、対応環境、既知の制約
 8. [Diagnostic localization](./08-diagnostic-localization.md) — locale API, resolution order, and adding a language
 

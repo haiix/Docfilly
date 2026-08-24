@@ -39,6 +39,6 @@ An existing view does not automatically follow later browser-language changes. C
 2. Add a complete catalog in `packages/docfilly/src/messages.ts`. The `MessageCatalog` type requires every message key and gives each formatter its typed interpolation parameters.
 3. Update `resolveLocale` to recognize the new base language.
 4. Add the locale to the catalog-completeness, normalization, Core API, DOM integration, and React propagation tests.
-5. Document the new locale and any default-message impact in `CHANGELOG.md`.
+5. Document the new locale and any default-message impact in the relevant user documentation. Do not edit `CHANGELOG.md` in a normal pull request; verify the generated entry in the Release Please pull request.
 
 Translations should preserve Docfilly syntax, identifiers, source excerpts, and interpolated user values exactly. They should convey equivalent causes and recovery actions naturally rather than mirror another locale word for word.

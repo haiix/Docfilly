@@ -53,32 +53,14 @@ deploy --project [[プロジェクト名]] --environment [[実行環境]]
 - `documents`: 利用方法、フォーマット、APIなどの詳細文書
 - [`brand`](./brand/README.md): アイコンの原本、生成設定、Web用アイコンの生成方法
 
-## 開発コマンド
+## 開発
 
 ```sh
 pnpm install
 pnpm dev
-pnpm build
-pnpm lint
-pnpm format:check
-pnpm version:check
-pnpm typecheck
-pnpm test
-pnpm test:e2e
 ```
 
-Issue、Pull Request、バージョン、GitHub Pagesへのデプロイ、リリースの運用については[CONTRIBUTING.md](./CONTRIBUTING.md)を参照してください。
-
-ブラウザーE2EテストはPlaywrightとChromiumを使用します。初回実行前にブラウザーをインストールしてください。
-
-```sh
-pnpm --filter @docfilly/web exec playwright install chromium
-pnpm test:e2e
-```
-
-Playwrightは`apps/web`のViteサーバーを起動し、GitHub Pagesと同じ`/Docfilly/`ベースパスで実行します。ローカルでは同じURLの既存サーバーを再利用し、CIではワーカーを1つに制限します。失敗時は`apps/web/test-results`へスクリーンショットとtraceを保存し、CIではHTMLレポートとともに成果物として取得できます。
-
-E2Eテストは`apps/web/e2e`へ利用者シナリオ単位で追加します。CSSクラスやDOM階層ではなくrole、label、表示文言を優先し、固定時間の待機ではなくlocatorとweb-first assertionを使用してください。各テストは独立させ、ブラウザーコンテキストをまたぐ状態が必要な場合だけ明示的に準備します。細かなロジック、コンポーネント分岐、境界値は引き続きVitestで検証します。
+ビルド、静的検査、Vitest、Playwright、CIの詳細は[開発とテスト](./documents/06-development-and-testing.md)を参照してください。Issue、Pull Request、バージョン、デプロイ、リリースの運用は[CONTRIBUTING.md](./CONTRIBUTING.md)を参照してください。
 
 ## ライブラリAPI
 
@@ -155,4 +137,4 @@ import { DocfillyView } from "@docfilly/react";
 
 `className`、`id`、`aria-*`などの`HTMLAttributes<HTMLDivElement>`は外側のラッパー要素へ渡されます。`onRender`には現在の`outputSource`、`ReadonlyMap`形式の`values`、`diagnostics`、Docfilly文書かどうかを示す`isDocfilly`が渡されます。
 
-テストにはVitestとjsdomを使用しています。通常実行は`pnpm test`、ウォッチモードは`pnpm test:watch`です。
+開発時のテスト方法は[開発とテスト](./documents/06-development-and-testing.md)を参照してください。

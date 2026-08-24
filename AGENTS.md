@@ -6,15 +6,11 @@ Docfilly is a pnpm TypeScript monorepo. `packages/docfilly/` contains the framew
 
 ## Build, Test, and Development Commands
 
-Run commands from the repository root using Node 24 and pnpm 11.
-
-- `pnpm install --frozen-lockfile` installs the workspace exactly as locked.
-- `pnpm dev` starts the web app's Vite development server.
-- `pnpm build` builds all packages and the demo.
-- `pnpm test` runs all Vitest suites once; `pnpm test:watch` watches them.
-- `pnpm test:e2e` runs the web Playwright suite (Chromium must be installed).
-- `pnpm lint`, `pnpm format:check`, and `pnpm typecheck` reproduce CI quality checks.
-- `pnpm version:check` verifies that workspace versions match `version.txt`.
+Use Node 24 and pnpm 11 from the repository root. Run `pnpm install` for local setup and
+`pnpm dev` for the Vite demo. Before opening a PR, run `pnpm lint`, `pnpm format:check`,
+`pnpm version:check`, `pnpm test`, `pnpm typecheck`, and `pnpm build`. Run `pnpm test:e2e`
+for user-visible web flows. See [Development and testing](documents/06-development-and-testing.md)
+for command details, watch mode, and Playwright setup.
 
 ## Coding Style & Naming Conventions
 
@@ -22,12 +18,12 @@ TypeScript is strict, with unused declarations and switch fallthrough rejected. 
 
 ## Testing Guidelines
 
-Use Vitest with jsdom for unit, parser, and React behavior tests; use React Testing Library for UI interactions. Name unit tests `*.test.ts(x)` and Playwright tests `*.spec.ts`. Add regression coverage beside the affected package and exercise user-visible flows in `apps/web/e2e/`. There is no fixed coverage threshold; test new behavior and edge cases.
+Use Vitest with jsdom for unit, parser, and React behavior tests; use React Testing Library for UI interactions. Name unit tests `*.test.ts` or `*.test.tsx`, and Playwright tests `*.spec.ts`. Add regression coverage beside the affected package and exercise user-visible flows in `apps/web/e2e/`. There is no fixed coverage threshold; test new behavior and edge cases.
 
 ## Commit & Pull Request Guidelines
 
-Work issue-by-issue and merge through reviewed, passing pull requests. Use Conventional Commit titles such as `feat(web): add export option` or `fix(core): preserve quoted values`; add `!` for breaking changes and document migration steps. Complete the PR template with a concise rationale, release impact, tests, and documentation changes; include screenshots for visible UI changes and link the relevant issue. Normal PRs must not edit `version.txt`, package versions, or `CHANGELOG.md`; Release Please owns those updates.
+Treat [CONTRIBUTING.md](CONTRIBUTING.md) as the source of truth for branches, releases, and PRs. Use Conventional Commit titles such as `feat(web): add export option`; add `!` for breaking changes and document migration steps. Complete the PR template, link the issue, and include screenshots for visible UI changes. Normal PRs must not edit version files or `CHANGELOG.md`.
 
 ## Security & Configuration
 
-Do not commit secrets or generated `dist/`, coverage, Playwright report, or test-result directories. Report vulnerabilities through the process in `SECURITY.md`, not a public issue.
+Do not commit secrets or generated files excluded by `.gitignore`. Follow [SECURITY.md](SECURITY.md) for vulnerability reports; never disclose them in a public issue.

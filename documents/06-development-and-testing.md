@@ -54,6 +54,22 @@ pnpm test:watch
 
 Vitestをウォッチモードで起動します。
 
+```sh
+pnpm version:check
+```
+
+`version.txt`と各workspaceのバージョンが一致することを確認します。
+
+```sh
+pnpm test:e2e
+```
+
+WebアプリのPlaywrightテストを実行します。初回実行前にChromiumをインストールしてください。
+
+```sh
+pnpm --filter @docfilly/web exec playwright install chromium
+```
+
 ## ライブラリのビルド
 
 `packages/docfilly`では次の順序でビルドします。
@@ -82,6 +98,12 @@ dist/
 - WebアプリUIテスト: React Testing Library
 
 jsdomを使うことで、ブラウザを起動せずにフォーム要素、イベント、Markdown出力を検証しています。
+
+## ブラウザーE2Eテスト
+
+Playwrightは`apps/web`のViteサーバーを起動し、GitHub Pagesと同じ`/Docfilly/`ベースパスで実行します。ローカルでは既存サーバーを再利用し、CIではワーカーを1つに制限します。失敗時のスクリーンショットとtraceは`apps/web/test-results`、HTMLレポートは`apps/web/playwright-report`に保存されます。
+
+テストは`apps/web/e2e`へ利用者シナリオ単位で追加します。CSSクラスやDOM階層ではなくrole、label、表示文言を優先し、固定時間の待機ではなくlocatorとweb-first assertionを使用してください。各テストは独立させ、細かなロジック、コンポーネント分岐、境界値はVitestで検証します。
 
 ## 現在のテスト範囲
 
@@ -146,6 +168,7 @@ jsdomを使うことで、ブラウザを起動せずにフォーム要素、イ
 ```sh
 pnpm lint
 pnpm format:check
+pnpm version:check
 pnpm test
 pnpm typecheck
 pnpm build
@@ -163,16 +186,19 @@ pnpm build
 
 ## CI
 
-GitHub Actionsの`.github/workflows/ci.yml`は、`main`へのpush、すべてのPull Request、手動実行で起動します。
+GitHub Actionsの`.github/workflows/ci.yml`は、Pull Requestまたは手動実行で起動します。
 
 CIではNode.js 24と`package.json`で固定したpnpmを使用し、次の処理を順番に実行します。
 
 1. `pnpm install --frozen-lockfile`
 2. `pnpm lint`
 3. `pnpm format:check`
-4. `pnpm test`
-5. `pnpm typecheck`
-6. `pnpm build`
+4. `pnpm version:check`
+5. `pnpm test`
+6. `pnpm typecheck`
+7. `pnpm build`
+
+別のE2EジョブではChromiumをインストールし、`pnpm test:e2e`を実行します。失敗時のレポートとテスト成果物はGitHub Actionsへアップロードされます。
 
 同じブランチで新しい実行が開始された場合、古い実行はキャンセルされます。
 
