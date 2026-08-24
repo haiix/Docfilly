@@ -89,6 +89,45 @@ describe("updateDocfillyDefaults", () => {
     });
   });
 
+  it("preserves quoted labels and round-trips text and dropdown delimiters", () => {
+    const source = [
+      "#!docfilly",
+      'message | "Label | with = and ""quotes""" = before',
+      'choice = ["one, first", "two ""quoted"""]',
+      "---",
+      "[[message]] [[choice]]",
+    ].join("\r\n");
+
+    const result = updateDocfillyDefaults(
+      source,
+      new Map([
+        ["message", 'after, with = and "quotes"'],
+        ["choice", 'two "quoted"'],
+      ]),
+    );
+    const parsed = parseDocfillySource(result.source);
+
+    expect(parsed.variables).toEqual([
+      {
+        type: "text",
+        name: "message",
+        label: 'Label | with = and "quotes"',
+        initialValue: 'after, with = and "quotes"',
+      },
+      {
+        type: "select",
+        name: "choice",
+        label: "choice",
+        options: ["one, first", 'two "quoted"'],
+        initialValue: 'two "quoted"',
+      },
+    ]);
+    expect(result.source).toContain(
+      'message | "Label | with = and ""quotes""" = "after, with = and ""quotes"""\r\n',
+    );
+    expect(result.source).toContain('choice = ["one, first", *"two ""quoted"""]\r\n');
+  });
+
   it("leaves unspecified, unknown, invalid, and duplicate definitions untouched", () => {
     const source = [
       "#!docfilly",
