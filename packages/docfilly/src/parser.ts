@@ -1,5 +1,6 @@
 import { compileTemplate, type CompiledTemplate } from "./template";
 import { diagnosticMessage, resolveLocale } from "./messages";
+import { decodeField, findFirstOutsideQuotes, splitOutsideQuotes } from "./quoted-fields";
 import type {
   DocfillyDiagnostic,
   DocfillyFormItem,
@@ -22,8 +23,6 @@ interface ParsedVariableRow {
   variable?: DocfillyVariable;
   diagnostic?: DocfillyDiagnostic;
 }
-
-type ScanResult<T> = { ok: true; value: T } | { ok: false };
 
 /**
  * Separates Docfilly definitions from the document template.
@@ -69,97 +68,6 @@ function splitAtDelimiterLine(source: string, locale: SupportedLocale): SplitSou
     definitionLineOffset: 2,
     templateLineOffset: delimiterIndex + 1,
   };
-}
-
-/**
- * Finds the first delimiter that is not enclosed in a quoted field.
- *
- * @param value - The text to scan.
- * @param delimiter - The single-character delimiter to locate.
- * @returns The delimiter index, or a failed result for an unclosed quote.
- */
-function findFirstOutsideQuotes(value: string, delimiter: string): ScanResult<number> {
-  let inQuotes = false;
-  let delimiterIndex = -1;
-
-  for (let index = 0; index < value.length; index += 1) {
-    const character = value[index];
-    if (character === '"') {
-      if (inQuotes && value[index + 1] === '"') {
-        index += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (!inQuotes && character === delimiter && delimiterIndex === -1) {
-      delimiterIndex = index;
-    }
-  }
-
-  return inQuotes ? { ok: false } : { ok: true, value: delimiterIndex };
-}
-
-/**
- * Splits text at delimiters that are not enclosed in quoted fields.
- *
- * @param value - The text to split.
- * @param delimiter - The single-character delimiter to use.
- * @returns The split fields, or a failed result for an unclosed quote.
- */
-function splitOutsideQuotes(value: string, delimiter: string): ScanResult<string[]> {
-  const parts: string[] = [];
-  let start = 0;
-  let inQuotes = false;
-
-  for (let index = 0; index < value.length; index += 1) {
-    const character = value[index];
-    if (character === '"') {
-      if (inQuotes && value[index + 1] === '"') {
-        index += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (!inQuotes && character === delimiter) {
-      parts.push(value.slice(start, index));
-      start = index + 1;
-    }
-  }
-
-  if (inQuotes) return { ok: false };
-  parts.push(value.slice(start));
-  return { ok: true, value: parts };
-}
-
-/**
- * Trims an unquoted field or decodes a CSV-style quoted field.
- *
- * @param rawField - The field text, including any surrounding quotes.
- * @returns The decoded field, or a failed result for invalid quoting.
- */
-function decodeField(rawField: string): ScanResult<string> {
-  const field = rawField.trim();
-  if (!field.includes('"')) return { ok: true, value: field };
-  if (!field.startsWith('"')) return { ok: false };
-
-  let decoded = "";
-  for (let index = 1; index < field.length; index += 1) {
-    const character = field[index];
-    if (character !== '"') {
-      decoded += character;
-      continue;
-    }
-
-    if (field[index + 1] === '"') {
-      decoded += '"';
-      index += 1;
-      continue;
-    }
-
-    return field.slice(index + 1).trim().length === 0
-      ? { ok: true, value: decoded }
-      : { ok: false };
-  }
-
-  return { ok: false };
 }
 
 /**

@@ -1,5 +1,6 @@
 import { parseDocfillyDocument } from "./parser";
 import { diagnosticMessage, resolveLocale } from "./messages";
+import { encodeField, findFirstOutsideQuotes } from "./quoted-fields";
 import type {
   DocfillyDiagnostic,
   DocfillyInitialValues,
@@ -9,45 +10,13 @@ import type {
   SupportedLocale,
 } from "./types";
 
-/** Returns the first equals sign outside a CSV-style quoted field. */
-function findDefinitionEquals(line: string): number {
-  let inQuotes = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    if (line[index] !== '"') {
-      if (!inQuotes && line[index] === "=") return index;
-      continue;
-    }
-
-    if (inQuotes && line[index + 1] === '"') {
-      index += 1;
-    } else {
-      inQuotes = !inQuotes;
-    }
-  }
-
-  return -1;
-}
-
-/** Quotes a field when its raw representation would change how the parser reads it. */
-function encodeField(value: string, delimiters: string): string {
-  const requiresQuotes =
-    value !== value.trim() ||
-    value.includes('"') ||
-    [...delimiters].some((delimiter) => value.includes(delimiter));
-
-  return requiresQuotes ? `"${value.replaceAll('"', '""')}"` : value;
-}
-
 function encodeTextValue(value: string): string {
   const resemblesControl = value.startsWith("[") && value.endsWith("]");
-  if (resemblesControl) return `"${value.replaceAll('"', '""')}"`;
-  return encodeField(value, '"');
+  return encodeField(value, '"', resemblesControl);
 }
 
 function encodeDropdownOption(value: string): string {
-  if (value.startsWith("*")) return `"${value.replaceAll('"', '""')}"`;
-  return encodeField(value, ',"');
+  return encodeField(value, ',"', value.startsWith("*"));
 }
 
 function encodeVariableValue(variable: DocfillyVariable, value: string): string | undefined {
@@ -127,8 +96,9 @@ export function updateDocfillyDefaults(
 
     const partIndex = (lineNumber - 1) * 2;
     const line = parts[partIndex];
-    const equalsIndex = findDefinitionEquals(line);
-    if (equalsIndex === -1) continue;
+    const equals = findFirstOutsideQuotes(line, "=");
+    if (!equals.ok || equals.value === -1) continue;
+    const equalsIndex = equals.value;
 
     const encodedValue = encodeVariableValue(variable, value);
     if (encodedValue === undefined) {
