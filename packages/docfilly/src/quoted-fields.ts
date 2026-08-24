@@ -1,9 +1,12 @@
 export type QuotedFieldResult<T> = { ok: true; value: T } | { ok: false };
 
-/** Collects delimiter positions while validating CSV-style quote pairs. */
-function findOutsideQuotes(value: string, delimiter: string): QuotedFieldResult<number[]> {
+/** Visits delimiters outside quotes and reports whether all quote pairs are closed. */
+function scanOutsideQuotes(
+  value: string,
+  delimiter: string,
+  visitDelimiter: (index: number) => void,
+): boolean {
   let inQuotes = false;
-  const delimiterIndices: number[] = [];
 
   for (let index = 0; index < value.length; index += 1) {
     const character = value[index];
@@ -14,11 +17,11 @@ function findOutsideQuotes(value: string, delimiter: string): QuotedFieldResult<
         inQuotes = !inQuotes;
       }
     } else if (!inQuotes && character === delimiter) {
-      delimiterIndices.push(index);
+      visitDelimiter(index);
     }
   }
 
-  return inQuotes ? { ok: false } : { ok: true, value: delimiterIndices };
+  return !inQuotes;
 }
 
 /** Finds the first delimiter that is not enclosed in a CSV-style quoted field. */
@@ -26,21 +29,22 @@ export function findFirstOutsideQuotes(
   value: string,
   delimiter: string,
 ): QuotedFieldResult<number> {
-  const indices = findOutsideQuotes(value, delimiter);
-  return indices.ok ? { ok: true, value: indices.value[0] ?? -1 } : indices;
+  let delimiterIndex = -1;
+  const valid = scanOutsideQuotes(value, delimiter, (index) => {
+    if (delimiterIndex === -1) delimiterIndex = index;
+  });
+  return valid ? { ok: true, value: delimiterIndex } : { ok: false };
 }
 
 /** Splits text at delimiters that are not enclosed in CSV-style quoted fields. */
 export function splitOutsideQuotes(value: string, delimiter: string): QuotedFieldResult<string[]> {
-  const indices = findOutsideQuotes(value, delimiter);
-  if (!indices.ok) return indices;
-
   const parts: string[] = [];
   let start = 0;
-  for (const index of indices.value) {
+  const valid = scanOutsideQuotes(value, delimiter, (index) => {
     parts.push(value.slice(start, index));
     start = index + 1;
-  }
+  });
+  if (!valid) return { ok: false };
 
   parts.push(value.slice(start));
   return { ok: true, value: parts };

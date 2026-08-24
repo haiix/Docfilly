@@ -17,6 +17,13 @@ describe("quoted field syntax", () => {
     expect(findFirstOutsideQuotes(value, delimiter)).toEqual(expected);
   });
 
+  it("retains only the first delimiter while validating the complete value", () => {
+    const value = `name ${"=".repeat(20_000)} value`;
+
+    expect(findFirstOutsideQuotes(value, "=")).toEqual({ ok: true, value: 5 });
+    expect(findFirstOutsideQuotes(`${value}"unclosed`, "=")).toEqual({ ok: false });
+  });
+
   it.each([
     ["one,two", { ok: true, value: ["one", "two"] }],
     ['"one,two",three', { ok: true, value: ['"one,two"', "three"] }],
