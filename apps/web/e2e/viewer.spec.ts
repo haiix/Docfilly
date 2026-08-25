@@ -47,6 +47,52 @@ test("組み込みチュートリアルを開いてフォーム値を反映で�
   await expect(page.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeVisible();
 });
 
+test("PWAをインストール可能な構成で配信し、オフラインでも両言語とローカル文書を利用できる", async ({
+  context,
+  page,
+}) => {
+  await page.goto("./");
+
+  const manifestUrl = await page.locator('link[rel="manifest"]').getAttribute("href");
+  expect(manifestUrl).not.toBeNull();
+  const manifestResponse = await page.request.get(new URL(manifestUrl!, page.url()).toString());
+  expect(manifestResponse.ok()).toBe(true);
+  const manifest = (await manifestResponse.json()) as {
+    display?: string;
+    start_url?: string;
+    scope?: string;
+    icons?: { src: string; sizes: string }[];
+  };
+  expect(manifest.display).toBe("standalone");
+  expect(manifest.start_url).toBe(".");
+  expect(manifest.scope).toBe(".");
+  expect(manifest.icons?.map(({ sizes }) => sizes)).toEqual(["192x192", "512x512"]);
+
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? null))
+    .toContain("/Docfilly/sw.js");
+
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Docfilly文書を開く" })).toBeVisible();
+
+  await page.getByRole("button", { name: "サンプルを開く" }).click();
+  await page.getByLabel("プロジェクト名").fill("オフライン");
+  await expect(page.getByRole("heading", { name: "オフライン 5分チュートリアル" })).toBeVisible();
+
+  await page.getByLabel("言語").selectOption("en");
+  await page.getByLabel("Open file").setInputFiles({
+    name: "offline.md",
+    mimeType: "text/markdown",
+    buffer: Buffer.from("# Local offline document"),
+  });
+  await expect(page.getByRole("heading", { name: "Local offline document" })).toBeVisible();
+});
+
 test("ローカル文書をファイル選択から開ける", async ({ page }) => {
   await page.goto("./");
   await page.getByLabel("ファイルを開く").setInputFiles({

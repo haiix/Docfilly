@@ -26,7 +26,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm dev --host ${host} --port ${port}`,
+    command: `node node_modules/vite/bin/vite.js preview --host ${host} --port ${port}`,
     url: `http://${host}:${port}/Docfilly/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

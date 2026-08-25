@@ -232,6 +232,40 @@ button.toolbar-button:not(:disabled),
   background: #fff9ee;
 }
 
+.pwa-update {
+  position: fixed;
+  z-index: 100;
+  right: 1rem;
+  bottom: 1rem;
+  width: min(28rem, calc(100% - 2rem));
+  padding: 1rem;
+  border: 1px solid #cbd3df;
+  border-radius: 0.75rem;
+  color: #26324a;
+  background: white;
+  box-shadow: 0 12px 35px rgb(23 32 51 / 18%);
+}
+
+.pwa-update p {
+  margin: 0 0 0.75rem;
+}
+
+.pwa-update__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.pwa-update__reload {
+  border-color: #596cff;
+  background: #596cff;
+}
+
+.pwa-update__reload:hover:not(:disabled) {
+  border-color: #4354e8;
+  background: #4354e8;
+}
+
 .dialog-backdrop {
   position: fixed;
   z-index: 200;
