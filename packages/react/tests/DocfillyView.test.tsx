@@ -65,6 +65,41 @@ describe("DocfillyView", () => {
     });
   });
 
+  it("reports the latest render diagnostics without duplicating parse diagnostics", () => {
+    vi.useFakeTimers();
+    const onRender = vi.fn<(state: DocfillyRenderState) => void>();
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          source={"#!docfilly\ninvalid row\nname = Alice\n---\n[[name]] / [[missing]]"}
+          sourceType="text"
+          options={{ debounceMs: 10 }}
+          onRender={onRender}
+        />,
+      );
+    });
+
+    const input = container.querySelector<HTMLInputElement>('input[name="name"]');
+    expect(onRender.mock.lastCall?.[0].diagnostics.map((diagnostic) => diagnostic.code)).toEqual([
+      "missing-equals",
+      "undefined-variable",
+    ]);
+
+    act(() => {
+      if (input === null) throw new Error("Expected the generated input");
+      input.value = "Bob";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      vi.advanceTimersByTime(10);
+    });
+
+    expect(onRender).toHaveBeenCalledTimes(2);
+    expect(onRender.mock.lastCall?.[0]).toMatchObject({
+      outputSource: "Bob / [[missing]]",
+      diagnostics: [{ code: "missing-equals" }, { code: "undefined-variable" }],
+    });
+  });
+
   it("recreates the instance for content props and destroys it on unmount", () => {
     const destroy = vi.spyOn(Docfilly.prototype, "destroy");
 

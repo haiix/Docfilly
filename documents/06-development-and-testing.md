@@ -132,6 +132,13 @@ Playwrightは`apps/web`のViteサーバーを起動し、GitHub Pagesと同じ`/
 - 不正な引用の読み飛ばしと診断
 - ifブロックの構文木生成、ネスト、不正構文からの原文復旧
 
+### 文書評価
+
+- テンプレート評価後のMarkdown／text出力ソース
+- Markdown用の変数値エスケープとHTMLサニタイズ
+- Markdown変換失敗時のtextフォールバック
+- parse diagnosticsと最新render diagnosticsの合成
+
 ### DOM統合
 
 - フォーム要素の生成
@@ -142,9 +149,7 @@ Playwrightは`apps/web`のViteサーバーを起動し、GitHub Pagesと同じ`/
 - 6種類の文字列ケース変換とフィルター合成
 - 未知のフィルターと不正なプレースホルダーの診断
 - 設定項目がない文書でのフォーム非表示
-- 変数値のHTMLエスケープ
-- 引用された変数値のHTMLエスケープ
-- Markdown HTMLのサニタイズ
+- 文書評価結果のDOM反映
 - `docfilly:render`イベント
 - `destroy()`によるDOM削除
 - チェックボックス条件と`#else`の再描画
