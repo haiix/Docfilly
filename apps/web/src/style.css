@@ -630,6 +630,12 @@ main {
   line-height: 1.25;
 }
 
+.docfilly__output blockquote {
+  margin-inline-start: 0;
+  padding-left: 1rem;
+  border-left: 0.25rem solid #cbd3df;
+}
+
 .docfilly__output code {
   padding: 0.15em 0.35em;
   border-radius: 0.25rem;
