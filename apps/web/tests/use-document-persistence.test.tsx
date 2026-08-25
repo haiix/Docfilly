@@ -95,11 +95,11 @@ describe("document persistence", () => {
     const { result } = renderHook(() => useDocumentPersistence(options));
 
     await waitFor(() => expect(options.onRestore).toHaveBeenCalledWith(session));
-    act(() => {
-      result.current.invalidateRestoreCompletion();
-      result.current.persistValues(session.values);
-    });
+    act(() => result.current.invalidateRestoreCompletion());
+    expect(result.current.shouldApplyViewerStatus()).toBe(false);
+    act(() => result.current.persistValues(session.values));
 
+    expect(result.current.shouldApplyViewerStatus()).toBe(true);
     expect(options.onRestoreComplete).not.toHaveBeenCalled();
     expect(store.save).not.toHaveBeenCalled();
   });

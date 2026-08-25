@@ -87,6 +87,13 @@ export function useDocumentPersistence({
     operationGenerationRef.current += 1;
   }, []);
 
+  const shouldApplyViewerStatus = useCallback(
+    (): boolean =>
+      restoredRenderGenerationRef.current === undefined ||
+      restoredRenderGenerationRef.current === operationGenerationRef.current,
+    [],
+  );
+
   const activateDocument = useCallback(
     (document: LoadedDocument): void => {
       cancelPendingSave();
@@ -147,6 +154,7 @@ export function useDocumentPersistence({
   return {
     beginDocumentSelection,
     invalidateRestoreCompletion,
+    shouldApplyViewerStatus,
     activateDocument,
     persistValues,
     clearSavedDocument,

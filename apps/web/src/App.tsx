@@ -48,6 +48,7 @@ export function App() {
   const {
     beginDocumentSelection,
     invalidateRestoreCompletion,
+    shouldApplyViewerStatus,
     activateDocument,
     persistValues,
     clearSavedDocument: clearPersistedDocument,
@@ -113,6 +114,13 @@ export function App() {
       persistValues(values);
     },
     [persistValues, updateValues],
+  );
+
+  const handleViewerStatusChange = useCallback(
+    (nextStatus: ViewerStatus): void => {
+      if (shouldApplyViewerStatus()) setStatus(nextStatus);
+    },
+    [shouldApplyViewerStatus],
   );
 
   const clearSavedDocument = useCallback(async (): Promise<void> => {
@@ -183,9 +191,13 @@ export function App() {
     ],
   );
 
-  const handleValidationError = useCallback((message: string): void => {
-    setStatus({ message, isWarning: true });
-  }, []);
+  const handleValidationError = useCallback(
+    (message: string): void => {
+      invalidateRestoreCompletion();
+      setStatus({ message, isWarning: true });
+    },
+    [invalidateRestoreCompletion],
+  );
 
   const openFilePicker = (): void => fileInputRef.current?.click();
 
@@ -408,7 +420,7 @@ export function App() {
             initialValues={initialValues}
             locale={locale}
             messages={messages}
-            onStatusChange={setStatus}
+            onStatusChange={handleViewerStatusChange}
             onRenderStateChange={updateRender}
             onValuesChange={handleValuesChange}
           />
