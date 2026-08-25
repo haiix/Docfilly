@@ -121,17 +121,17 @@ describe("document persistence", () => {
     expect(store.save).not.toHaveBeenCalled();
   });
 
-  it("resumes delayed saving when clearing saved data fails", async () => {
+  it("keeps saving suppressed when closing cleanup fails", async () => {
     vi.useFakeTimers();
     const store = createStore({ clear: vi.fn(() => Promise.reject(new Error("failed"))) });
     const options = createOptions(store);
     const { result } = renderHook(() => useDocumentPersistence(options));
     act(() => result.current.activateDocument(document));
 
-    await expect(result.current.clearSavedDocument()).rejects.toThrow("failed");
+    await expect(result.current.closeDocument()).rejects.toThrow("failed");
     act(() => result.current.persistValues(new Map([["name", "Still here"]])));
     await act(() => vi.advanceTimersByTimeAsync(50));
 
-    expect(store.save).toHaveBeenCalledWith(document, new Map([["name", "Still here"]]));
+    expect(store.save).not.toHaveBeenCalled();
   });
 });

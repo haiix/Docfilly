@@ -136,34 +136,94 @@ test("文書を閉じると復元せず、空状態から別の文書を開け�
   await expect(page.getByText("サンプル.md")).toBeVisible();
 });
 
-test("保存データ削除を確認し、キャンセルと実行後の状態を判別できる", async ({ page }) => {
+test("アプリデータのリセットで文書、復元データ、Docfillyのオフライン資材を削除する", async ({
+  page,
+}) => {
   await openSample(page);
+  const appUrl = page.url();
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(true);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    await caches.open("another-project-cache");
+  });
   await page.getByRole("button", { name: "ヘルプ", exact: true }).first().click();
-  const clearDataButton = page.getByRole("button", { name: "この端末の保存データを削除" });
-  await expect(clearDataButton).toHaveCSS("color", "rgb(255, 255, 255)");
-  await expect(clearDataButton).toHaveCSS("background-color", "rgb(180, 35, 24)");
-  await clearDataButton.click();
+  const resetDataButton = page.getByRole("button", { name: "アプリデータをリセット" });
+  await expect(resetDataButton).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(resetDataButton).toHaveCSS("background-color", "rgb(180, 35, 24)");
+  await resetDataButton.click();
 
   const confirmation = page.getByRole("dialog", {
-    name: "この端末の保存データを削除しますか？",
+    name: "アプリデータをリセットしますか？",
   });
+  await expect(confirmation).toContainText("表示中の文書を閉じ");
+  await expect(confirmation).toContainText("次回の利用にはインターネット接続が必要です");
   await expect(confirmation).toContainText(
-    "現在表示している文書と元のローカルファイルは削除されません",
+    "インストール済みアプリ自体はアンインストールされません",
   );
+  await expect(confirmation).toContainText("元のローカルファイルとダウンロード済みファイル");
   const cancelButton = page.getByRole("button", { name: "キャンセル" });
   await expect(cancelButton).toBeFocused();
   await expect(cancelButton).toHaveCSS("color", "rgb(38, 50, 74)");
   await expect(cancelButton).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await page.keyboard.press("Escape");
-  await expect(clearDataButton).toBeFocused();
+  await expect(resetDataButton).toBeFocused();
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(true);
 
-  await clearDataButton.click();
-  await page.getByRole("button", { name: "保存データを削除", exact: true }).click();
-  await expect(page.getByText("サンプル.md")).toBeVisible();
-  await expect(page.getByRole("status")).toContainText("保存した文書データを削除しました");
+  await resetDataButton.click();
+  await page.getByRole("button", { name: "アプリデータをリセット", exact: true }).last().click();
+  await expect(page.getByRole("heading", { name: "Docfilly文書を開く" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText(
+    "アプリデータをリセットし、文書を閉じました",
+  );
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(false);
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const scopeUrl = new URL("./", location.href).href;
+        const cacheNames = await caches.keys();
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        return {
+          docfillyCaches: cacheNames.filter(
+            (name) =>
+              name.endsWith(`-${scopeUrl}`) &&
+              (name.startsWith("docfilly-") || name.startsWith("workbox-")),
+          ),
+          hasOtherCache: cacheNames.includes("another-project-cache"),
+          hasDocfillyRegistration: registrations.some(
+            (registration) => registration.scope === scopeUrl,
+          ),
+        };
+      }),
+    )
+    .toEqual({
+      docfillyCaches: [],
+      hasOtherCache: true,
+      hasDocfillyRegistration: false,
+    });
+
+  await page.goto("about:blank");
+  await page.goto(appUrl);
+  await expect(page.getByRole("heading", { name: "Docfilly文書を開く" })).toBeVisible();
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const scopeUrl = new URL("./", location.href).href;
+        const cacheNames = await caches.keys();
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        return {
+          hasDocfillyCache: cacheNames.some(
+            (name) => name.startsWith("docfilly-") && name.endsWith(`-${scopeUrl}`),
+          ),
+          hasDocfillyRegistration: registrations.some(
+            (registration) => registration.scope === scopeUrl,
+          ),
+        };
+      }),
+    )
+    .toEqual({ hasDocfillyCache: true, hasDocfillyRegistration: true });
 });
 
 test("ヘルプをキーボードで閉じると起点へフォーカスが戻る", async ({ page }) => {
