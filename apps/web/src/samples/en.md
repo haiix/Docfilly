@@ -42,7 +42,7 @@ The parts are `variable name | label = default value`. Insert a form value in th
 ```
 
 > The current project is **[[project_name]]**.
-
+>
 > Author: **[[author]]**
 
 ## 2. Choose what to display
@@ -54,7 +54,7 @@ environment | Environment = [development, *staging, production]
 ```
 
 > Current selection: **[[environment]]**
-
+>
 [[#if environment = development]]
 > Use development settings to check local changes quickly.
 [[#endif]]

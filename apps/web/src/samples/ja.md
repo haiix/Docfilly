@@ -46,7 +46,7 @@ project_name | プロジェクト名 = Docfilly
 ```
 
 > 現在のプロジェクト名は **[[project_name]]** です。
-
+>
 > 作成者: **[[author]]**
 
 ## 2. 選択肢で表示を変える
@@ -58,7 +58,7 @@ environment | 実行環境 = [development, *staging, production]
 ```
 
 > 現在の選択: **[[environment]]**
-
+>
 [[#if environment = development]]
 > 開発用の設定で、手元の変更をすぐ確認できます。
 [[#endif]]
