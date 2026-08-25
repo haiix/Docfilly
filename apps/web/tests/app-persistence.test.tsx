@@ -2,7 +2,13 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { saveDocumentSession } from "../src/document-session";
-import { openSample, renderApp, setupAppTests } from "./app-test-utils";
+import {
+  createFileList,
+  openSample,
+  readableFile,
+  renderApp,
+  setupAppTests,
+} from "./app-test-utils";
 
 setupAppTests();
 
@@ -71,6 +77,32 @@ describe("App persistence", () => {
         "ファイルを読み込めませんでした。もう一度選択してください。",
       ),
     );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).not.toContain("前回の文書を復元しました。"),
+    );
+    expect(screen.getByText("previous.txt")).toBeTruthy();
+    expect(screen.getByText("Previous")).toBeTruthy();
+  });
+
+  it("does not overwrite a multiple-file drop error with restoration completion", async () => {
+    await saveDocumentSession(
+      { name: "previous.txt", source: "Previous", sourceType: "text" },
+      new Map(),
+    );
+    renderApp();
+    expect(await screen.findByText("previous.txt")).toBeTruthy();
+
+    const files = [readableFile("first", "first.txt"), readableFile("second", "second.txt")];
+    fireEvent.drop(window, {
+      dataTransfer: { dropEffect: "none", files: createFileList(files), types: ["Files"] },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain(
+        "ファイルは1つずつドロップしてください。",
+      ),
+    );
+    expect(screen.getByRole("status").textContent).not.toContain("前回の文書を復元しました。");
     expect(screen.getByText("previous.txt")).toBeTruthy();
     expect(screen.getByText("Previous")).toBeTruthy();
   });

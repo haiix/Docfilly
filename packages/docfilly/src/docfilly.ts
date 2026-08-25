@@ -1,9 +1,8 @@
-import DOMPurify from "dompurify";
-import { marked } from "marked";
 import { createControl } from "./controls";
-import { diagnosticMessage, resolveLocale } from "./messages";
+import { evaluateDocument } from "./document-evaluation";
+import { resolveLocale } from "./messages";
 import { parseDocfillyDocument } from "./parser";
-import { escapeHtml, type CompiledTemplate } from "./template";
+import type { CompiledTemplate } from "./template";
 import type {
   DocfillyDiagnostic,
   DocfillyOptions,
@@ -128,30 +127,22 @@ export class Docfilly {
    * @returns The interpolated source text.
    */
   render(): string {
-    const values = this.values;
-    this.diagnosticList.splice(0, this.diagnosticList.length, ...this.parseDiagnostics);
-    this._outputSource = this.compiledTemplate.render(values, undefined, (diagnostic) => {
-      this.diagnosticList.push(diagnostic);
+    const result = evaluateDocument({
+      compiledTemplate: this.compiledTemplate,
+      values: this.values,
+      sourceType: this.sourceType,
+      locale: this.locale,
+      parseDiagnostics: this.parseDiagnostics,
     });
+    this._outputSource = result.outputSource;
+    this.diagnosticList.splice(0, this.diagnosticList.length, ...result.diagnostics);
 
-    if (this.sourceType === "md") {
-      try {
-        const safeTemplate = this.compiledTemplate.render(values, escapeHtml);
-        const html = marked.parse(safeTemplate, { async: false });
-        this.output.innerHTML = DOMPurify.sanitize(html);
-      } catch {
-        this.output.textContent = this._outputSource;
-        this.output.classList.add("docfilly__output--fallback");
-        if (!this.diagnosticList.some((item) => item.code === "markdown-render-fallback")) {
-          this.diagnosticList.push({
-            code: "markdown-render-fallback",
-            severity: "warning",
-            message: diagnosticMessage(this.locale, "markdown-render-fallback", {}),
-          });
-        }
-      }
+    if (result.payload.kind === "html") {
+      this.output.innerHTML = result.payload.html;
+      this.output.classList.remove("docfilly__output--fallback");
     } else {
-      this.output.textContent = this._outputSource;
+      this.output.textContent = result.payload.text;
+      this.output.classList.toggle("docfilly__output--fallback", result.payload.fallback);
     }
 
     this.element.dispatchEvent(

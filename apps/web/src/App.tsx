@@ -47,6 +47,8 @@ export function App() {
 
   const {
     beginDocumentSelection,
+    invalidateRestoreCompletion,
+    shouldApplyViewerStatus,
     activateDocument,
     persistValues,
     clearSavedDocument: clearPersistedDocument,
@@ -114,6 +116,13 @@ export function App() {
     [persistValues, updateValues],
   );
 
+  const handleViewerStatusChange = useCallback(
+    (nextStatus: ViewerStatus): void => {
+      if (shouldApplyViewerStatus()) setStatus(nextStatus);
+    },
+    [shouldApplyViewerStatus],
+  );
+
   const clearSavedDocument = useCallback(async (): Promise<void> => {
     try {
       await clearPersistedDocument();
@@ -163,6 +172,7 @@ export function App() {
         beginDocumentSelection();
         showDocument(nextDocument);
       } catch (error) {
+        invalidateRestoreCompletion();
         setStatus({
           message:
             error instanceof UnsupportedDocumentFileError
@@ -172,12 +182,22 @@ export function App() {
         });
       }
     },
-    [beginDocumentSelection, messages.fileReadFailed, messages.unsupportedFile, showDocument],
+    [
+      beginDocumentSelection,
+      invalidateRestoreCompletion,
+      messages.fileReadFailed,
+      messages.unsupportedFile,
+      showDocument,
+    ],
   );
 
-  const handleValidationError = useCallback((message: string): void => {
-    setStatus({ message, isWarning: true });
-  }, []);
+  const handleValidationError = useCallback(
+    (message: string): void => {
+      invalidateRestoreCompletion();
+      setStatus({ message, isWarning: true });
+    },
+    [invalidateRestoreCompletion],
+  );
 
   const openFilePicker = (): void => fileInputRef.current?.click();
 
@@ -400,7 +420,7 @@ export function App() {
             initialValues={initialValues}
             locale={locale}
             messages={messages}
-            onStatusChange={setStatus}
+            onStatusChange={handleViewerStatusChange}
             onRenderStateChange={updateRender}
             onValuesChange={handleValuesChange}
           />
