@@ -107,7 +107,9 @@ describe("App menus and dialogs", () => {
       "ブラウザー内だけで処理され、外部サーバーへ送信されません",
     );
     expect(dialog.textContent).toContain("最後に開いた1文書");
-    expect(dialog.textContent).toContain("インストールとオフライン起動には未対応");
+    expect(dialog.textContent).toContain(
+      "ブラウザーからインストールしてビューアー機能をオフラインでも利用できます",
+    );
     const sampleButton = screen.getByRole("button", { name: "サンプル文書を開く" });
     expect(sampleButton.parentElement?.classList.contains("help-actions")).toBe(true);
     const specificationLink = screen.getByRole("link", {

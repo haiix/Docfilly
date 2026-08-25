@@ -30,6 +30,9 @@ export interface WebMessages {
   openSample: string;
   supportedFiles: string;
   filesStayLocal: string;
+  updateAvailable: string;
+  updateLater: string;
+  reloadForUpdate: string;
   restored: string;
   restoreFailed: string;
   sessionSaveFailed: string;
@@ -98,6 +101,9 @@ const en: WebMessages = {
   openSample: "Open sample",
   supportedFiles: "Supports .md, .markdown, and .txt.",
   filesStayLocal: "Files are not sent outside your browser.",
+  updateAvailable: "A new version of Docfilly is available.",
+  updateLater: "Later",
+  reloadForUpdate: "Reload to update",
   restored: "Restored your previous document.",
   restoreFailed: "Saved data on this device could not be loaded. You can open a new document.",
   sessionSaveFailed:
@@ -153,7 +159,7 @@ const en: WebMessages = {
   },
   helpPrivacy: {
     heading: "Privacy and data on this device",
-    body: "Open documents and form values are processed only in your browser and are not sent to an external server. The latest document's file name, source, format, and form values are stored in this browser profile for restoration. Delete saved data after use on a shared device. Installation and offline startup are not yet supported.",
+    body: "Open documents and form values are processed only in your browser and are not sent to an external server. The latest document's file name, source, format, and form values are stored in this browser profile for restoration. Delete saved data after use on a shared device. After opening Docfilly online once, you can install it with your browser and use its viewer features offline.",
   },
   clearDeviceData: "Delete saved data on this device",
   clearTitle: "Delete saved data on this device?",
@@ -195,6 +201,9 @@ const ja: WebMessages = {
   openSample: "サンプルを開く",
   supportedFiles: ".md、.markdown、.txt に対応。",
   filesStayLocal: "ファイルは外部へ送信されません。",
+  updateAvailable: "新しいバージョンのDocfillyを利用できます。",
+  updateLater: "後で",
+  reloadForUpdate: "再読み込みして更新",
   restored: "前回の文書を復元しました。",
   restoreFailed: "この端末の保存データを読み込めませんでした。新しい文書を開けます。",
   sessionSaveFailed: "この端末へ文書データを保存できませんでした。表示中の文書は維持されています。",
@@ -247,7 +256,7 @@ const ja: WebMessages = {
   },
   helpPrivacy: {
     heading: "プライバシーと端末内の保存",
-    body: "開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。最後に開いた1文書のファイル名、元ソース、形式、フォーム値は現在のブラウザープロファイル内へ保存され、次回起動時に復元されます。共有端末では利用後に保存データを削除してください。インストールとオフライン起動には未対応です。",
+    body: "開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。最後に開いた1文書のファイル名、元ソース、形式、フォーム値は現在のブラウザープロファイル内へ保存され、次回起動時に復元されます。共有端末では利用後に保存データを削除してください。一度オンラインでDocfillyを開くと、ブラウザーからインストールしてビューアー機能をオフラインでも利用できます。",
   },
   clearDeviceData: "この端末の保存データを削除",
   clearTitle: "この端末の保存データを削除しますか？",

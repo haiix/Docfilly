@@ -13,6 +13,7 @@ import {
 import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
 import { resolveWebLocale, webMessages, type WebLocale } from "./locale";
+import { PwaUpdatePrompt } from "./PwaUpdatePrompt";
 import { useDocumentPersistence } from "./use-document-persistence";
 import { useDocumentWorkspace } from "./use-document-workspace";
 import englishSample from "./samples/en.md?raw";
@@ -390,6 +391,8 @@ export function App() {
           {status.message}
         </div>
       )}
+
+      <PwaUpdatePrompt messages={messages} />
 
       <main className={document === null ? "empty-layout" : undefined}>
         {document === null ? (
