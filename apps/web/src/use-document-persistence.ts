@@ -47,7 +47,9 @@ export function useDocumentPersistence({
   const documentRef = useRef<LoadedDocument | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const restoreCancelledRef = useRef(false);
-  const restoredNoticeRef = useRef(false);
+  const operationGenerationRef = useRef(0);
+  const restoreStartedGenerationRef = useRef(operationGenerationRef.current);
+  const restoredRenderGenerationRef = useRef<number | undefined>(undefined);
   const persistenceSuppressedRef = useRef(false);
 
   const cancelPendingSave = useCallback((): void => {
@@ -63,7 +65,7 @@ export function useDocumentPersistence({
       .then((session) => {
         if (!active || restoreCancelledRef.current || session === null) return;
         documentRef.current = session;
-        restoredNoticeRef.current = true;
+        restoredRenderGenerationRef.current = restoreStartedGenerationRef.current;
         callbacksRef.current.onRestore(session);
       })
       .catch(() => {
@@ -77,14 +79,20 @@ export function useDocumentPersistence({
   }, [cancelPendingSave]);
 
   const beginDocumentSelection = useCallback((): void => {
+    operationGenerationRef.current += 1;
     restoreCancelledRef.current = true;
+  }, []);
+
+  const invalidateRestoreCompletion = useCallback((): void => {
+    operationGenerationRef.current += 1;
   }, []);
 
   const activateDocument = useCallback(
     (document: LoadedDocument): void => {
       cancelPendingSave();
+      operationGenerationRef.current += 1;
       restoreCancelledRef.current = true;
-      restoredNoticeRef.current = false;
+      restoredRenderGenerationRef.current = undefined;
       persistenceSuppressedRef.current = false;
       documentRef.current = document;
     },
@@ -93,9 +101,10 @@ export function useDocumentPersistence({
 
   const persistValues = useCallback(
     (values: ReadonlyMap<string, string>): void => {
-      if (restoredNoticeRef.current) {
-        restoredNoticeRef.current = false;
-        callbacksRef.current.onRestoreComplete();
+      if (restoredRenderGenerationRef.current !== undefined) {
+        const shouldNotify = restoredRenderGenerationRef.current === operationGenerationRef.current;
+        restoredRenderGenerationRef.current = undefined;
+        if (shouldNotify) callbacksRef.current.onRestoreComplete();
         return;
       }
       if (persistenceSuppressedRef.current || documentRef.current === null) return;
@@ -113,6 +122,7 @@ export function useDocumentPersistence({
   );
 
   const clearSavedDocument = useCallback(async (): Promise<void> => {
+    operationGenerationRef.current += 1;
     restoreCancelledRef.current = true;
     cancelPendingSave();
     persistenceSuppressedRef.current = true;
@@ -125,8 +135,9 @@ export function useDocumentPersistence({
   }, [cancelPendingSave]);
 
   const closeDocument = useCallback(async (): Promise<void> => {
+    operationGenerationRef.current += 1;
     restoreCancelledRef.current = true;
-    restoredNoticeRef.current = false;
+    restoredRenderGenerationRef.current = undefined;
     cancelPendingSave();
     persistenceSuppressedRef.current = true;
     documentRef.current = null;
@@ -135,6 +146,7 @@ export function useDocumentPersistence({
 
   return {
     beginDocumentSelection,
+    invalidateRestoreCompletion,
     activateDocument,
     persistValues,
     clearSavedDocument,

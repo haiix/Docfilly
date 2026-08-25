@@ -83,6 +83,27 @@ describe("document persistence", () => {
     expect(store.save).not.toHaveBeenCalled();
   });
 
+  it("suppresses a stale restoration notice without saving the restored values", async () => {
+    const session: SavedDocumentSession = {
+      ...document,
+      schemaVersion: documentSessionSchemaVersion,
+      values: new Map([["name", "Restored"]]),
+      updatedAt: new Date().toISOString(),
+    };
+    const store = createStore({ load: vi.fn(() => Promise.resolve(session)) });
+    const options = createOptions(store);
+    const { result } = renderHook(() => useDocumentPersistence(options));
+
+    await waitFor(() => expect(options.onRestore).toHaveBeenCalledWith(session));
+    act(() => {
+      result.current.invalidateRestoreCompletion();
+      result.current.persistValues(session.values);
+    });
+
+    expect(options.onRestoreComplete).not.toHaveBeenCalled();
+    expect(store.save).not.toHaveBeenCalled();
+  });
+
   it("cancels a pending save when the document closes", async () => {
     vi.useFakeTimers();
     const store = createStore();

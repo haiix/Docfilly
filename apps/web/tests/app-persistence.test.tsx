@@ -71,6 +71,9 @@ describe("App persistence", () => {
         "ファイルを読み込めませんでした。もう一度選択してください。",
       ),
     );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).not.toContain("前回の文書を復元しました。"),
+    );
     expect(screen.getByText("previous.txt")).toBeTruthy();
     expect(screen.getByText("Previous")).toBeTruthy();
   });
