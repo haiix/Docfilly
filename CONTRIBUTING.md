@@ -2,7 +2,7 @@
 
 ## 開発フロー
 
-変更はissue単位でブランチとPull Requestを作成し、CIとレビューを通して`main`へマージします。Webアプリや関連パッケージの変更はGitHub Pagesへ自動デプロイされますが、それ自体を正式なリリースとは扱いません。Pages上のアプリは常に最新の開発スナップショットです。
+変更はissue単位でブランチとPull Requestを作成し、CIとレビューを通して`main`へマージします。`main`上のCIが成功するとWebアプリをGitHub Pagesへ自動デプロイしますが、それ自体を正式なリリースとは扱いません。Pages上のアプリは常に最新の検証済み開発スナップショットです。
 
 通常のPull Requestでは、`version.txt`や各`package.json`の`version`を変更しないでください。バージョン更新はリリースPull Requestに集約します。
 
