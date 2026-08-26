@@ -36,8 +36,8 @@ export interface WebMessages {
   restored: string;
   restoreFailed: string;
   sessionSaveFailed: string;
-  cleared: string;
-  clearFailed: string;
+  resetComplete: string;
+  resetFailed: string;
   closed: string;
   closeCleanupFailed: string;
   unsupportedFile: string;
@@ -64,12 +64,12 @@ export interface WebMessages {
   helpSave: HelpSection;
   helpExport: HelpSection;
   helpPrivacy: HelpSection;
-  clearDeviceData: string;
-  clearTitle: string;
-  clearDescription: string;
-  clearSafety: string;
+  resetAppData: string;
+  resetTitle: string;
+  resetDescription: string;
+  resetSafety: string;
   cancel: string;
-  clearSavedData: string;
+  confirmResetAppData: string;
   diagnosticsTitle: (count: number) => string;
   diagnosticsSummary: string;
   line: string;
@@ -108,8 +108,8 @@ const en: WebMessages = {
   restoreFailed: "Saved data on this device could not be loaded. You can open a new document.",
   sessionSaveFailed:
     "Document data could not be saved on this device. The open document remains available.",
-  cleared: "Saved document data was deleted from this device. The open document remains available.",
-  clearFailed: "Saved data could not be deleted from this device.",
+  resetComplete: "App data was reset. The document was closed.",
+  resetFailed: "App data could not be completely reset. The document was closed.",
   closed: "The document was closed. The original local file was not changed.",
   closeCleanupFailed:
     "The document was closed, but its recovery data could not be deleted from this device. It may be restored after reloading.",
@@ -159,16 +159,16 @@ const en: WebMessages = {
   },
   helpPrivacy: {
     heading: "Privacy and data on this device",
-    body: "Open documents and form values are processed only in your browser and are not sent to an external server. The latest document's file name, source, format, and form values are stored in this browser profile for restoration. Delete saved data after use on a shared device. After opening Docfilly online once, you can install it with your browser and use its viewer features offline.",
+    body: "Open documents and form values are processed only in your browser and are not sent to an external server. The latest document's file name, source, format, and form values are stored in this browser profile for restoration. Close the document after use on a shared device. After opening Docfilly online once, you can install it with your browser and use its viewer features offline. Reset app data to also remove Docfilly's offline startup data.",
   },
-  clearDeviceData: "Delete saved data on this device",
-  clearTitle: "Delete saved data on this device?",
-  clearDescription:
-    "This deletes the file name, original source, format, and form values stored to restore the previous document.",
-  clearSafety:
-    "The document currently displayed and the original local file are not deleted. App data for offline startup is also excluded.",
+  resetAppData: "Reset app data",
+  resetTitle: "Reset app data?",
+  resetDescription:
+    "This closes the displayed document and deletes its saved recovery data and Docfilly's offline startup data. You will need an internet connection the next time you use Docfilly.",
+  resetSafety:
+    "The installed app itself will not be uninstalled. Original local files and downloaded files will not be deleted.",
   cancel: "Cancel",
-  clearSavedData: "Delete saved data",
+  confirmResetAppData: "Reset app data",
   diagnosticsTitle: (count) => `Document diagnostics (${count})`,
   diagnosticsSummary:
     "The document remains visible. Review the following locations when appropriate.",
@@ -207,8 +207,8 @@ const ja: WebMessages = {
   restored: "前回の文書を復元しました。",
   restoreFailed: "この端末の保存データを読み込めませんでした。新しい文書を開けます。",
   sessionSaveFailed: "この端末へ文書データを保存できませんでした。表示中の文書は維持されています。",
-  cleared: "この端末に保存した文書データを削除しました。表示中の文書は維持されています。",
-  clearFailed: "この端末の保存データを削除できませんでした。",
+  resetComplete: "アプリデータをリセットし、文書を閉じました。",
+  resetFailed: "アプリデータを完全にはリセットできませんでした。文書は閉じました。",
   closed: "文書を閉じました。元のローカルファイルは変更されていません。",
   closeCleanupFailed:
     "文書を閉じましたが、この端末の復元データを削除できませんでした。再読み込み時に文書が復元される可能性があります。",
@@ -256,16 +256,16 @@ const ja: WebMessages = {
   },
   helpPrivacy: {
     heading: "プライバシーと端末内の保存",
-    body: "開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。最後に開いた1文書のファイル名、元ソース、形式、フォーム値は現在のブラウザープロファイル内へ保存され、次回起動時に復元されます。共有端末では利用後に保存データを削除してください。一度オンラインでDocfillyを開くと、ブラウザーからインストールしてビューアー機能をオフラインでも利用できます。",
+    body: "開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。最後に開いた1文書のファイル名、元ソース、形式、フォーム値は現在のブラウザープロファイル内へ保存され、次回起動時に復元されます。共有端末では利用後に文書を閉じてください。一度オンラインでDocfillyを開くと、ブラウザーからインストールしてビューアー機能をオフラインでも利用できます。オフライン起動用データも削除する場合は、アプリデータをリセットしてください。",
   },
-  clearDeviceData: "この端末の保存データを削除",
-  clearTitle: "この端末の保存データを削除しますか？",
-  clearDescription:
-    "前回の文書を復元するために保存された、ファイル名、元ソース、形式、フォーム値を削除します。",
-  clearSafety:
-    "現在表示している文書と元のローカルファイルは削除されません。オフライン起動用のアプリデータも対象外です。",
+  resetAppData: "アプリデータをリセット",
+  resetTitle: "アプリデータをリセットしますか？",
+  resetDescription:
+    "表示中の文書を閉じ、保存した文書データとDocfillyのオフライン起動用データを削除します。次回の利用にはインターネット接続が必要です。",
+  resetSafety:
+    "インストール済みアプリ自体はアンインストールされません。元のローカルファイルとダウンロード済みファイルは削除されません。",
   cancel: "キャンセル",
-  clearSavedData: "保存データを削除",
+  confirmResetAppData: "アプリデータをリセット",
   diagnosticsTitle: (count) => `文書の診断（${count}件）`,
   diagnosticsSummary: "文書は表示を継続しています。次の箇所を必要に応じて確認してください。",
   line: "行",

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppDialog } from "./AppDialog";
+import { resetOfflineAppData } from "./app-data-reset";
 import {
   readDocumentFile,
   UnsupportedDocumentFileError,
@@ -37,14 +38,16 @@ export function App() {
   } = useDocumentWorkspace();
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
-  const [isClearConfirmationOpen, setIsClearConfirmationOpen] = useState(false);
+  const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
+  const [isResettingAppData, setIsResettingAppData] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const overflowButtonRef = useRef<HTMLButtonElement>(null);
-  const clearDataButtonRef = useRef<HTMLButtonElement>(null);
-  const cancelClearButtonRef = useRef<HTMLButtonElement>(null);
-  const restoreClearDataFocusRef = useRef(false);
+  const resetDataButtonRef = useRef<HTMLButtonElement>(null);
+  const cancelResetButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreResetDataFocusRef = useRef(false);
+  const resetInProgressRef = useRef(false);
 
   const {
     beginDocumentSelection,
@@ -52,7 +55,6 @@ export function App() {
     shouldApplyViewerStatus,
     activateDocument,
     persistValues,
-    clearSavedDocument: clearPersistedDocument,
     closeDocument: closePersistedDocument,
   } = useDocumentPersistence({
     onRestore: (session) => openDocument(session, session.values),
@@ -89,10 +91,10 @@ export function App() {
   }, [isOverflowOpen]);
 
   useEffect(() => {
-    if (isClearConfirmationOpen || !restoreClearDataFocusRef.current) return;
-    restoreClearDataFocusRef.current = false;
-    clearDataButtonRef.current?.focus();
-  }, [isClearConfirmationOpen]);
+    if (isResetConfirmationOpen || !restoreResetDataFocusRef.current) return;
+    restoreResetDataFocusRef.current = false;
+    resetDataButtonRef.current?.focus();
+  }, [isResetConfirmationOpen]);
 
   const showDocument = useCallback(
     (nextDocument: LoadedDocument): void => {
@@ -124,21 +126,37 @@ export function App() {
     [shouldApplyViewerStatus],
   );
 
-  const clearSavedDocument = useCallback(async (): Promise<void> => {
+  const resetAppData = useCallback(async (): Promise<void> => {
+    if (resetInProgressRef.current) return;
+    resetInProgressRef.current = true;
+    setIsResettingAppData(true);
+    resetDocumentWorkspace();
+    setIsOverflowOpen(false);
+
     try {
-      await clearPersistedDocument();
-      setIsClearConfirmationOpen(false);
+      const [documentCleanup, offlineCleanup] = await Promise.allSettled([
+        closePersistedDocument(),
+        resetOfflineAppData(),
+      ]);
+      const resetSucceeded =
+        documentCleanup.status === "fulfilled" &&
+        offlineCleanup.status === "fulfilled" &&
+        offlineCleanup.value.success;
       setStatus({
-        message: messages.cleared,
-        isWarning: false,
+        message: resetSucceeded ? messages.resetComplete : messages.resetFailed,
+        isWarning: !resetSucceeded,
       });
-    } catch {
-      setStatus({
-        message: messages.clearFailed,
-        isWarning: true,
-      });
+    } finally {
+      resetInProgressRef.current = false;
+      setIsResettingAppData(false);
+      setIsResetConfirmationOpen(false);
     }
-  }, [clearPersistedDocument, messages.clearFailed, messages.cleared]);
+  }, [
+    closePersistedDocument,
+    messages.resetComplete,
+    messages.resetFailed,
+    resetDocumentWorkspace,
+  ]);
 
   const closeDocument = useCallback(async (): Promise<void> => {
     if (document === null) return;
@@ -207,12 +225,14 @@ export function App() {
     showDocument(samples[locale]);
   };
 
-  const openClearConfirmation = (): void => {
-    restoreClearDataFocusRef.current = true;
-    setIsClearConfirmationOpen(true);
+  const openResetConfirmation = (): void => {
+    restoreResetDataFocusRef.current = true;
+    setIsResetConfirmationOpen(true);
   };
 
-  const closeClearConfirmation = (): void => setIsClearConfirmationOpen(false);
+  const closeResetConfirmation = (): void => {
+    if (!resetInProgressRef.current) setIsResetConfirmationOpen(false);
+  };
 
   const runOverflowAction = (action: () => void): void => {
     setIsOverflowOpen(false);
@@ -434,7 +454,7 @@ export function App() {
         <AppDialog
           title={messages.helpTitle}
           closeLabel={messages.closeDialog(messages.helpTitle)}
-          inactive={isClearConfirmationOpen}
+          inactive={isResetConfirmationOpen}
           onClose={() => setOpenDialog(null)}
         >
           <section>
@@ -477,41 +497,44 @@ export function App() {
             <h3>{messages.helpPrivacy.heading}</h3>
             <p>{messages.helpPrivacy.body}</p>
             <button
-              ref={clearDataButtonRef}
+              ref={resetDataButtonRef}
               type="button"
               className="text-button danger-action"
-              onClick={openClearConfirmation}
+              onClick={openResetConfirmation}
             >
-              {messages.clearDeviceData}
+              {messages.resetAppData}
             </button>
           </section>
         </AppDialog>
       )}
 
-      {isClearConfirmationOpen && (
+      {isResetConfirmationOpen && (
         <AppDialog
-          title={messages.clearTitle}
-          closeLabel={messages.closeDialog(messages.clearTitle)}
-          initialFocusRef={cancelClearButtonRef}
-          onClose={closeClearConfirmation}
+          title={messages.resetTitle}
+          closeLabel={messages.closeDialog(messages.resetTitle)}
+          initialFocusRef={cancelResetButtonRef}
+          busy={isResettingAppData}
+          onClose={closeResetConfirmation}
         >
-          <p>{messages.clearDescription}</p>
-          <p>{messages.clearSafety}</p>
+          <p>{messages.resetDescription}</p>
+          <p>{messages.resetSafety}</p>
           <div className="dialog-actions">
             <button
-              ref={cancelClearButtonRef}
+              ref={cancelResetButtonRef}
               type="button"
               className="toolbar-button dialog-cancel-action"
-              onClick={closeClearConfirmation}
+              disabled={isResettingAppData}
+              onClick={closeResetConfirmation}
             >
               {messages.cancel}
             </button>
             <button
               type="button"
               className="toolbar-button danger-action"
-              onClick={() => void clearSavedDocument()}
+              disabled={isResettingAppData}
+              onClick={() => void resetAppData()}
             >
-              {messages.clearSavedData}
+              {messages.confirmResetAppData}
             </button>
           </div>
         </AppDialog>

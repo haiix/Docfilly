@@ -41,6 +41,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cacheId: "docfilly",
         cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{css,html,js,png,svg}"],
         navigateFallback: "index.html",

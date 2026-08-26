@@ -131,7 +131,7 @@ describe("App menus and dialogs", () => {
     await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: "この端末の保存データを削除" }),
+      screen.getByRole("button", { name: "アプリデータをリセット" }),
     );
     await user.keyboard("{Tab}");
     expect(document.activeElement).toBe(

@@ -128,19 +128,6 @@ export function useDocumentPersistence({
     [cancelPendingSave, saveDelayMs],
   );
 
-  const clearSavedDocument = useCallback(async (): Promise<void> => {
-    operationGenerationRef.current += 1;
-    restoreCancelledRef.current = true;
-    cancelPendingSave();
-    persistenceSuppressedRef.current = true;
-    try {
-      await storeRef.current.clear();
-    } catch (error) {
-      persistenceSuppressedRef.current = false;
-      throw error;
-    }
-  }, [cancelPendingSave]);
-
   const closeDocument = useCallback(async (): Promise<void> => {
     operationGenerationRef.current += 1;
     restoreCancelledRef.current = true;
@@ -157,7 +144,6 @@ export function useDocumentPersistence({
     shouldApplyViewerStatus,
     activateDocument,
     persistValues,
-    clearSavedDocument,
     closeDocument,
   };
 }

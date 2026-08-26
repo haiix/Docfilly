@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isPwaRegistrationSuppressed, trackPwaRegistration } from "./app-data-reset";
 import type { WebMessages } from "./locale";
 
 interface PwaUpdateNoticeProps {
@@ -33,7 +34,7 @@ export function PwaUpdatePrompt({ messages }: PwaUpdatePromptProps) {
   const reloadOnControllerChangeRef = useRef(false);
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
+    if (!("serviceWorker" in navigator) || isPwaRegistrationSuppressed()) return;
 
     let disposed = false;
     let updateInterval: ReturnType<typeof setInterval> | undefined;
@@ -57,10 +58,9 @@ export function PwaUpdatePrompt({ messages }: PwaUpdatePromptProps) {
     };
 
     navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
-    void navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
+    void trackPwaRegistration(navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`))
       .then((registration) => {
-        if (disposed) return;
+        if (disposed || registration === null) return;
         registrationRef.current = registration;
         showWaitingUpdate(registration);
         registration.addEventListener("updatefound", handleUpdateFound);
