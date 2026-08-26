@@ -51,14 +51,36 @@ describe("app data reset", () => {
     expect(otherRegistration.unregister).not.toHaveBeenCalled();
   });
 
-  it("reports a partial failure while continuing the available cleanup", async () => {
-    const unregister = vi.fn(() => Promise.resolve(true));
+  it("treats false results as targets that were already absent", async () => {
+    const unregister = vi.fn(() => Promise.resolve(false));
     const result = await resetOfflineAppData({
       scopeUrl,
       suppressRegistration: false,
       cacheStorage: {
         keys: vi.fn(() => Promise.resolve([`docfilly-precache-v2-${scopeUrl}`])),
         delete: vi.fn(() => Promise.resolve(false)),
+      },
+      serviceWorker: {
+        getRegistrations: vi.fn(() =>
+          Promise.resolve([
+            { scope: scopeUrl, unregister } as unknown as ServiceWorkerRegistration,
+          ]),
+        ),
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(unregister).toHaveBeenCalledOnce();
+  });
+
+  it("reports a rejected deletion while continuing the available cleanup", async () => {
+    const unregister = vi.fn(() => Promise.resolve(true));
+    const result = await resetOfflineAppData({
+      scopeUrl,
+      suppressRegistration: false,
+      cacheStorage: {
+        keys: vi.fn(() => Promise.resolve([`docfilly-precache-v2-${scopeUrl}`])),
+        delete: vi.fn(() => Promise.reject(new Error("failed"))),
       },
       serviceWorker: {
         getRegistrations: vi.fn(() =>

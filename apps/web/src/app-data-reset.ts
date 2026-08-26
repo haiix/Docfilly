@@ -59,7 +59,7 @@ async function deleteDocfillyCaches(
       isDocfillyCache(name, scopeUrl),
     );
     const results = await Promise.allSettled(cacheNames.map((name) => cacheStorage.delete(name)));
-    return results.every((result) => result.status === "fulfilled" && result.value);
+    return results.every((result) => result.status === "fulfilled");
   } catch {
     return false;
   }
@@ -78,7 +78,7 @@ async function unregisterDocfillyServiceWorkers(
     const results = await Promise.allSettled(
       registrations.map((registration) => registration.unregister()),
     );
-    return results.every((result) => result.status === "fulfilled" && result.value);
+    return results.every((result) => result.status === "fulfilled");
   } catch {
     return false;
   }

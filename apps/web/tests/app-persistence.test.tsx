@@ -190,4 +190,51 @@ describe("App persistence", () => {
     expect(screen.getByRole("status").classList.contains("is-warning")).toBe(true);
     expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
   });
+
+  it("prevents reset and cancellation actions while app data is being reset", async () => {
+    let resolveCacheNames!: (cacheNames: string[]) => void;
+    const cacheNames = new Promise<string[]>((resolve) => {
+      resolveCacheNames = resolve;
+    });
+    const keys = vi.fn(() => cacheNames);
+    vi.stubGlobal("caches", {
+      keys,
+      delete: vi.fn(() => Promise.resolve(true)),
+    });
+    const user = userEvent.setup();
+    renderApp();
+    await openSample(user);
+    await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
+    await user.click(screen.getByRole("button", { name: "アプリデータをリセット" }));
+
+    const confirmation = screen.getByRole("dialog", {
+      name: "アプリデータをリセットしますか？",
+    });
+    const confirmButton = screen.getByRole<HTMLButtonElement>("button", {
+      name: /^アプリデータをリセット$/,
+    });
+    await user.click(confirmButton);
+    await waitFor(() => expect(keys).toHaveBeenCalledOnce());
+
+    expect(confirmButton.disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "キャンセル" }).disabled).toBe(
+      true,
+    );
+    expect(
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: "アプリデータをリセットしますか？を閉じる",
+      }).disabled,
+    ).toBe(true);
+    expect(confirmation.getAttribute("aria-busy")).toBe("true");
+    fireEvent.click(confirmButton);
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "アプリデータをリセットしますか？" })).toBeTruthy();
+    expect(keys).toHaveBeenCalledOnce();
+
+    resolveCacheNames([]);
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "アプリデータをリセットしますか？" })).toBeNull(),
+    );
+    expect(screen.getByRole("status").textContent).toContain("アプリデータをリセット");
+  });
 });

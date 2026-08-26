@@ -14,6 +14,7 @@ interface AppDialogProps {
   onClose: () => void;
   initialFocusRef?: RefObject<HTMLElement | null>;
   inactive?: boolean;
+  busy?: boolean;
 }
 
 const focusableSelector = [
@@ -32,6 +33,7 @@ export function AppDialog({
   onClose,
   initialFocusRef,
   inactive = false,
+  busy = false,
 }: AppDialogProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -46,10 +48,14 @@ export function AppDialog({
     };
   }, [initialFocusRef]);
 
+  useEffect(() => {
+    if (busy) titleRef.current?.focus();
+  }, [busy]);
+
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key === "Escape") {
       event.preventDefault();
-      onClose();
+      if (!busy) onClose();
       return;
     }
 
@@ -84,13 +90,16 @@ export function AppDialog({
       className="dialog-backdrop"
       aria-hidden={inactive || undefined}
       inert={inactive || undefined}
-      onMouseDown={(event) => !inactive && event.target === event.currentTarget && onClose()}
+      onMouseDown={(event) =>
+        !inactive && !busy && event.target === event.currentTarget && onClose()
+      }
     >
       <div
         ref={dialogRef}
         className="app-dialog"
         role="dialog"
         aria-modal="true"
+        aria-busy={busy || undefined}
         aria-labelledby={titleId}
         onKeyDown={handleKeyDown}
       >
@@ -98,7 +107,13 @@ export function AppDialog({
           <h2 ref={titleRef} id={titleId} tabIndex={-1}>
             {title}
           </h2>
-          <button type="button" className="dialog-close" aria-label={closeLabel} onClick={onClose}>
+          <button
+            type="button"
+            className="dialog-close"
+            aria-label={closeLabel}
+            disabled={busy}
+            onClick={onClose}
+          >
             ×
           </button>
         </header>

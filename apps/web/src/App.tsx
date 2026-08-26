@@ -39,6 +39,7 @@ export function App() {
   const [status, setStatus] = useState<ViewerStatus | null>(null);
   const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
   const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
+  const [isResettingAppData, setIsResettingAppData] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
@@ -46,6 +47,7 @@ export function App() {
   const resetDataButtonRef = useRef<HTMLButtonElement>(null);
   const cancelResetButtonRef = useRef<HTMLButtonElement>(null);
   const restoreResetDataFocusRef = useRef(false);
+  const resetInProgressRef = useRef(false);
 
   const {
     beginDocumentSelection,
@@ -125,22 +127,30 @@ export function App() {
   );
 
   const resetAppData = useCallback(async (): Promise<void> => {
+    if (resetInProgressRef.current) return;
+    resetInProgressRef.current = true;
+    setIsResettingAppData(true);
     resetDocumentWorkspace();
     setIsOverflowOpen(false);
 
-    const [documentCleanup, offlineCleanup] = await Promise.allSettled([
-      closePersistedDocument(),
-      resetOfflineAppData(),
-    ]);
-    const resetSucceeded =
-      documentCleanup.status === "fulfilled" &&
-      offlineCleanup.status === "fulfilled" &&
-      offlineCleanup.value.success;
-    setIsResetConfirmationOpen(false);
-    setStatus({
-      message: resetSucceeded ? messages.resetComplete : messages.resetFailed,
-      isWarning: !resetSucceeded,
-    });
+    try {
+      const [documentCleanup, offlineCleanup] = await Promise.allSettled([
+        closePersistedDocument(),
+        resetOfflineAppData(),
+      ]);
+      const resetSucceeded =
+        documentCleanup.status === "fulfilled" &&
+        offlineCleanup.status === "fulfilled" &&
+        offlineCleanup.value.success;
+      setStatus({
+        message: resetSucceeded ? messages.resetComplete : messages.resetFailed,
+        isWarning: !resetSucceeded,
+      });
+    } finally {
+      resetInProgressRef.current = false;
+      setIsResettingAppData(false);
+      setIsResetConfirmationOpen(false);
+    }
   }, [
     closePersistedDocument,
     messages.resetComplete,
@@ -220,7 +230,9 @@ export function App() {
     setIsResetConfirmationOpen(true);
   };
 
-  const closeResetConfirmation = (): void => setIsResetConfirmationOpen(false);
+  const closeResetConfirmation = (): void => {
+    if (!resetInProgressRef.current) setIsResetConfirmationOpen(false);
+  };
 
   const runOverflowAction = (action: () => void): void => {
     setIsOverflowOpen(false);
@@ -501,6 +513,7 @@ export function App() {
           title={messages.resetTitle}
           closeLabel={messages.closeDialog(messages.resetTitle)}
           initialFocusRef={cancelResetButtonRef}
+          busy={isResettingAppData}
           onClose={closeResetConfirmation}
         >
           <p>{messages.resetDescription}</p>
@@ -510,6 +523,7 @@ export function App() {
               ref={cancelResetButtonRef}
               type="button"
               className="toolbar-button dialog-cancel-action"
+              disabled={isResettingAppData}
               onClick={closeResetConfirmation}
             >
               {messages.cancel}
@@ -517,6 +531,7 @@ export function App() {
             <button
               type="button"
               className="toolbar-button danger-action"
+              disabled={isResettingAppData}
               onClick={() => void resetAppData()}
             >
               {messages.confirmResetAppData}
