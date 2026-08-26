@@ -2,6 +2,13 @@
 
 変更時は技術的な正しさに加え、Docfillyの中心的な体験である「読者の読み替えを最初のフォーム入力へ移すこと」を維持してください。構文やUIを追加する場合も、読者に構文理解を要求せず、文書を主役にできるかを判断基準にします。
 
+## 必要な環境
+
+- Node.js 24
+- pnpm 11
+
+Node.jsのメジャーバージョンは`.node-version`、対応範囲はルート`package.json`の`engines`で定義します。対応するバージョン管理ツールを使う場合は、リポジトリへ移動した時点で`.node-version`を適用してください。pnpmは`packageManager`で固定したバージョンを使用します。
+
 ## ルートコマンド
 
 すべてリポジトリのルートで実行します。
@@ -191,7 +198,7 @@ pnpm build
 
 ## CI
 
-GitHub Actionsの`.github/workflows/ci.yml`は、Pull Requestまたは手動実行で起動します。
+GitHub Actionsの`.github/workflows/ci.yml`は、Pull Request、`main`へのpush、または手動実行で起動します。
 
 CIではNode.js 24と`package.json`で固定したpnpmを使用し、次の処理を順番に実行します。
 
@@ -204,6 +211,10 @@ CIではNode.js 24と`package.json`で固定したpnpmを使用し、次の処�
 7. `pnpm build`
 
 別のE2EジョブではChromiumをインストールし、`pnpm test:e2e`を実行します。失敗時のレポートとテスト成果物はGitHub Actionsへアップロードされます。
+
+`main`上のCIでは、通常検証とE2Eの両方が成功した場合だけ、再利用可能な`.github/workflows/deploy-pages.yml`を呼び出してWebアプリをGitHub Pagesへデプロイします。Pages workflowを単独で手動実行する経路は設けず、再デプロイもCIの手動実行を通します。
+
+外部のGitHub Actionsは完全なcommit SHAで固定し、末尾コメントに対応するリリースタグを記載します。更新はGitHub Actions向けDependabot PRで行い、タグの参照先を手作業で更新する場合はGitHub APIの`repos/{owner}/{repo}/git/ref/tags/{tag}`でcommitを確認します。注釈付きタグの場合は、返されたtag objectを`repos/{owner}/{repo}/git/tags/{sha}`で参照し、最終的なcommit SHAまで解決します。
 
 同じブランチで新しい実行が開始された場合、古い実行はキャンセルされます。
 

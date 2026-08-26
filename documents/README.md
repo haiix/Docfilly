@@ -9,7 +9,7 @@ Docfillyは、手順書にある「この値は自分の環境に合わせて読
 - **まず考え方を知りたい方** — [概要](./01-overview.md)
 - **文書を作る執筆者** — [はじめに](./02-getting-started.md)、[ソースフォーマット仕様](./03-source-format.md)
 - **Docfillyを組み込む開発者** — [APIリファレンス](./04-api-reference.md)、[セキュリティと制約](./07-security-and-limitations.md)、[Diagnostic localization](./08-diagnostic-localization.md)
-- **このリポジトリを開発する方** — [Webデモ](./05-web-demo.md)、[開発とテスト](./06-development-and-testing.md)
+- **このリポジトリを開発する方** — [Webデモ](./05-web-demo.md)、[開発とテスト](./06-development-and-testing.md)、[npm公開計画](./09-npm-publication-plan.md)
 
 ## ドキュメント一覧
 
@@ -21,6 +21,7 @@ Docfillyは、手順書にある「この値は自分の環境に合わせて読
 6. [開発とテスト](./06-development-and-testing.md) — コマンド、ビルド、Vitest、Playwright、CI
 7. [セキュリティと制約](./07-security-and-limitations.md) — サニタイズ、対応環境、既知の制約
 8. [Diagnostic localization](./08-diagnostic-localization.md) — locale API, resolution order, and adding a language
+9. [npm公開計画](./09-npm-publication-plan.md) — 将来の公開判断、認証、検証、公開順序
 
 ## まず試す
 
