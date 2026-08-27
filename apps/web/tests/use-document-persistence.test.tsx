@@ -121,6 +121,94 @@ describe("document persistence", () => {
     expect(store.save).not.toHaveBeenCalled();
   });
 
+  it("clears the session after an in-progress save completes", async () => {
+    vi.useFakeTimers();
+    const saving = deferred<void>();
+    const operations: string[] = [];
+    const store = createStore({
+      save: vi.fn(() => {
+        operations.push("save");
+        return saving.promise;
+      }),
+      clear: vi.fn(() => {
+        operations.push("clear");
+        return Promise.resolve();
+      }),
+    });
+    const options = createOptions(store);
+    const { result } = renderHook(() => useDocumentPersistence(options));
+    act(() => {
+      result.current.activateDocument(document);
+      result.current.persistValues(new Map([["name", "Saving"]]));
+    });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+
+    let closing!: Promise<void>;
+    act(() => {
+      closing = result.current.closeDocument();
+    });
+    expect(store.clear).not.toHaveBeenCalled();
+
+    saving.resolve();
+    await act(() => closing);
+
+    expect(operations).toEqual(["save", "clear"]);
+  });
+
+  it("saves a new document after an in-progress save for the previous document", async () => {
+    vi.useFakeTimers();
+    const firstSave = deferred<void>();
+    const nextDocument = { ...document, name: "next.md" };
+    const store = createStore({
+      save: vi
+        .fn<DocumentPersistenceStore["save"]>()
+        .mockImplementationOnce(() => firstSave.promise)
+        .mockResolvedValueOnce(),
+    });
+    const options = createOptions(store);
+    const { result } = renderHook(() => useDocumentPersistence(options));
+    act(() => {
+      result.current.activateDocument(document);
+      result.current.persistValues(new Map([["name", "Previous"]]));
+    });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+
+    act(() => {
+      result.current.activateDocument(nextDocument);
+      result.current.persistValues(new Map([["name", "Next"]]));
+    });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+    expect(store.save).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      firstSave.resolve();
+      await firstSave.promise;
+    });
+
+    expect(store.save).toHaveBeenCalledTimes(2);
+    expect(store.save).toHaveBeenNthCalledWith(1, document, new Map([["name", "Previous"]]));
+    expect(store.save).toHaveBeenNthCalledWith(2, nextDocument, new Map([["name", "Next"]]));
+  });
+
+  it("does not report a failed save after its document is replaced", async () => {
+    vi.useFakeTimers();
+    const saving = deferred<void>();
+    const store = createStore({ save: vi.fn(() => saving.promise) });
+    const options = createOptions(store);
+    const { result } = renderHook(() => useDocumentPersistence(options));
+    act(() => {
+      result.current.activateDocument(document);
+      result.current.persistValues(new Map([["name", "Previous"]]));
+    });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+
+    act(() => result.current.activateDocument({ ...document, name: "next.md" }));
+    saving.reject(new Error("failed"));
+    await act(() => Promise.resolve());
+
+    expect(options.onSaveFailure).not.toHaveBeenCalled();
+  });
+
   it("keeps saving suppressed when closing cleanup fails", async () => {
     vi.useFakeTimers();
     const store = createStore({ clear: vi.fn(() => Promise.reject(new Error("failed"))) });
