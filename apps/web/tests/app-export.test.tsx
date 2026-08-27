@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { openSample, readBlob, readableFile, renderApp, setupAppTests } from "./app-test-utils";
@@ -52,6 +52,47 @@ describe("App document saving and export", () => {
     expect(exportedText).not.toContain("#!docfilly");
     expect(exportedText).not.toContain("author | 作成者");
     expect(exportedText).not.toContain("[[author]]");
+  });
+
+  it("flushes pending text, select, and checkbox changes before exporting", async () => {
+    const user = userEvent.setup();
+    let downloadedBlob: Blob | undefined;
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn((blob: Blob) => {
+        downloadedBlob = blob;
+        return "blob:document-export";
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    renderApp();
+    await user.upload(
+      screen.getByLabelText("ファイルを開く"),
+      readableFile(
+        [
+          "#!docfilly",
+          "name = Before",
+          "region = [*east, west]",
+          "enabled = [ ]",
+          "---",
+          "[[name]] / [[region]] / [[enabled]]",
+        ].join("\n"),
+        "settings.txt",
+      ),
+    );
+    const name = await screen.findByLabelText<HTMLInputElement>("name");
+    const region = screen.getByLabelText<HTMLSelectElement>("region");
+    const enabled = screen.getByLabelText<HTMLInputElement>("enabled");
+
+    vi.useFakeTimers();
+    fireEvent.input(name, { target: { value: "After" } });
+    fireEvent.change(region, { target: { value: "west" } });
+    fireEvent.click(enabled);
+    fireEvent.click(screen.getAllByRole("button", { name: "表示結果を書き出す" })[0]);
+    vi.useRealTimers();
+
+    expect(downloadedBlob).toBeDefined();
+    await expect(readBlob(downloadedBlob!)).resolves.toBe("After / west / true");
   });
 
   it("exports an ordinary text document without changing its content", async () => {

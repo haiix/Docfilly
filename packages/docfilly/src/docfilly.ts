@@ -127,6 +127,11 @@ export class Docfilly {
    * @returns The interpolated source text.
    */
   render(): string {
+    if (this.debounceTimer !== undefined) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
+    }
+
     const result = evaluateDocument({
       compiledTemplate: this.compiledTemplate,
       values: this.values,
@@ -154,10 +159,22 @@ export class Docfilly {
   }
 
   /**
+   * Immediately completes a pending debounced render.
+   *
+   * @returns The latest interpolated source text.
+   */
+  flush(): string {
+    return this.debounceTimer === undefined ? this._outputSource : this.render();
+  }
+
+  /**
    * Removes event listeners, cancels pending work, and detaches the view.
    */
   destroy(): void {
-    if (this.debounceTimer !== undefined) clearTimeout(this.debounceTimer);
+    if (this.debounceTimer !== undefined) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = undefined;
+    }
     this.form.removeEventListener("submit", this.preventSubmit);
     this.form.removeEventListener("input", this.scheduleRender);
     this.form.removeEventListener("change", this.scheduleRender);

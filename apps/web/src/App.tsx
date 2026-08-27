@@ -11,7 +11,7 @@ import {
   createDocumentExport,
   downloadDocumentExport,
 } from "./document-export";
-import { DocumentViewer, type ViewerStatus } from "./DocumentViewer";
+import { DocumentViewer, type DocumentViewerHandle, type ViewerStatus } from "./DocumentViewer";
 import { FileDropZone } from "./FileDropZone";
 import { resolveWebLocale, webMessages, type WebLocale } from "./locale";
 import { PwaUpdatePrompt } from "./PwaUpdatePrompt";
@@ -42,6 +42,7 @@ export function App() {
   const [isResettingAppData, setIsResettingAppData] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentViewerRef = useRef<DocumentViewerHandle>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const overflowButtonRef = useRef<HTMLButtonElement>(null);
   const resetDataButtonRef = useRef<HTMLButtonElement>(null);
@@ -244,7 +245,12 @@ export function App() {
     if (document === null || outputSource === null) return;
 
     try {
-      const documentExport = createDocumentExport(outputSource, document.sourceType, document.name);
+      const latestOutputSource = documentViewerRef.current?.flush() ?? outputSource;
+      const documentExport = createDocumentExport(
+        latestOutputSource,
+        document.sourceType,
+        document.name,
+      );
       downloadDocumentExport(documentExport);
       setStatus({
         message: messages.renderedExportStarted(documentExport.fileName),
@@ -438,6 +444,7 @@ export function App() {
           </section>
         ) : (
           <DocumentViewer
+            ref={documentViewerRef}
             source={document.source}
             sourceType={document.sourceType}
             initialValues={initialValues}

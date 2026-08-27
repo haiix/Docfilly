@@ -1,4 +1,11 @@
-import { useEffect, useRef, type HTMLAttributes, type ReactElement } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  type HTMLAttributes,
+  type ReactElement,
+} from "react";
 import {
   createDocfilly,
   type DocfillyDiagnostic,
@@ -19,6 +26,10 @@ export interface DocfillyViewProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   sourceType: DocfillySourceType;
   options?: DocfillyOptions;
   onRender?: (state: DocfillyRenderState) => void;
+}
+
+export interface DocfillyViewHandle {
+  flush(): string | null;
 }
 
 function initialValuesEqual(
@@ -49,15 +60,21 @@ function useStableInitialValues(
 /**
  * Connects a Docfilly instance to React's lifecycle.
  */
-export function DocfillyView({
-  source,
-  sourceType,
-  options,
-  onRender,
-  ...containerProps
-}: DocfillyViewProps): ReactElement {
+export const DocfillyView = forwardRef<DocfillyViewHandle, DocfillyViewProps>(function DocfillyView(
+  { source, sourceType, options, onRender, ...containerProps },
+  ref,
+): ReactElement {
   const containerRef = useRef<HTMLDivElement>(null);
   const onRenderRef = useRef(onRender);
+  const viewRef = useRef<ReturnType<typeof createDocfilly> | null>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      flush: () => viewRef.current?.flush() ?? null,
+    }),
+    [],
+  );
 
   useEffect(() => {
     onRenderRef.current = onRender;
@@ -72,6 +89,7 @@ export function DocfillyView({
     if (container === null) return;
 
     const view = createDocfilly(source, sourceType, { debounceMs, initialValues, locale });
+    viewRef.current = view;
     const notify = (): void => {
       onRenderRef.current?.({
         outputSource: view.outputSource,
@@ -87,9 +105,10 @@ export function DocfillyView({
 
     return () => {
       view.element.removeEventListener("docfilly:render", notify);
+      if (viewRef.current === view) viewRef.current = null;
       view.destroy();
     };
   }, [source, sourceType, debounceMs, initialValues, locale]);
 
   return <div {...containerProps} ref={containerRef} />;
-}
+});

@@ -205,6 +205,14 @@ if (input instanceof HTMLInputElement) {
 }
 ```
 
+#### `flush(): string`
+
+フォーム操作によるデバウンス描画が保留中の場合、その描画を直ちに完了します。保留中の描画がなければ再描画せず、現在の`outputSource`を返します。出力や送信など、操作時点のフォーム値が必要な処理の直前に使用します。
+
+```ts
+const latestSource = view.flush();
+```
+
 #### `destroy(): void`
 
 保留中の再描画を停止し、イベントリスナーを解除して、ルート要素をDOMから削除します。

@@ -137,4 +137,16 @@ import { DocfillyView } from "@docfilly/react";
 
 `className`、`id`、`aria-*`などの`HTMLAttributes<HTMLDivElement>`は外側のラッパー要素へ渡されます。`onRender`には現在の`outputSource`、`ReadonlyMap`形式の`values`、`diagnostics`、Docfilly文書かどうかを示す`isDocfilly`が渡されます。
 
+出力や送信の直前に保留中のデバウンス描画を完了する場合は、refの`flush()`を使用します。戻り値は最新の`outputSource`で、ビューがまだ利用できない場合は`null`です。
+
+```tsx
+import { useRef } from "react";
+import { DocfillyView, type DocfillyViewHandle } from "@docfilly/react";
+
+const viewRef = useRef<DocfillyViewHandle>(null);
+
+<DocfillyView ref={viewRef} source={source} sourceType="md" />;
+const latestSource = viewRef.current?.flush();
+```
+
 開発時のテスト方法は[開発とテスト](./documents/06-development-and-testing.md)を参照してください。
