@@ -1,8 +1,8 @@
-import { StrictMode, act } from "react";
+import { StrictMode, act, createRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Docfilly } from "docfilly";
-import { DocfillyView, type DocfillyRenderState } from "../src";
+import { DocfillyView, type DocfillyRenderState, type DocfillyViewHandle } from "../src";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -98,6 +98,42 @@ describe("DocfillyView", () => {
       outputSource: "Bob / [[missing]]",
       diagnostics: [{ code: "missing-equals" }, { code: "undefined-variable" }],
     });
+  });
+
+  it("exposes a handle that flushes a pending render", () => {
+    vi.useFakeTimers();
+    const ref = createRef<DocfillyViewHandle>();
+    const onRender = vi.fn<(state: DocfillyRenderState) => void>();
+
+    act(() => {
+      root.render(
+        <DocfillyView
+          ref={ref}
+          source={"#!docfilly\nname = Alice\n---\nHello [[name]]"}
+          sourceType="text"
+          onRender={onRender}
+        />,
+      );
+    });
+    const input = container.querySelector<HTMLInputElement>('input[name="name"]');
+    if (input === null) throw new Error("Expected the generated input");
+
+    act(() => {
+      input.value = "Bob";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(container.querySelector(".docfilly__output")?.textContent).toBe("Hello Alice");
+
+    let outputSource: string | null | undefined;
+    act(() => {
+      outputSource = ref.current?.flush();
+    });
+
+    expect(outputSource).toBe("Hello Bob");
+    expect(container.querySelector(".docfilly__output")?.textContent).toBe("Hello Bob");
+    expect(onRender).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(200);
+    expect(onRender).toHaveBeenCalledTimes(2);
   });
 
   it("recreates the instance for content props and destroys it on unmount", () => {

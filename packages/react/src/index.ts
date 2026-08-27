@@ -1,2 +1,2 @@
 export { DocfillyView } from "./DocfillyView";
-export type { DocfillyRenderState, DocfillyViewProps } from "./DocfillyView";
+export type { DocfillyRenderState, DocfillyViewHandle, DocfillyViewProps } from "./DocfillyView";

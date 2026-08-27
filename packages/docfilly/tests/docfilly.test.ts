@@ -175,6 +175,43 @@ describe("Docfilly", () => {
     expect(view.output.textContent).toBe("Hello after");
   });
 
+  it("flushes pending text, select, and checkbox changes without a later render", () => {
+    vi.useFakeTimers();
+    const view = createDocfilly(
+      [
+        "#!docfilly",
+        "name = Before",
+        "region = [*east, west]",
+        "enabled = [ ]",
+        "---",
+        "[[name]] / [[region]] / [[enabled]]",
+      ].join("\n"),
+      "text",
+    );
+    const name = view.form.elements.namedItem("name");
+    const region = view.form.elements.namedItem("region");
+    const enabled = view.form.elements.namedItem("enabled");
+    const listener = vi.fn();
+    view.element.addEventListener("docfilly:render", listener);
+
+    if (!(name instanceof HTMLInputElement)) throw new Error("Expected a text input");
+    if (!(region instanceof HTMLSelectElement)) throw new Error("Expected a select input");
+    if (!(enabled instanceof HTMLInputElement)) throw new Error("Expected a checkbox input");
+    name.value = "After";
+    name.dispatchEvent(new Event("input", { bubbles: true }));
+    region.value = "west";
+    region.dispatchEvent(new Event("change", { bubbles: true }));
+    enabled.checked = true;
+    enabled.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(view.outputSource).toBe("Before / east / false");
+    expect(view.flush()).toBe("After / west / true");
+    expect(listener).toHaveBeenCalledOnce();
+
+    vi.advanceTimersByTime(200);
+    expect(listener).toHaveBeenCalledOnce();
+  });
+
   it("leaves undefined placeholders unchanged", () => {
     const view = createDocfilly("#!docfilly\nname = Alice\n---\n[[name]] / [[missing]]", "text");
 
