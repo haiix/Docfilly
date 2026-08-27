@@ -46,6 +46,7 @@ export function useDocumentPersistence({
   const storeRef = useRef(store);
   const documentRef = useRef<LoadedDocument | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const operationQueueRef = useRef(Promise.resolve());
   const restoreCancelledRef = useRef(false);
   const operationGenerationRef = useRef(0);
   const restoreStartedGenerationRef = useRef(operationGenerationRef.current);
@@ -56,6 +57,15 @@ export function useDocumentPersistence({
     if (saveTimerRef.current === undefined) return;
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = undefined;
+  }, []);
+
+  const enqueueOperation = useCallback(<T>(operation: () => Promise<T>): Promise<T> => {
+    const result = operationQueueRef.current.then(operation);
+    operationQueueRef.current = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
   }, []);
 
   useEffect(() => {
@@ -118,14 +128,17 @@ export function useDocumentPersistence({
       cancelPendingSave();
       const document = documentRef.current;
       const valuesToSave = new Map(values);
+      const operationGeneration = operationGenerationRef.current;
       saveTimerRef.current = setTimeout(() => {
         saveTimerRef.current = undefined;
-        void storeRef.current
-          .save(document, valuesToSave)
-          .catch(() => callbacksRef.current.onSaveFailure());
+        void enqueueOperation(() => storeRef.current.save(document, valuesToSave)).catch(() => {
+          if (operationGeneration === operationGenerationRef.current) {
+            callbacksRef.current.onSaveFailure();
+          }
+        });
       }, saveDelayMs);
     },
-    [cancelPendingSave, saveDelayMs],
+    [cancelPendingSave, enqueueOperation, saveDelayMs],
   );
 
   const closeDocument = useCallback(async (): Promise<void> => {
@@ -135,8 +148,8 @@ export function useDocumentPersistence({
     cancelPendingSave();
     persistenceSuppressedRef.current = true;
     documentRef.current = null;
-    await storeRef.current.clear();
-  }, [cancelPendingSave]);
+    await enqueueOperation(() => storeRef.current.clear());
+  }, [cancelPendingSave, enqueueOperation]);
 
   return {
     beginDocumentSelection,
