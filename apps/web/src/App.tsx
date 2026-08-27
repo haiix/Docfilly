@@ -49,6 +49,7 @@ export function App() {
   const cancelResetButtonRef = useRef<HTMLButtonElement>(null);
   const restoreResetDataFocusRef = useRef(false);
   const resetInProgressRef = useRef(false);
+  const fileLoadGenerationRef = useRef(0);
 
   const {
     beginDocumentSelection,
@@ -187,11 +188,15 @@ export function App() {
 
   const loadFile = useCallback(
     async (file: File): Promise<void> => {
+      const generation = ++fileLoadGenerationRef.current;
+
       try {
         const nextDocument = await readDocumentFile(file);
+        if (generation !== fileLoadGenerationRef.current) return;
         beginDocumentSelection();
         showDocument(nextDocument);
       } catch (error) {
+        if (generation !== fileLoadGenerationRef.current) return;
         invalidateRestoreCompletion();
         setStatus({
           message:

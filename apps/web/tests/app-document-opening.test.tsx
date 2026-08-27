@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
@@ -11,6 +11,23 @@ import {
 } from "./app-test-utils";
 
 setupAppTests();
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function deferredFile(name: string) {
+  const reading = deferred<string>();
+  const file = new File([], name, { type: "text/plain" });
+  Object.defineProperty(file, "text", { value: () => reading.promise });
+  return { file, reading };
+}
 
 describe("App document opening", () => {
   it("starts empty and opens the sample only when requested", async () => {
@@ -69,6 +86,55 @@ describe("App document opening", () => {
       "#!docfilly識別子がないため、通常のテキストとして表示しています。",
     );
     expect(screen.getByText("Hello")).toBeTruthy();
+  });
+
+  it("keeps the most recently selected file when an older read finishes last", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const first = deferredFile("first.txt");
+    const second = deferredFile("second.txt");
+    const input = screen.getByLabelText("ファイルを開く");
+
+    await user.upload(input, first.file);
+    await user.upload(input, second.file);
+    second.reading.resolve("Second");
+
+    expect(await screen.findByText("second.txt")).toBeTruthy();
+    expect(screen.getByText("Second")).toBeTruthy();
+
+    await act(async () => {
+      first.reading.resolve("First");
+      await first.reading.promise;
+    });
+    expect(screen.queryByText("first.txt")).toBeNull();
+    expect(screen.queryByText("First")).toBeNull();
+  });
+
+  it("ignores a stale read failure after the latest file opens", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const first = deferredFile("first.txt");
+    const second = deferredFile("second.txt");
+    const input = screen.getByLabelText("ファイルを開く");
+
+    await user.upload(input, first.file);
+    await user.upload(input, second.file);
+    second.reading.resolve("Second");
+
+    expect(await screen.findByText("second.txt")).toBeTruthy();
+    const status = await screen.findByRole("status");
+    await waitFor(() =>
+      expect(status.textContent).toContain(
+        "#!docfilly識別子がないため、通常のテキストとして表示しています。",
+      ),
+    );
+
+    await act(async () => {
+      first.reading.reject(new Error("read failed"));
+      await first.reading.promise.catch(() => undefined);
+    });
+    expect(status.textContent).not.toContain("ファイルを読み込めませんでした");
+    expect(screen.getByText("second.txt")).toBeTruthy();
   });
 
   it("lists every diagnostic separately from app notifications", async () => {
