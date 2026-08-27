@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
@@ -11,6 +11,23 @@ import {
 } from "./app-test-utils";
 
 setupAppTests();
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function deferredFile(name: string) {
+  const reading = deferred<string>();
+  const file = new File([], name, { type: "text/plain" });
+  Object.defineProperty(file, "text", { value: () => reading.promise });
+  return { file, reading };
+}
 
 describe("App document opening", () => {
   it("starts empty and opens the sample only when requested", async () => {
@@ -69,6 +86,138 @@ describe("App document opening", () => {
       "#!docfilly識別子がないため、通常のテキストとして表示しています。",
     );
     expect(screen.getByText("Hello")).toBeTruthy();
+  });
+
+  it("keeps the most recently selected file when an older read finishes last", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const first = deferredFile("first.txt");
+    const second = deferredFile("second.txt");
+    const input = screen.getByLabelText("ファイルを開く");
+
+    await user.upload(input, first.file);
+    await user.upload(input, second.file);
+    second.reading.resolve("Second");
+
+    expect(await screen.findByText("second.txt")).toBeTruthy();
+    expect(screen.getByText("Second")).toBeTruthy();
+
+    await act(async () => {
+      first.reading.resolve("First");
+      await first.reading.promise;
+    });
+    expect(screen.queryByText("first.txt")).toBeNull();
+    expect(screen.queryByText("First")).toBeNull();
+  });
+
+  it("ignores a stale read failure after the latest file opens", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const first = deferredFile("first.txt");
+    const second = deferredFile("second.txt");
+    const input = screen.getByLabelText("ファイルを開く");
+
+    await user.upload(input, first.file);
+    await user.upload(input, second.file);
+    second.reading.resolve("Second");
+
+    expect(await screen.findByText("second.txt")).toBeTruthy();
+    const status = await screen.findByRole("status");
+    await waitFor(() =>
+      expect(status.textContent).toContain(
+        "#!docfilly識別子がないため、通常のテキストとして表示しています。",
+      ),
+    );
+
+    await act(async () => {
+      first.reading.reject(new Error("read failed"));
+      await first.reading.promise.catch(() => undefined);
+    });
+    expect(status.textContent).not.toContain("ファイルを読み込めませんでした");
+    expect(screen.getByText("second.txt")).toBeTruthy();
+  });
+
+  it("ignores a pending file read after opening the sample", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const pending = deferredFile("pending.txt");
+
+    await user.upload(screen.getByLabelText("ファイルを開く"), pending.file);
+    await openSample(user);
+    await act(async () => {
+      pending.reading.resolve("Pending");
+      await pending.reading.promise;
+    });
+
+    expect(screen.getByText("サンプル.md")).toBeTruthy();
+    expect(screen.queryByText("pending.txt")).toBeNull();
+  });
+
+  it("ignores a pending file read after closing the document", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await openSample(user);
+    const pending = deferredFile("pending.txt");
+
+    await user.upload(screen.getByLabelText("ファイルを開く"), pending.file);
+    await user.click(screen.getAllByRole("button", { name: "文書を閉じる" })[0]);
+    await act(async () => {
+      pending.reading.resolve("Pending");
+      await pending.reading.promise;
+    });
+
+    expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
+    expect(screen.queryByText("pending.txt")).toBeNull();
+  });
+
+  it("ignores a pending file read after resetting app data", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await openSample(user);
+    const pending = deferredFile("pending.txt");
+
+    await user.upload(screen.getByLabelText("ファイルを開く"), pending.file);
+    await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
+    await user.click(screen.getByRole("button", { name: "アプリデータをリセット" }));
+    await user.click(screen.getByRole("button", { name: /^アプリデータをリセット$/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain("アプリデータをリセット"),
+    );
+    await act(async () => {
+      pending.reading.resolve("Pending");
+      await pending.reading.promise;
+    });
+
+    expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
+    expect(screen.queryByText("pending.txt")).toBeNull();
+  });
+
+  it("ignores a pending file read after a file validation error", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const pending = deferredFile("pending.txt");
+
+    await user.upload(screen.getByLabelText("ファイルを開く"), pending.file);
+    fireEvent.drop(window, {
+      dataTransfer: {
+        dropEffect: "none",
+        files: createFileList([
+          readableFile("first", "first.txt"),
+          readableFile("second", "second.txt"),
+        ]),
+        types: ["Files"],
+      },
+    });
+    await act(async () => {
+      pending.reading.resolve("Pending");
+      await pending.reading.promise;
+    });
+
+    expect(screen.getByText("ファイル未選択")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "ファイルは1つずつドロップしてください。",
+    );
+    expect(screen.queryByText("pending.txt")).toBeNull();
   });
 
   it("lists every diagnostic separately from app notifications", async () => {

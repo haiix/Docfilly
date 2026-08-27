@@ -49,6 +49,7 @@ export function App() {
   const cancelResetButtonRef = useRef<HTMLButtonElement>(null);
   const restoreResetDataFocusRef = useRef(false);
   const resetInProgressRef = useRef(false);
+  const fileLoadGenerationRef = useRef(0);
 
   const {
     beginDocumentSelection,
@@ -97,13 +98,18 @@ export function App() {
     resetDataButtonRef.current?.focus();
   }, [isResetConfirmationOpen]);
 
+  const invalidatePendingFileLoad = useCallback((): void => {
+    fileLoadGenerationRef.current += 1;
+  }, []);
+
   const showDocument = useCallback(
     (nextDocument: LoadedDocument): void => {
+      invalidatePendingFileLoad();
       activateDocument(nextDocument);
       setStatus({ message: messages.loading, isWarning: false });
       openDocument(nextDocument);
     },
-    [activateDocument, messages.loading, openDocument],
+    [activateDocument, invalidatePendingFileLoad, messages.loading, openDocument],
   );
 
   const changeLocale = (nextLocale: WebLocale): void => {
@@ -130,6 +136,7 @@ export function App() {
   const resetAppData = useCallback(async (): Promise<void> => {
     if (resetInProgressRef.current) return;
     resetInProgressRef.current = true;
+    invalidatePendingFileLoad();
     setIsResettingAppData(true);
     resetDocumentWorkspace();
     setIsOverflowOpen(false);
@@ -154,6 +161,7 @@ export function App() {
     }
   }, [
     closePersistedDocument,
+    invalidatePendingFileLoad,
     messages.resetComplete,
     messages.resetFailed,
     resetDocumentWorkspace,
@@ -161,6 +169,7 @@ export function App() {
 
   const closeDocument = useCallback(async (): Promise<void> => {
     if (document === null) return;
+    invalidatePendingFileLoad();
     resetDocumentWorkspace();
     setOpenDialog(null);
     setIsOverflowOpen(false);
@@ -180,6 +189,7 @@ export function App() {
   }, [
     closePersistedDocument,
     document,
+    invalidatePendingFileLoad,
     messages.closeCleanupFailed,
     messages.closed,
     resetDocumentWorkspace,
@@ -187,11 +197,15 @@ export function App() {
 
   const loadFile = useCallback(
     async (file: File): Promise<void> => {
+      const generation = ++fileLoadGenerationRef.current;
+
       try {
         const nextDocument = await readDocumentFile(file);
+        if (generation !== fileLoadGenerationRef.current) return;
         beginDocumentSelection();
         showDocument(nextDocument);
       } catch (error) {
+        if (generation !== fileLoadGenerationRef.current) return;
         invalidateRestoreCompletion();
         setStatus({
           message:
@@ -213,10 +227,11 @@ export function App() {
 
   const handleValidationError = useCallback(
     (message: string): void => {
+      invalidatePendingFileLoad();
       invalidateRestoreCompletion();
       setStatus({ message, isWarning: true });
     },
-    [invalidateRestoreCompletion],
+    [invalidatePendingFileLoad, invalidateRestoreCompletion],
   );
 
   const openFilePicker = (): void => fileInputRef.current?.click();
