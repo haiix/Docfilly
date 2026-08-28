@@ -664,6 +664,30 @@ main {
   line-height: 1.25;
 }
 
+.docfilly__output table {
+  overflow: hidden;
+  border: 1px solid #cbd3df;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 0.25rem;
+}
+
+.docfilly__output th,
+.docfilly__output td {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid #cbd3df;
+  border-left: 1px solid #cbd3df;
+}
+
+.docfilly__output tr > :first-child {
+  border-left: 0;
+}
+
+.docfilly__output thead:first-child tr:first-child > *,
+.docfilly__output tbody:first-child tr:first-child > * {
+  border-top: 0;
+}
+
 .docfilly__output blockquote {
   margin-inline-start: 0;
   padding-left: 1rem;
