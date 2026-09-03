@@ -175,6 +175,7 @@ test("アプリデータのリセットで文書、復元データ、Docfillyの
   await expect(page.getByRole("status")).toContainText(
     "アプリデータをリセットし、文書を閉じました",
   );
+  await expect(page.getByRole("dialog", { name: "Docfillyの使い方" })).toHaveCount(0);
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(false);
   await expect
     .poll(() =>

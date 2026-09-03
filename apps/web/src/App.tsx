@@ -154,6 +154,7 @@ export function App() {
         message: resetSucceeded ? messages.resetComplete : messages.resetFailed,
         isWarning: !resetSucceeded,
       });
+      if (resetSucceeded) setOpenDialog(null);
     } finally {
       resetInProgressRef.current = false;
       setIsResettingAppData(false);

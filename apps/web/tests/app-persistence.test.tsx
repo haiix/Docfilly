@@ -162,6 +162,7 @@ describe("App persistence", () => {
     await waitFor(() =>
       expect(screen.getByRole("status").textContent).toContain("アプリデータをリセット"),
     );
+    expect(screen.queryByRole("dialog", { name: "Docfillyの使い方" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
     firstRender.unmount();
     renderApp();
