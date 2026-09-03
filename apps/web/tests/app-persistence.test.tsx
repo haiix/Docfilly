@@ -20,9 +20,7 @@ describe("App persistence", () => {
     const input = await screen.findByLabelText<HTMLInputElement>("作成者");
     fireEvent.input(input, { target: { value: "鈴木花子" } });
 
-    await waitFor(() =>
-      expect(screen.getByText(/作成者:/).textContent).toContain("作成者: 鈴木花子"),
-    );
+    await waitFor(() => expect(screen.getByText("鈴木花子", { exact: true })).toBeTruthy());
     expect(screen.getByLabelText("作成者")).toBe(input);
     expect(input.value).toBe("鈴木花子");
     expect(document.querySelectorAll(".docfilly")).toHaveLength(1);
@@ -35,7 +33,7 @@ describe("App persistence", () => {
     const input = await screen.findByLabelText<HTMLInputElement>("作成者");
     await user.clear(input);
     await user.type(input, "復元する名前");
-    await waitFor(() => expect(screen.getByText(/作成者:/).textContent).toContain("復元する名前"));
+    await waitFor(() => expect(screen.getByText("復元する名前", { exact: true })).toBeTruthy());
     await new Promise((resolve) => setTimeout(resolve, 600));
     firstRender.unmount();
 

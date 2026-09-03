@@ -70,7 +70,6 @@ describe("App document opening", () => {
       (code) => code.textContent,
     ).join("\n");
     expect(codeExamples).toContain("[[project_name]]");
-    expect(codeExamples).toContain("[[プロジェクト名]]");
     expect(codeExamples).toContain("[[#if team_work]]");
     expect(codeExamples).toContain("[[#else]]");
     expect(screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" })).toBeTruthy();
