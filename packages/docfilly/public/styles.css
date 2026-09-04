@@ -1,0 +1,203 @@
+.docfilly {
+  --docfilly-color-scheme: light;
+  --docfilly-color: light-dark(#172033, #e5eaf2);
+  --docfilly-background: light-dark(#ffffff, #1f2937);
+  --docfilly-form-background: light-dark(#fafbfc, #273449);
+  --docfilly-muted-color: light-dark(#637087, #b8c2d1);
+  --docfilly-label-color: light-dark(#48556b, #b8c2d1);
+  --docfilly-border-color: light-dark(#dce1e8, #526076);
+  --docfilly-field-border-color: light-dark(#cbd3df, #526076);
+  --docfilly-code-background: light-dark(#eef1f5, #2b374a);
+  --docfilly-code-block-color: light-dark(#edf1f8, #f4f7fb);
+  --docfilly-code-block-background: light-dark(#172033, #0b1020);
+  --docfilly-accent-color: #596cff;
+  --docfilly-focus-ring-color: rgb(89 108 255 / 18%);
+  --docfilly-spacing: 1.5rem;
+  --docfilly-form-width: minmax(15rem, 0.38fr);
+  --docfilly-sticky-top: 1rem;
+  --docfilly-form-max-height: calc(100dvh - var(--docfilly-sticky-top) - 1rem);
+
+  container-type: inline-size;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: var(--docfilly-form-width) minmax(0, 1fr);
+  width: 100%;
+  overflow: clip;
+  border: 1px solid var(--docfilly-border-color);
+  border-radius: 1rem;
+  color: var(--docfilly-color);
+  color-scheme: var(--docfilly-color-scheme);
+  background: var(--docfilly-background);
+  box-shadow: 0 18px 50px rgb(23 32 51 / 8%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .docfilly {
+    --docfilly-color-scheme: dark;
+  }
+}
+
+.docfilly__form {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: var(--docfilly-spacing);
+  border-bottom: 1px solid var(--docfilly-border-color);
+  background: var(--docfilly-form-background);
+}
+
+.docfilly__description {
+  margin: 0 0 1.25rem;
+  color: var(--docfilly-muted-color);
+  font-size: 0.88rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.docfilly__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.docfilly__field label {
+  color: var(--docfilly-label-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.docfilly__field input[type="text"],
+.docfilly__field select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid var(--docfilly-field-border-color);
+  border-radius: 0.45rem;
+  color: var(--docfilly-color);
+  background: var(--docfilly-background);
+  font: inherit;
+}
+
+.docfilly__field input:focus-visible,
+.docfilly__field select:focus-visible {
+  border-color: var(--docfilly-accent-color);
+  outline: 3px solid var(--docfilly-focus-ring-color);
+}
+
+.docfilly__field--checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.docfilly__field--checkbox input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--docfilly-accent-color);
+}
+
+.docfilly__output {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  min-width: 0;
+  min-height: 28rem;
+  padding: clamp(var(--docfilly-spacing), 4cqi, calc(var(--docfilly-spacing) * 2));
+  overflow-wrap: anywhere;
+}
+
+.docfilly__output--md {
+  line-height: 1.65;
+}
+
+.docfilly__output--text,
+.docfilly__output--fallback {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.docfilly__output > :first-child {
+  margin-top: 0;
+}
+
+.docfilly__output h1,
+.docfilly__output h2 {
+  line-height: 1.25;
+}
+
+.docfilly__output table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--docfilly-field-border-color);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 0.25rem;
+}
+
+.docfilly__output th,
+.docfilly__output td {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--docfilly-field-border-color);
+  border-left: 1px solid var(--docfilly-field-border-color);
+}
+
+.docfilly__output tr > :first-child {
+  border-left: 0;
+}
+
+.docfilly__output thead:first-child tr:first-child > th,
+.docfilly__output thead:first-child tr:first-child > td,
+.docfilly__output tbody:first-child tr:first-child > th,
+.docfilly__output tbody:first-child tr:first-child > td {
+  border-top: 0;
+}
+
+.docfilly__output blockquote {
+  margin-inline-start: 0;
+  padding-left: 1rem;
+  border-left: 0.25rem solid var(--docfilly-field-border-color);
+}
+
+.docfilly__output code {
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  background: var(--docfilly-code-background);
+}
+
+.docfilly__output pre {
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  color: var(--docfilly-code-block-color);
+  background: var(--docfilly-code-block-background);
+}
+
+.docfilly__output pre code {
+  padding: 0;
+  background: transparent;
+}
+
+@container (min-width: 47.5rem) {
+  .docfilly__form {
+    position: sticky;
+    z-index: 1;
+    top: var(--docfilly-sticky-top);
+    grid-row: 1;
+    grid-column: 1;
+    align-self: start;
+    max-height: var(--docfilly-form-max-height);
+    border-right: 1px solid var(--docfilly-border-color);
+    border-bottom: 0;
+    overflow-y: auto;
+  }
+
+  .docfilly__output {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .docfilly--without-form .docfilly__output {
+    grid-column: 1 / -1;
+  }
+}

@@ -368,7 +368,15 @@ type DocfillyVariable =
 
 ## CSSクラス
 
-ライブラリは構造を生成しますが、完成したテーマCSSは注入しません。利用側で次のクラスを装飾できます。
+ライブラリは構造を生成しますが、CSSを自動注入しません。フォームと本文のレスポンシブレイアウト、入力欄、Markdown、プレーンテキスト、描画失敗時のフォールバック、ライト／ダーク配色を含む公式CSSは、次のサブパスから任意で読み込めます。Reactでも同じCSSを使用します。
+
+```ts
+import "docfilly/styles.css";
+```
+
+公式CSSは`.docfilly`以下だけへ適用され、コンテナ幅が47.5rem以上ならフォームと本文を左右に、それ未満なら上下に配置します。配色は`prefers-color-scheme`に従い、`--docfilly-color-scheme`で明示的に切り替えられます。CSSをimportしなければ、従来どおり構造だけが生成されます。
+
+独自CSSでは次の公開クラスを装飾できます。
 
 - `.docfilly`
 - `.docfilly--without-form`
@@ -383,4 +391,31 @@ type DocfillyVariable =
 - `.docfilly__output--text`
 - `.docfilly__output--fallback`
 
-Webデモの[`apps/web/src/style.css`](../apps/web/src/style.css)を実装例として参照できます。
+### CSSカスタムプロパティ
+
+公式CSSを部分的に調整する場合は、公式CSSより後に読み込むCSSの`.docfilly`ルールで次の`--docfilly-*`プロパティを上書きします。
+
+| プロパティ                                                        | 用途                                   |
+| ----------------------------------------------------------------- | -------------------------------------- |
+| `--docfilly-color-scheme`                                         | `light`または`dark`の配色選択          |
+| `--docfilly-color`、`--docfilly-background`                       | 本文色と背景色                         |
+| `--docfilly-form-background`                                      | フォーム領域の背景色                   |
+| `--docfilly-muted-color`、`--docfilly-label-color`                | 説明文とラベルの文字色                 |
+| `--docfilly-border-color`、`--docfilly-field-border-color`        | コンテナ、フォーム、表、入力欄の境界色 |
+| `--docfilly-accent-color`、`--docfilly-focus-ring-color`          | checkbox、フォーカス枠、アクセント色   |
+| `--docfilly-code-background`                                      | インラインコードの背景色               |
+| `--docfilly-code-block-color`、`--docfilly-code-block-background` | コードブロックの文字色と背景色         |
+| `--docfilly-spacing`                                              | フォームと本文の基準余白               |
+| `--docfilly-form-width`                                           | 2カラム時のフォーム列幅                |
+| `--docfilly-sticky-top`                                           | 追従フォームの上端位置                 |
+| `--docfilly-form-max-height`                                      | 追従フォームの最大高                   |
+
+例えば固定ヘッダーの下へフォームを配置するには、次のように上書きします。
+
+```css
+.document-viewer .docfilly {
+  --docfilly-accent-color: #0f766e;
+  --docfilly-sticky-top: 5rem;
+  --docfilly-form-max-height: calc(100dvh - 6rem);
+}
+```
