@@ -1,9 +1,16 @@
 :root {
+  color-scheme: light;
   color: #172033;
   background: #f3f5f8;
   font-family: Inter, "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e5eaf2;
+  background: #111827;
 }
 
 * {
@@ -718,6 +725,119 @@ main {
 
 .docfilly__output pre code {
   padding: 0;
+  background: transparent;
+}
+
+[data-theme="dark"] .toolbar-overflow__menu,
+[data-theme="dark"] .app-status,
+[data-theme="dark"] .pwa-update,
+[data-theme="dark"] .app-dialog,
+[data-theme="dark"] .app-dialog__header,
+[data-theme="dark"] .dialog-close,
+[data-theme="dark"] .dialog-cancel-action,
+[data-theme="dark"] .settings-field select,
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .text-button,
+[data-theme="dark"] .docfilly,
+[data-theme="dark"] .docfilly__field input[type="text"],
+[data-theme="dark"] .docfilly__field select {
+  color: #e5eaf2;
+  background: #1f2937;
+}
+
+[data-theme="dark"] .docfilly__form,
+[data-theme="dark"] .toolbar-overflow__menu button:hover:not(:disabled),
+[data-theme="dark"] .toolbar-overflow__menu button:focus-visible,
+[data-theme="dark"] .dialog-close:hover,
+[data-theme="dark"] .dialog-cancel-action:hover:not(:disabled),
+[data-theme="dark"] .text-button:hover {
+  color: #f4f7fb;
+  background: #273449;
+}
+
+[data-theme="dark"] .toolbar-overflow__menu,
+[data-theme="dark"] .app-dialog__header,
+[data-theme="dark"] .dialog-close,
+[data-theme="dark"] .dialog-cancel-action,
+[data-theme="dark"] .settings-field select,
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .text-button,
+[data-theme="dark"] .docfilly,
+[data-theme="dark"] .docfilly__form,
+[data-theme="dark"] .docfilly__field input[type="text"],
+[data-theme="dark"] .docfilly__field select,
+[data-theme="dark"] .docfilly__output table,
+[data-theme="dark"] .docfilly__output th,
+[data-theme="dark"] .docfilly__output td {
+  border-color: #526076;
+}
+
+[data-theme="dark"] .toolbar-overflow__menu button,
+[data-theme="dark"] .app-dialog__content,
+[data-theme="dark"] .empty-state > p:not(.eyebrow),
+[data-theme="dark"] .empty-state small,
+[data-theme="dark"] .docfilly__description,
+[data-theme="dark"] .docfilly__field label {
+  color: #b8c2d1;
+}
+
+[data-theme="dark"] .app-dialog__content h3,
+[data-theme="dark"] .settings-field span {
+  color: #f4f7fb;
+}
+
+[data-theme="dark"] .app-dialog__content a {
+  color: #aeb8ff;
+}
+
+[data-theme="dark"] .danger-action,
+[data-theme="dark"] .text-button.danger-action {
+  border-color: #e05246;
+  color: white;
+  background: #b42318;
+}
+
+[data-theme="dark"] .danger-action:hover:not(:disabled),
+[data-theme="dark"] .text-button.danger-action:hover:not(:disabled) {
+  border-color: #f07167;
+  background: #912018;
+}
+
+[data-theme="dark"] .dialog-close:focus-visible,
+[data-theme="dark"] .app-dialog a:focus-visible,
+[data-theme="dark"] .dialog-cancel-action:focus-visible,
+[data-theme="dark"] .settings-field select:focus-visible,
+[data-theme="dark"] .primary-button:focus-visible,
+[data-theme="dark"] .text-button:focus-visible,
+[data-theme="dark"] .docfilly__field input:focus,
+[data-theme="dark"] .docfilly__field select:focus {
+  outline-color: #aeb8ff;
+}
+
+[data-theme="dark"] .app-status.is-warning,
+[data-theme="dark"] .diagnostic-list li {
+  color: #ffd89b;
+  background: #3b2b16;
+}
+
+[data-theme="dark"] .diagnostic-list p {
+  color: #ffe2b2;
+}
+
+[data-theme="dark"] .docfilly__output blockquote {
+  border-left-color: #66758d;
+}
+
+[data-theme="dark"] .docfilly__output code {
+  background: #2b374a;
+}
+
+[data-theme="dark"] .docfilly__output pre {
+  color: #f4f7fb;
+  background: #0b1020;
+}
+
+[data-theme="dark"] .docfilly__output pre code {
   background: transparent;
 }
 

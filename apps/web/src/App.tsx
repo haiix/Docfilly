@@ -15,6 +15,7 @@ import { DocumentViewer, type DocumentViewerHandle, type ViewerStatus } from "./
 import { FileDropZone } from "./FileDropZone";
 import { resolveWebLocale, webMessages, type WebLocale } from "./locale";
 import { PwaUpdatePrompt } from "./PwaUpdatePrompt";
+import { applyTheme, resolvePreferredTheme } from "./theme";
 import { useDocumentPersistence } from "./use-document-persistence";
 import { useDocumentWorkspace } from "./use-document-workspace";
 import {
@@ -23,6 +24,7 @@ import {
   resolvePreferredLocale,
   writeUserPreferences,
   type LanguagePreference,
+  type ThemePreference,
 } from "./user-preferences";
 import englishSample from "./samples/en.md?raw";
 import japaneseSample from "./samples/ja.md?raw";
@@ -35,6 +37,9 @@ const samples: Record<WebLocale, LoadedDocument> = {
 export function App() {
   const [languagePreference, setLanguagePreference] = useState<LanguagePreference>(
     () => readUserPreferences().language,
+  );
+  const [themePreference, setThemePreference] = useState<ThemePreference>(
+    () => readUserPreferences().theme,
   );
   const [locale, setLocale] = useState<WebLocale>(() => resolvePreferredLocale(languagePreference));
   const messages = webMessages[locale];
@@ -79,6 +84,21 @@ export function App() {
   useEffect(() => {
     globalThis.document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    const colorScheme =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-color-scheme: dark)")
+        : null;
+    const updateTheme = (): void => {
+      applyTheme(resolvePreferredTheme(themePreference, colorScheme?.matches ?? false));
+    };
+
+    updateTheme();
+    if (themePreference !== "system" || colorScheme === null) return;
+    colorScheme.addEventListener("change", updateTheme);
+    return () => colorScheme.removeEventListener("change", updateTheme);
+  }, [themePreference]);
 
   useEffect(() => {
     if (!isOverflowOpen) return;
@@ -129,9 +149,24 @@ export function App() {
     if (nextLocale !== locale) prepareLocaleChange();
     setLanguagePreference(nextPreference);
     setLocale(nextLocale);
-    const preferenceStatus = writeUserPreferences({ language: nextPreference })
+    const preferenceStatus = writeUserPreferences({
+      language: nextPreference,
+      theme: themePreference,
+    })
       ? null
       : { message: webMessages[nextLocale].preferenceSaveFailed, isWarning: true };
+    viewerStatusOverrideRef.current = preferenceStatus;
+    setStatus(preferenceStatus);
+  };
+
+  const changeThemePreference = (nextPreference: ThemePreference): void => {
+    setThemePreference(nextPreference);
+    const preferenceStatus = writeUserPreferences({
+      language: languagePreference,
+      theme: nextPreference,
+    })
+      ? null
+      : { message: messages.preferenceSaveFailed, isWarning: true };
     viewerStatusOverrideRef.current = preferenceStatus;
     setStatus(preferenceStatus);
   };
@@ -166,6 +201,7 @@ export function App() {
       const preferencesCleared = clearUserPreferences();
       const browserLocale = resolveWebLocale();
       setLanguagePreference("browser");
+      setThemePreference("system");
       setLocale(browserLocale);
       const [documentCleanup, offlineCleanup] = await Promise.allSettled([
         closePersistedDocument(),
@@ -518,6 +554,20 @@ export function App() {
                 <option value="browser">{messages.browserLanguage}</option>
                 <option value="ja">{messages.japanese}</option>
                 <option value="en">{messages.english}</option>
+              </select>
+            </label>
+            <p>{messages.themeDescription}</p>
+            <label className="settings-field">
+              <span>{messages.theme}</span>
+              <select
+                value={themePreference}
+                onChange={(event) =>
+                  changeThemePreference(event.currentTarget.value as ThemePreference)
+                }
+              >
+                <option value="system">{messages.systemTheme}</option>
+                <option value="light">{messages.lightTheme}</option>
+                <option value="dark">{messages.darkTheme}</option>
               </select>
             </label>
           </section>

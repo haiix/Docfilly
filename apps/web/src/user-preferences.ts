@@ -1,14 +1,16 @@
 import { resolveWebLocale, type WebLocale } from "./locale";
 
 export type LanguagePreference = "browser" | WebLocale;
+export type ThemePreference = "system" | "light" | "dark";
 
 export interface UserPreferences {
   language: LanguagePreference;
+  theme: ThemePreference;
 }
 
 const storageKey = "docfilly-web-preferences";
 const currentVersion = 1;
-const defaultPreferences: UserPreferences = { language: "browser" };
+const defaultPreferences: UserPreferences = { language: "browser", theme: "system" };
 
 function getStorage(storage?: Storage): Storage | null {
   if (storage !== undefined) return storage;
@@ -33,7 +35,12 @@ export function readUserPreferences(storage?: Storage): UserPreferences {
       return defaultPreferences;
     }
 
-    return { language: stored.language };
+    const theme = "theme" in stored ? stored.theme : "system";
+    if (theme !== "system" && theme !== "light" && theme !== "dark") {
+      return defaultPreferences;
+    }
+
+    return { language: stored.language, theme };
   } catch {
     return defaultPreferences;
   }

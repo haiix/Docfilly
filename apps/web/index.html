@@ -4,7 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Docfilly web application" />
-    <meta name="theme-color" content="#172033" />
+    <meta name="theme-color" content="#f3f5f8" />
+    <script>
+      (() => {
+        let preference = "system";
+        try {
+          const stored = JSON.parse(localStorage.getItem("docfilly-web-preferences") ?? "null");
+          if (stored?.version === 1 && (stored.theme === "light" || stored.theme === "dark")) {
+            preference = stored.theme;
+          }
+        } catch {}
+        const theme =
+          preference === "system"
+            ? matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : preference;
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "dark" ? "#111827" : "#f3f5f8";
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
