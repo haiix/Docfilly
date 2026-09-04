@@ -13,8 +13,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/docfilly.js",
       "require": "./dist/docfilly.cjs"
-    }
+    },
+    "./styles.css": "./dist/styles.css"
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "build": "vite build && tsc -p tsconfig.build.json",
     "test": "vitest run",

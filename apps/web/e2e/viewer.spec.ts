@@ -607,6 +607,8 @@ test.describe("themes", () => {
     await page.goto("./");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#111827");
+    await page.getByRole("button", { name: "サンプルを開く" }).click();
+    await expect(page.locator(".docfilly")).toHaveCSS("background-color", "rgb(31, 41, 55)");
 
     await page.getByRole("button", { name: "設定", exact: true }).first().click();
     await expect(page.getByLabel("テーマ")).toHaveValue("system");
@@ -616,6 +618,7 @@ test.describe("themes", () => {
     );
     await page.getByLabel("テーマ").selectOption("light");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(page.locator(".docfilly")).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 

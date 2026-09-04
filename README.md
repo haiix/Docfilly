@@ -66,6 +66,7 @@ pnpm dev
 
 ```ts
 import { createDocfilly } from "docfilly";
+import "docfilly/styles.css";
 
 const source = `#!docfilly
 プロジェクト名 = MyProject
@@ -87,6 +88,7 @@ view.diagnostics; // 読み飛ばしや自動補正に関する執筆者向け�
 ```
 
 `createDocfilly`の第2引数には`"md"`または`"text"`を指定します。MarkdownのHTML出力はDOMPurifyでサニタイズされます。
+標準スタイルは自動注入されず、上記のCSS importを追加した場合だけ適用されます。独自テーマを使う場合はimportを省略し、公開CSSクラスを直接装飾できます。
 
 現在のフォーム値を次回の初期値としてDocfillyソースへ保存する場合は、`updateDocfillyDefaults`を使用します。
 
@@ -114,6 +116,7 @@ pnpm add @docfilly/react react react-dom
 
 ```tsx
 import { DocfillyView } from "@docfilly/react";
+import "docfilly/styles.css";
 
 <DocfillyView
   source={source}
