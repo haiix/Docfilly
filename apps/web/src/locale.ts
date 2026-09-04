@@ -74,9 +74,13 @@ export interface WebMessages {
   systemTheme: string;
   lightTheme: string;
   darkTheme: string;
+  documentSettings: string;
+  restorePreviousDocument: string;
+  restorePreviousDocumentDescription: string;
   dataPrivacySettings: string;
   storedDataDescription: string;
   preferenceSaveFailed: string;
+  restoreCleanupFailed: string;
   resetAppData: string;
   resetTitle: string;
   resetDescription: string;
@@ -174,7 +178,7 @@ const en: WebMessages = {
   },
   helpPrivacy: {
     heading: "Privacy and data on this device",
-    body: "Open documents and form values are processed only in your browser and are not sent to an external server. The latest document's file name, source, format, and form values are stored in this browser profile for restoration. Close the document after use on a shared device. After opening Docfilly online once, you can install it with your browser and use its viewer features offline.",
+    body: "Open documents and form values are processed only in your browser and are not sent to an external server. By default, the latest document's file name, source, format, and form values are stored in this browser profile for restoration. You can turn off restoration in Settings for shared devices or sensitive documents. After opening Docfilly online once, you can install it with your browser and use its viewer features offline.",
   },
   settingsTitle: "Settings",
   displaySettings: "Display",
@@ -184,15 +188,20 @@ const en: WebMessages = {
   systemTheme: "Follow system settings",
   lightTheme: "Light",
   darkTheme: "Dark",
+  documentSettings: "Document",
+  restorePreviousDocument: "Restore previous document",
+  restorePreviousDocumentDescription:
+    "When enabled, the displayed document and form values are stored in this browser profile and restored the next time Docfilly starts. They are not sent to an external server. Turning this off deletes saved recovery data without closing the displayed document.",
   dataPrivacySettings: "Data and privacy",
   storedDataDescription:
-    "This browser profile stores your language and theme settings, the latest document and form values for restoration, and Docfilly's offline startup data. Open documents and form values are not sent to an external server.",
-  preferenceSaveFailed:
-    "The display setting changed, but it could not be saved in this browser profile.",
+    "This browser profile stores your settings, recovery data when document restoration is enabled, and Docfilly's offline startup data. Open documents and form values are not sent to an external server.",
+  preferenceSaveFailed: "The setting changed, but it could not be saved in this browser profile.",
+  restoreCleanupFailed:
+    "Document restoration was turned off, but saved recovery data could not be deleted from this browser profile.",
   resetAppData: "Reset app data",
   resetTitle: "Reset app data?",
   resetDescription:
-    "This returns the language and theme to your system settings, closes the displayed document, and deletes user settings, saved recovery data, and Docfilly's offline startup data. You will need an internet connection the next time you use Docfilly.",
+    "This returns language and theme to your system settings, turns document restoration on, closes the displayed document, and deletes user settings, saved recovery data, and Docfilly's offline startup data. You will need an internet connection the next time you use Docfilly.",
   resetSafety:
     "The installed app itself will not be uninstalled. Original local files and downloaded files will not be deleted.",
   cancel: "Cancel",
@@ -286,7 +295,7 @@ const ja: WebMessages = {
   },
   helpPrivacy: {
     heading: "プライバシーと端末内の保存",
-    body: "開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。最後に開いた1文書のファイル名、元ソース、形式、フォーム値は現在のブラウザープロファイル内へ保存され、次回起動時に復元されます。共有端末では利用後に文書を閉じてください。一度オンラインでDocfillyを開くと、ブラウザーからインストールしてビューアー機能をオフラインでも利用できます。",
+    body: "開いた文書とフォームへの入力内容はブラウザー内だけで処理され、外部サーバーへ送信されません。初期設定では、最後に開いた1文書のファイル名、元ソース、形式、フォーム値を現在のブラウザープロファイル内へ保存して次回起動時に復元します。共有端末や機密性のある文書では、設定から復元をオフにできます。一度オンラインでDocfillyを開くと、ブラウザーからインストールしてビューアー機能をオフラインでも利用できます。",
   },
   settingsTitle: "設定",
   displaySettings: "表示",
@@ -296,15 +305,21 @@ const ja: WebMessages = {
   systemTheme: "システム設定に従う",
   lightTheme: "ライト",
   darkTheme: "ダーク",
+  documentSettings: "文書",
+  restorePreviousDocument: "前回の文書を復元する",
+  restorePreviousDocumentDescription:
+    "オンにすると、表示中の文書とフォーム値を現在のブラウザープロファイル内へ保存し、次回起動時に復元します。外部サーバーへは送信しません。オフにすると、表示中の文書を閉じずに保存済みの復元データを削除します。",
   dataPrivacySettings: "データとプライバシー",
   storedDataDescription:
-    "このブラウザープロファイルには、言語とテーマの設定、復元用の最後の文書とフォーム値、Docfillyのオフライン起動用データが保存されます。開いた文書とフォーム値は外部サーバーへ送信されません。",
+    "このブラウザープロファイルには、ユーザー設定、文書の復元がオンの場合の復元データ、Docfillyのオフライン起動用データが保存されます。開いた文書とフォーム値は外部サーバーへ送信されません。",
   preferenceSaveFailed:
-    "表示設定は変更されましたが、このブラウザープロファイルへ保存できませんでした。",
+    "設定は変更されましたが、このブラウザープロファイルへ保存できませんでした。",
+  restoreCleanupFailed:
+    "文書の復元をオフにしましたが、このブラウザープロファイル内の復元データを削除できませんでした。",
   resetAppData: "アプリデータをリセット",
   resetTitle: "アプリデータをリセットしますか？",
   resetDescription:
-    "言語とテーマをシステム設定へ戻し、表示中の文書を閉じ、ユーザー設定、保存した文書データ、Docfillyのオフライン起動用データを削除します。次回の利用にはインターネット接続が必要です。",
+    "言語とテーマをシステム設定へ戻して文書の復元をオンにし、表示中の文書を閉じ、ユーザー設定、保存した文書データ、Docfillyのオフライン起動用データを削除します。次回の利用にはインターネット接続が必要です。",
   resetSafety:
     "インストール済みアプリ自体はアンインストールされません。元のローカルファイルとダウンロード済みファイルは削除されません。",
   cancel: "キャンセル",

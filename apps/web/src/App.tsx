@@ -41,6 +41,9 @@ export function App() {
   const [themePreference, setThemePreference] = useState<ThemePreference>(
     () => readUserPreferences().theme,
   );
+  const [restoreDocument, setRestoreDocument] = useState(
+    () => readUserPreferences().restoreDocument,
+  );
   const [locale, setLocale] = useState<WebLocale>(() => resolvePreferredLocale(languagePreference));
   const messages = webMessages[locale];
   const {
@@ -65,6 +68,7 @@ export function App() {
   const restoreResetDataFocusRef = useRef(false);
   const resetInProgressRef = useRef(false);
   const fileLoadGenerationRef = useRef(0);
+  const persistencePreferenceGenerationRef = useRef(0);
   const viewerStatusOverrideRef = useRef<ViewerStatus | null>(null);
 
   const {
@@ -73,12 +77,15 @@ export function App() {
     shouldApplyViewerStatus,
     activateDocument,
     persistValues,
+    setPersistenceEnabled,
     closeDocument: closePersistedDocument,
   } = useDocumentPersistence({
+    enabled: restoreDocument,
     onRestore: (session) => openDocument(session, session.values),
     onRestoreComplete: () => setStatus({ message: messages.restored, isWarning: false }),
     onRestoreFailure: () => setStatus({ message: messages.restoreFailed, isWarning: true }),
     onSaveFailure: () => setStatus({ message: messages.sessionSaveFailed, isWarning: true }),
+    onClearFailure: () => setStatus({ message: messages.restoreCleanupFailed, isWarning: true }),
   });
 
   useEffect(() => {
@@ -152,6 +159,7 @@ export function App() {
     const preferenceStatus = writeUserPreferences({
       language: nextPreference,
       theme: themePreference,
+      restoreDocument,
     })
       ? null
       : { message: webMessages[nextLocale].preferenceSaveFailed, isWarning: true };
@@ -164,11 +172,37 @@ export function App() {
     const preferenceStatus = writeUserPreferences({
       language: languagePreference,
       theme: nextPreference,
+      restoreDocument,
     })
       ? null
       : { message: messages.preferenceSaveFailed, isWarning: true };
     viewerStatusOverrideRef.current = preferenceStatus;
     setStatus(preferenceStatus);
+  };
+
+  const changeRestoreDocument = async (nextRestoreDocument: boolean): Promise<void> => {
+    const generation = ++persistencePreferenceGenerationRef.current;
+    setRestoreDocument(nextRestoreDocument);
+    const preferencesSaved = writeUserPreferences({
+      language: languagePreference,
+      theme: themePreference,
+      restoreDocument: nextRestoreDocument,
+    });
+
+    try {
+      await setPersistenceEnabled(nextRestoreDocument, currentValues);
+      if (generation !== persistencePreferenceGenerationRef.current) return;
+      const preferenceStatus = preferencesSaved
+        ? null
+        : { message: messages.preferenceSaveFailed, isWarning: true };
+      viewerStatusOverrideRef.current = preferenceStatus;
+      setStatus(preferenceStatus);
+    } catch {
+      if (generation !== persistencePreferenceGenerationRef.current) return;
+      const cleanupStatus = { message: messages.restoreCleanupFailed, isWarning: true };
+      viewerStatusOverrideRef.current = cleanupStatus;
+      setStatus(cleanupStatus);
+    }
   };
 
   const handleValuesChange = useCallback(
@@ -192,6 +226,7 @@ export function App() {
     if (resetInProgressRef.current) return;
     resetInProgressRef.current = true;
     viewerStatusOverrideRef.current = null;
+    persistencePreferenceGenerationRef.current += 1;
     invalidatePendingFileLoad();
     setIsResettingAppData(true);
     resetDocumentWorkspace();
@@ -202,11 +237,13 @@ export function App() {
       const browserLocale = resolveWebLocale();
       setLanguagePreference("browser");
       setThemePreference("system");
+      setRestoreDocument(true);
       setLocale(browserLocale);
       const [documentCleanup, offlineCleanup] = await Promise.allSettled([
         closePersistedDocument(),
         resetOfflineAppData(),
       ]);
+      await setPersistenceEnabled(true, null);
       const resetSucceeded =
         preferencesCleared &&
         documentCleanup.status === "fulfilled" &&
@@ -224,7 +261,12 @@ export function App() {
       setIsResettingAppData(false);
       setIsResetConfirmationOpen(false);
     }
-  }, [closePersistedDocument, invalidatePendingFileLoad, resetDocumentWorkspace]);
+  }, [
+    closePersistedDocument,
+    invalidatePendingFileLoad,
+    resetDocumentWorkspace,
+    setPersistenceEnabled,
+  ]);
 
   const closeDocument = useCallback(async (): Promise<void> => {
     if (document === null) return;
@@ -570,6 +612,19 @@ export function App() {
                 <option value="dark">{messages.darkTheme}</option>
               </select>
             </label>
+          </section>
+          <section>
+            <h3>{messages.documentSettings}</h3>
+            <label className="settings-toggle">
+              <input
+                type="checkbox"
+                checked={restoreDocument}
+                aria-describedby="restore-document-description"
+                onChange={(event) => void changeRestoreDocument(event.currentTarget.checked)}
+              />
+              <span>{messages.restorePreviousDocument}</span>
+            </label>
+            <p id="restore-document-description">{messages.restorePreviousDocumentDescription}</p>
           </section>
           <section>
             <h3>{messages.dataPrivacySettings}</h3>

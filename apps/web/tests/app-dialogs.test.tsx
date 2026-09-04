@@ -33,7 +33,7 @@ describe("App menus and dialogs", () => {
     expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
   });
 
-  it("opens the named settings dialog and exposes its two sections", async () => {
+  it("opens the named settings dialog and exposes its sections", async () => {
     const user = userEvent.setup();
     renderApp();
     const settingsButton = screen.getAllByRole<HTMLButtonElement>("button", { name: "設定" })[0];
@@ -41,10 +41,18 @@ describe("App menus and dialogs", () => {
 
     const dialog = screen.getByRole("dialog", { name: "設定" });
     expect(within(dialog).getByRole("heading", { name: "表示" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "文書" })).toBeTruthy();
     expect(within(dialog).getByRole("heading", { name: "データとプライバシー" })).toBeTruthy();
     expect(within(dialog).getByLabelText<HTMLSelectElement>("言語").value).toBe("browser");
     expect(within(dialog).getByLabelText<HTMLSelectElement>("テーマ").value).toBe("system");
-    expect(dialog.textContent).toContain("言語とテーマの設定、復元用の最後の文書とフォーム値");
+    expect(
+      within(dialog).getByRole<HTMLInputElement>("checkbox", {
+        name: "前回の文書を復元する",
+      }).checked,
+    ).toBe(true);
+    expect(dialog.textContent).toContain("文書の復元がオンの場合の復元データ");
+    expect(dialog.textContent).toContain("現在のブラウザープロファイル内へ保存");
+    expect(dialog.textContent).toContain("外部サーバーへは送信しません");
     await user.keyboard("{Escape}");
     expect(document.activeElement).toBe(settingsButton);
   });

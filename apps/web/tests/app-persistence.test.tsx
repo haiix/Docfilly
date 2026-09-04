@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { saveDocumentSession } from "../src/document-session";
+import { loadDocumentSession, saveDocumentSession } from "../src/document-session";
 import {
   createFileList,
   openSample,
@@ -41,6 +41,58 @@ describe("App persistence", () => {
     expect(await screen.findByText("サンプル.md")).toBeTruthy();
     expect(await screen.findByDisplayValue("復元する名前")).toBeTruthy();
     expect(screen.getByRole("status").textContent).toContain("前回の文書を復元しました。");
+  });
+
+  it("deletes recovery data and stops saving without closing the displayed document", async () => {
+    const user = userEvent.setup();
+    const firstRender = renderApp();
+    await openSample(user);
+    const input = await screen.findByLabelText<HTMLInputElement>("作成者");
+    await waitFor(() => expect(loadDocumentSession()).resolves.not.toBeNull());
+
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
+    await user.click(screen.getByRole("checkbox", { name: "前回の文書を復元する" }));
+    expect(screen.getByText("サンプル.md")).toBeTruthy();
+    await waitFor(() => expect(loadDocumentSession()).resolves.toBeNull());
+
+    await user.clear(input);
+    await user.type(input, "保存しない値");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(await loadDocumentSession()).toBeNull();
+    firstRender.unmount();
+
+    renderApp();
+    expect(await screen.findByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
+  });
+
+  it("saves the displayed document and current values when restoration is turned on again", async () => {
+    window.localStorage.setItem(
+      "docfilly-web-preferences",
+      JSON.stringify({
+        version: 1,
+        language: "browser",
+        theme: "system",
+        restoreDocument: false,
+      }),
+    );
+    const user = userEvent.setup();
+    const firstRender = renderApp();
+    await openSample(user);
+    const input = await screen.findByLabelText<HTMLInputElement>("作成者");
+    await user.clear(input);
+    await user.type(input, "再び保存する値");
+
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
+    await user.click(screen.getByRole("checkbox", { name: "前回の文書を復元する" }));
+    await waitFor(async () => {
+      const session = await loadDocumentSession();
+      expect(session?.name).toBe("サンプル.md");
+      expect(session?.values.get("author")).toBe("再び保存する値");
+    });
+    firstRender.unmount();
+
+    renderApp();
+    expect(await screen.findByDisplayValue("再び保存する値")).toBeTruthy();
   });
 
   it("does not replace a document opened while startup restoration is pending", async () => {
@@ -172,6 +224,12 @@ describe("App persistence", () => {
     expect(window.localStorage.getItem("docfilly-web-preferences")).toBeNull();
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
+    expect(
+      screen.getByRole<HTMLInputElement>("checkbox", {
+        name: "前回の文書を復元する",
+      }).checked,
+    ).toBe(true);
     firstRender.unmount();
     renderApp();
     expect(await screen.findByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();

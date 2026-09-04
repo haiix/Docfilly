@@ -14,6 +14,8 @@ describe("App localization", () => {
     await user.selectOptions(screen.getByLabelText("言語"), "en");
     expect(document.documentElement.lang).toBe("en");
     expect(screen.getByRole("heading", { name: "Open a Docfilly document" })).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "Restore previous document" })).toBeTruthy();
+    expect(screen.getByText("Document", { selector: "h3" })).toBeTruthy();
     await user.keyboard("{Escape}");
 
     await user.click(screen.getByRole("button", { name: "Open sample" }));

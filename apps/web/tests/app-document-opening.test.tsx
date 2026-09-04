@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { loadDocumentSession } from "../src/document-session";
 import {
   createFileList,
   openSample,
@@ -189,6 +190,24 @@ describe("App document opening", () => {
 
     expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
     expect(screen.queryByText("pending.txt")).toBeNull();
+  });
+
+  it("keeps a pending file load out of recovery data after restoration is disabled", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const pending = deferredFile("private.txt");
+
+    await user.upload(screen.getByLabelText("ファイルを開く"), pending.file);
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
+    await user.click(screen.getByRole("checkbox", { name: "前回の文書を復元する" }));
+    await act(async () => {
+      pending.reading.resolve("Private");
+      await pending.reading.promise;
+    });
+
+    expect(await screen.findByText("private.txt")).toBeTruthy();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(await loadDocumentSession()).toBeNull();
   });
 
   it("ignores a pending file read after a file validation error", async () => {
