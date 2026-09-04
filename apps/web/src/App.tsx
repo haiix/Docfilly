@@ -59,6 +59,7 @@ export function App() {
   const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
   const [isResettingAppData, setIsResettingAppData] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+  const toolbarRef = useRef<HTMLElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentViewerRef = useRef<DocumentViewerHandle>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
@@ -91,6 +92,30 @@ export function App() {
   useEffect(() => {
     globalThis.document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    const toolbar = toolbarRef.current;
+    if (toolbar === null) return;
+
+    const documentElement = globalThis.document.documentElement;
+    const updateToolbarHeight = (): void => {
+      documentElement.style.setProperty("--app-toolbar-height", `${toolbar.offsetHeight}px`);
+    };
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateToolbarHeight);
+
+    updateToolbarHeight();
+    resizeObserver?.observe(toolbar);
+    globalThis.addEventListener("resize", updateToolbarHeight);
+    globalThis.visualViewport?.addEventListener("resize", updateToolbarHeight);
+
+    return () => {
+      resizeObserver?.disconnect();
+      globalThis.removeEventListener("resize", updateToolbarHeight);
+      globalThis.visualViewport?.removeEventListener("resize", updateToolbarHeight);
+      documentElement.style.removeProperty("--app-toolbar-height");
+    };
+  }, []);
 
   useEffect(() => {
     const colorScheme =
@@ -406,7 +431,7 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <header className="toolbar">
+      <header ref={toolbarRef} className="toolbar">
         <a className="toolbar__brand" href="./" aria-label={messages.home}>
           Docfilly
         </a>

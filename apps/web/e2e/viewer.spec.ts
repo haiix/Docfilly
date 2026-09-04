@@ -47,6 +47,132 @@ test("組み込みチュートリアルを開いてフォーム値を反映で�
   await expect(page.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeVisible();
 });
 
+test.describe("デスクトップの追従フォーム", () => {
+  test.use({ viewport: { width: 1024, height: 700 } });
+
+  test("長い本文をスクロールしても短いフォームをツールバーの下で操作できる", async ({ page }) => {
+    await page.goto("./");
+    await page.getByLabel("ファイルを開く").setInputFiles({
+      name: "long-body.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from(
+        [
+          "#!docfilly",
+          "name | 名前 = Alice",
+          "---",
+          "# Hello [[name]]",
+          ...Array.from({ length: 80 }, () => "本文です。"),
+        ].join("\n\n"),
+      ),
+    });
+
+    const toolbar = page.locator(".toolbar");
+    const form = page.locator(".docfilly__form");
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+
+    await expect
+      .poll(async () => {
+        const toolbarBox = await toolbar.boundingBox();
+        const formBox = await form.boundingBox();
+        if (toolbarBox === null || formBox === null) return null;
+        return Math.round(formBox.y - (toolbarBox.y + toolbarBox.height));
+      })
+      .toBe(16);
+    await page.getByLabel("名前").fill("Bob");
+    await expect(page.getByRole("heading", { name: "Hello Bob" })).toBeVisible();
+  });
+
+  test("動的なツールバー高を考慮し、長いフォームの最後の項目まで操作できる", async ({ page }) => {
+    const fields = Array.from(
+      { length: 30 },
+      (_, index) => `field_${index + 1} | 項目 ${index + 1} = value ${index + 1}`,
+    );
+    await page.goto("./");
+    await page.getByLabel("ファイルを開く").setInputFiles({
+      name: "long-form.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from(
+        [
+          "#!docfilly",
+          ...fields,
+          "---",
+          "# Long form",
+          ...Array.from({ length: 80 }, () => "本文です。"),
+        ].join("\n"),
+      ),
+    });
+
+    const toolbar = page.locator(".toolbar");
+    await toolbar.evaluate((element) => {
+      element.style.paddingBlock = "2rem";
+    });
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          measured: document.querySelector<HTMLElement>(".toolbar")?.offsetHeight ?? 0,
+          configured: Number.parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue("--app-toolbar-height"),
+          ),
+        })),
+      )
+      .toEqual(
+        await page.evaluate(() => {
+          const measured = document.querySelector<HTMLElement>(".toolbar")?.offsetHeight ?? 0;
+          return { measured, configured: measured };
+        }),
+      );
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    const lastField = page.getByLabel("項目 30");
+    await lastField.focus();
+
+    const layout = await page.evaluate(() => {
+      const formElement = document.querySelector<HTMLElement>(".docfilly__form");
+      const lastInput = document.querySelector<HTMLElement>('[name="field_30"]');
+      if (formElement === null || lastInput === null) throw new Error("The form was not rendered.");
+      const inputBox = lastInput.getBoundingClientRect();
+      return {
+        formScrollTop: formElement.scrollTop,
+        inputBottom: inputBox.bottom,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    expect(layout.formScrollTop).toBeGreaterThan(0);
+    expect(layout.inputBottom).toBeLessThanOrEqual(layout.viewportHeight);
+    await expect(lastField).toBeFocused();
+  });
+});
+
+test.describe("モバイルのフォームスクロール", () => {
+  test.use({ viewport: { width: 760, height: 700 }, hasTouch: true });
+
+  test("1カラムではフォームの追従と内部スクロールを解除する", async ({ page }) => {
+    const fields = Array.from(
+      { length: 20 },
+      (_, index) => `field_${index + 1} | 項目 ${index + 1} = value ${index + 1}`,
+    );
+    await page.goto("./");
+    await page.getByLabel("ファイルを開く").setInputFiles({
+      name: "mobile-form.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from(["#!docfilly", ...fields, "---", "# Mobile body"].join("\n")),
+    });
+
+    const form = page.locator(".docfilly__form");
+    await expect(form).toHaveCSS("position", "static");
+    await expect(form).toHaveCSS("overflow-y", "visible");
+    const formSize = await form.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(formSize.clientHeight).toBe(formSize.scrollHeight);
+
+    await page.getByLabel("項目 20").focus();
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    expect(await form.evaluate((element) => element.scrollTop)).toBe(0);
+  });
+});
+
 test("PWAをインストール可能な構成で配信し、オフラインでも両言語とローカル文書を利用できる", async ({
   context,
   page,
