@@ -10,9 +10,11 @@ describe("App localization", () => {
     const user = userEvent.setup();
     renderApp();
 
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
     await user.selectOptions(screen.getByLabelText("言語"), "en");
     expect(document.documentElement.lang).toBe("en");
     expect(screen.getByRole("heading", { name: "Open a Docfilly document" })).toBeTruthy();
+    await user.keyboard("{Escape}");
 
     await user.click(screen.getByRole("button", { name: "Open sample" }));
     expect(await screen.findByLabelText("Project name")).toBeTruthy();
@@ -35,7 +37,9 @@ describe("App localization", () => {
     const projectName = await screen.findByLabelText<HTMLInputElement>("プロジェクト名");
     await user.clear(projectName);
     await user.type(projectName, "Atlas");
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
     await user.selectOptions(screen.getByLabelText("言語"), "en");
+    await user.keyboard("{Escape}");
 
     expect(document.documentElement.lang).toBe("en");
     expect(screen.getByRole("navigation", { name: "Document actions" })).toBeTruthy();
@@ -43,5 +47,23 @@ describe("App localization", () => {
     expect(screen.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeTruthy();
     expect(screen.getByText("サンプル.md")).toBeTruthy();
     expect(screen.queryByLabelText("Project name")).toBeNull();
+  });
+
+  it("persists an explicit language and can return to the browser language", async () => {
+    const user = userEvent.setup();
+    const firstRender = renderApp();
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
+    await user.selectOptions(screen.getByLabelText("言語"), "en");
+    firstRender.unmount();
+
+    renderApp();
+    expect(document.documentElement.lang).toBe("en");
+    expect(screen.getByRole("heading", { name: "Open a Docfilly document" })).toBeTruthy();
+    await user.click(screen.getAllByRole("button", { name: "Settings" })[0]);
+    expect(screen.getByLabelText<HTMLSelectElement>("Language").value).toBe("en");
+    await user.selectOptions(screen.getByLabelText("Language"), "browser");
+
+    expect(document.documentElement.lang).toBe("ja");
+    expect(screen.getByLabelText<HTMLSelectElement>("言語").value).toBe("browser");
   });
 });

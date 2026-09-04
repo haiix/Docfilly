@@ -84,7 +84,9 @@ test("PWAをインストール可能な構成で配信し、オフラインで�
   await page.getByLabel("プロジェクト名").fill("オフライン");
   await expect(page.getByRole("heading", { name: "オフライン 5分チュートリアル" })).toBeVisible();
 
+  await page.getByRole("button", { name: "設定", exact: true }).first().click();
   await page.getByLabel("言語").selectOption("en");
+  await page.keyboard.press("Escape");
   await page.getByLabel("Open file").setInputFiles({
     name: "offline.md",
     mimeType: "text/markdown",
@@ -146,7 +148,8 @@ test("アプリデータのリセットで文書、復元データ、Docfillyの
     await navigator.serviceWorker.ready;
     await caches.open("another-project-cache");
   });
-  await page.getByRole("button", { name: "ヘルプ", exact: true }).first().click();
+  await page.getByRole("button", { name: "設定", exact: true }).first().click();
+  await page.getByLabel("言語").selectOption("ja");
   const resetDataButton = page.getByRole("button", { name: "アプリデータをリセット" });
   await expect(resetDataButton).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(resetDataButton).toHaveCSS("background-color", "rgb(180, 35, 24)");
@@ -156,6 +159,7 @@ test("アプリデータのリセットで文書、復元データ、Docfillyの
     name: "アプリデータをリセットしますか？",
   });
   await expect(confirmation).toContainText("表示中の文書を閉じ");
+  await expect(confirmation).toContainText("ユーザー設定");
   await expect(confirmation).toContainText("次回の利用にはインターネット接続が必要です");
   await expect(confirmation).toContainText(
     "インストール済みアプリ自体はアンインストールされません",
@@ -176,6 +180,8 @@ test("アプリデータのリセットで文書、復元データ、Docfillyの
     "アプリデータをリセットし、文書を閉じました",
   );
   await expect(page.getByRole("dialog", { name: "Docfillyの使い方" })).toHaveCount(0);
+  await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+  expect(await page.evaluate(() => localStorage.getItem("docfilly-web-preferences"))).toBeNull();
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(false);
   await expect
     .poll(() =>
@@ -283,6 +289,13 @@ test.describe("狭い画面のオーバーフローメニュー", () => {
     await expect(overflowButton).toBeFocused();
 
     await overflowButton.click();
+    await overflowMenu.getByRole("button", { name: "設定" }).click();
+    await expect(overflowMenu).toBeHidden();
+    await expect(page.getByRole("dialog", { name: "設定" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(overflowButton).toBeFocused();
+
+    await overflowButton.click();
     await overflowMenu.getByRole("button", { name: "ヘルプ" }).click();
     await expect(overflowMenu).toBeHidden();
     const dialog = page.getByRole("dialog", { name: "Docfillyの使い方" });
@@ -369,13 +382,17 @@ test.describe("English and Japanese locales", () => {
     await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
     await page.getByLabel("Project name").fill("Atlas");
 
+    await page.getByRole("button", { name: "Settings", exact: true }).first().click();
     await page.getByLabel("Language").selectOption("ja");
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("navigation", { name: "文書操作" })).toBeVisible();
     await expect(page.getByLabel("Project name")).toHaveValue("Atlas");
     await expect(page.getByRole("heading", { name: "Atlas five-minute tutorial" })).toBeVisible();
     await expect(page.getByText("docfilly-tutorial.md")).toBeVisible();
     await expect(page.getByLabel("プロジェクト名")).toHaveCount(0);
+    await page.getByRole("button", { name: "設定", exact: true }).first().click();
     await page.getByLabel("言語").selectOption("en");
+    await page.keyboard.press("Escape");
 
     await page.getByLabel("Open file").setInputFiles({
       name: "warning.md",
@@ -388,12 +405,28 @@ test.describe("English and Japanese locales", () => {
     );
     await page.keyboard.press("Escape");
 
+    await page.getByRole("button", { name: "Settings", exact: true }).first().click();
     await page.getByLabel("Language").selectOption("ja");
+    await page.keyboard.press("Escape");
     await expect(page.locator("html")).toHaveAttribute("lang", "ja");
     await expect(page.getByRole("navigation", { name: "文書操作" })).toBeVisible();
     await page.getByRole("button", { name: "診断 1件", exact: true }).first().click();
     await expect(page.getByRole("dialog", { name: "文書の診断（1件）" })).toContainText(
       "2行目は「=」がないため",
     );
+  });
+
+  test("persists an explicit language and returns to the browser setting", async ({ page }) => {
+    await page.goto("./");
+    await page.getByRole("button", { name: "Settings", exact: true }).first().click();
+    await page.getByLabel("Language").selectOption("ja");
+    await page.reload();
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await page.getByRole("button", { name: "設定", exact: true }).first().click();
+    await expect(page.getByLabel("言語")).toHaveValue("ja");
+    await page.getByLabel("言語").selectOption("browser");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByLabel("Language")).toHaveValue("browser");
   });
 });

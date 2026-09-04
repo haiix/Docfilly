@@ -17,6 +17,13 @@ import { resolveWebLocale, webMessages, type WebLocale } from "./locale";
 import { PwaUpdatePrompt } from "./PwaUpdatePrompt";
 import { useDocumentPersistence } from "./use-document-persistence";
 import { useDocumentWorkspace } from "./use-document-workspace";
+import {
+  clearUserPreferences,
+  readUserPreferences,
+  resolvePreferredLocale,
+  writeUserPreferences,
+  type LanguagePreference,
+} from "./user-preferences";
 import englishSample from "./samples/en.md?raw";
 import japaneseSample from "./samples/ja.md?raw";
 
@@ -26,7 +33,10 @@ const samples: Record<WebLocale, LoadedDocument> = {
 };
 
 export function App() {
-  const [locale, setLocale] = useState<WebLocale>(resolveWebLocale);
+  const [languagePreference, setLanguagePreference] = useState<LanguagePreference>(
+    () => readUserPreferences().language,
+  );
+  const [locale, setLocale] = useState<WebLocale>(() => resolvePreferredLocale(languagePreference));
   const messages = webMessages[locale];
   const {
     state: { document, initialValues, outputSource, currentValues, isDocfilly, diagnostics },
@@ -37,7 +47,7 @@ export function App() {
     closeDocument: resetDocumentWorkspace,
   } = useDocumentWorkspace();
   const [status, setStatus] = useState<ViewerStatus | null>(null);
-  const [openDialog, setOpenDialog] = useState<"help" | "diagnostics" | null>(null);
+  const [openDialog, setOpenDialog] = useState<"settings" | "help" | "diagnostics" | null>(null);
   const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
   const [isResettingAppData, setIsResettingAppData] = useState(false);
   const [isOverflowOpen, setIsOverflowOpen] = useState(false);
@@ -112,10 +122,16 @@ export function App() {
     [activateDocument, invalidatePendingFileLoad, messages.loading, openDocument],
   );
 
-  const changeLocale = (nextLocale: WebLocale): void => {
-    prepareLocaleChange();
-    setStatus(null);
+  const changeLanguagePreference = (nextPreference: LanguagePreference): void => {
+    const nextLocale = resolvePreferredLocale(nextPreference);
+    if (nextLocale !== locale) prepareLocaleChange();
+    setLanguagePreference(nextPreference);
     setLocale(nextLocale);
+    setStatus(
+      writeUserPreferences({ language: nextPreference })
+        ? null
+        : { message: webMessages[nextLocale].preferenceSaveFailed, isWarning: true },
+    );
   };
 
   const handleValuesChange = useCallback(
@@ -142,16 +158,23 @@ export function App() {
     setIsOverflowOpen(false);
 
     try {
+      const preferencesCleared = clearUserPreferences();
+      const browserLocale = resolveWebLocale();
+      setLanguagePreference("browser");
+      setLocale(browserLocale);
       const [documentCleanup, offlineCleanup] = await Promise.allSettled([
         closePersistedDocument(),
         resetOfflineAppData(),
       ]);
       const resetSucceeded =
+        preferencesCleared &&
         documentCleanup.status === "fulfilled" &&
         offlineCleanup.status === "fulfilled" &&
         offlineCleanup.value.success;
       setStatus({
-        message: resetSucceeded ? messages.resetComplete : messages.resetFailed,
+        message: resetSucceeded
+          ? webMessages[browserLocale].resetComplete
+          : webMessages[browserLocale].resetFailed,
         isWarning: !resetSucceeded,
       });
       if (resetSucceeded) setOpenDialog(null);
@@ -160,13 +183,7 @@ export function App() {
       setIsResettingAppData(false);
       setIsResetConfirmationOpen(false);
     }
-  }, [
-    closePersistedDocument,
-    invalidatePendingFileLoad,
-    messages.resetComplete,
-    messages.resetFailed,
-    resetDocumentWorkspace,
-  ]);
+  }, [closePersistedDocument, invalidatePendingFileLoad, resetDocumentWorkspace]);
 
   const closeDocument = useCallback(async (): Promise<void> => {
     if (document === null) return;
@@ -315,17 +332,6 @@ export function App() {
           <strong title={document?.name}>{document?.name ?? messages.noFileSelected}</strong>
         </div>
         <nav className="toolbar__actions" aria-label={messages.documentActions}>
-          <label className="language-picker">
-            <span className="visually-hidden">{messages.language}</span>
-            <select
-              aria-label={messages.language}
-              value={locale}
-              onChange={(event) => changeLocale(event.currentTarget.value as WebLocale)}
-            >
-              <option value="en">{messages.english}</option>
-              <option value="ja">{messages.japanese}</option>
-            </select>
-          </label>
           <FileDropZone
             inputRef={fileInputRef}
             onFile={loadFile}
@@ -365,6 +371,13 @@ export function App() {
               {messages.diagnostics(diagnostics.length)}
             </button>
           )}
+          <button
+            type="button"
+            className="toolbar-button secondary-action"
+            onClick={() => setOpenDialog("settings")}
+          >
+            {messages.settings}
+          </button>
           <button
             type="button"
             className="toolbar-button secondary-action"
@@ -416,6 +429,12 @@ export function App() {
                     {messages.diagnostics(diagnostics.length)}
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => runOverflowAction(() => setOpenDialog("settings"))}
+                >
+                  {messages.settings}
+                </button>
                 <button
                   type="button"
                   onClick={() => runOverflowAction(() => setOpenDialog("help"))}
@@ -473,6 +492,45 @@ export function App() {
         )}
       </main>
 
+      {openDialog === "settings" && (
+        <AppDialog
+          title={messages.settingsTitle}
+          closeLabel={messages.closeDialog(messages.settingsTitle)}
+          inactive={isResetConfirmationOpen}
+          onClose={() => setOpenDialog(null)}
+        >
+          <section>
+            <h3>{messages.displaySettings}</h3>
+            <p>{messages.languageDescription}</p>
+            <label className="settings-field">
+              <span>{messages.language}</span>
+              <select
+                value={languagePreference}
+                onChange={(event) =>
+                  changeLanguagePreference(event.currentTarget.value as LanguagePreference)
+                }
+              >
+                <option value="browser">{messages.browserLanguage}</option>
+                <option value="ja">{messages.japanese}</option>
+                <option value="en">{messages.english}</option>
+              </select>
+            </label>
+          </section>
+          <section>
+            <h3>{messages.dataPrivacySettings}</h3>
+            <p>{messages.storedDataDescription}</p>
+            <button
+              ref={resetDataButtonRef}
+              type="button"
+              className="text-button danger-action"
+              onClick={openResetConfirmation}
+            >
+              {messages.resetAppData}
+            </button>
+          </section>
+        </AppDialog>
+      )}
+
       {openDialog === "help" && (
         <AppDialog
           title={messages.helpTitle}
@@ -519,14 +577,6 @@ export function App() {
           <section>
             <h3>{messages.helpPrivacy.heading}</h3>
             <p>{messages.helpPrivacy.body}</p>
-            <button
-              ref={resetDataButtonRef}
-              type="button"
-              className="text-button danger-action"
-              onClick={openResetConfirmation}
-            >
-              {messages.resetAppData}
-            </button>
           </section>
         </AppDialog>
       )}

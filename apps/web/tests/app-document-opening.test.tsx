@@ -176,7 +176,7 @@ describe("App document opening", () => {
     const pending = deferredFile("pending.txt");
 
     await user.upload(screen.getByLabelText("ファイルを開く"), pending.file);
-    await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
     await user.click(screen.getByRole("button", { name: "アプリデータをリセット" }));
     await user.click(screen.getByRole("button", { name: /^アプリデータをリセット$/ }));
     await waitFor(() =>
