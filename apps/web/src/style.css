@@ -647,6 +647,7 @@ main {
   min-width: 0;
   max-height: calc(100dvh - var(--app-toolbar-height) - 2rem);
   padding: 1.5rem;
+  border-right: 1px solid #e4e8ee;
   overflow-y: auto;
   background: #fafbfc;
 }
@@ -944,6 +945,7 @@ main {
     grid-row: 1;
     grid-column: 1;
     max-height: none;
+    border-right: 0;
     overflow-y: visible;
   }
 

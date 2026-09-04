@@ -70,6 +70,8 @@ test.describe("デスクトップの追従フォーム", () => {
     const form = page.locator(".docfilly__form");
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
 
+    await expect(form).toHaveCSS("border-right-width", "1px");
+    await expect(form).toHaveCSS("border-right-style", "solid");
     await expect
       .poll(async () => {
         const toolbarBox = await toolbar.boundingBox();
@@ -160,6 +162,7 @@ test.describe("モバイルのフォームスクロール", () => {
 
     const form = page.locator(".docfilly__form");
     await expect(form).toHaveCSS("position", "static");
+    await expect(form).toHaveCSS("border-right-width", "0px");
     await expect(form).toHaveCSS("overflow-y", "visible");
     const formSize = await form.evaluate((element) => ({
       clientHeight: element.clientHeight,
