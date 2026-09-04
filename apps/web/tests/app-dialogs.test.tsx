@@ -17,6 +17,11 @@ describe("App menus and dialogs", () => {
     expect(overflowButton.getAttribute("aria-expanded")).toBe("true");
     expect(
       within(document.getElementById("toolbar-overflow-menu")!).getByRole("button", {
+        name: "設定",
+      }),
+    ).toBeTruthy();
+    expect(
+      within(document.getElementById("toolbar-overflow-menu")!).getByRole("button", {
         name: "ヘルプ",
       }),
     ).toBeTruthy();
@@ -26,6 +31,21 @@ describe("App menus and dialogs", () => {
     await user.click(overflowButton);
     fireEvent.pointerDown(document.body, { pointerType: "touch" });
     expect(overflowButton.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("opens the named settings dialog and exposes its two sections", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const settingsButton = screen.getAllByRole<HTMLButtonElement>("button", { name: "設定" })[0];
+    await user.click(settingsButton);
+
+    const dialog = screen.getByRole("dialog", { name: "設定" });
+    expect(within(dialog).getByRole("heading", { name: "表示" })).toBeTruthy();
+    expect(within(dialog).getByRole("heading", { name: "データとプライバシー" })).toBeTruthy();
+    expect(within(dialog).getByLabelText<HTMLSelectElement>("言語").value).toBe("browser");
+    expect(dialog.textContent).toContain("言語設定、復元用の最後の文書とフォーム値");
+    await user.keyboard("{Escape}");
+    expect(document.activeElement).toBe(settingsButton);
   });
 
   it("closes the overflow menu with Escape and restores focus to its button", async () => {
@@ -131,7 +151,7 @@ describe("App menus and dialogs", () => {
     await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: "アプリデータをリセット" }),
+      screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" }),
     );
     await user.keyboard("{Tab}");
     expect(document.activeElement).toBe(

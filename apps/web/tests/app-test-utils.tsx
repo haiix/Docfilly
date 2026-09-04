@@ -6,6 +6,7 @@ import { App } from "../src/App";
 
 export function setupAppTests(): void {
   beforeEach(() => {
+    window.localStorage.clear();
     vi.stubGlobal("indexedDB", new FDBFactory());
     vi.spyOn(window.navigator, "languages", "get").mockReturnValue(["ja-JP"]);
     vi.spyOn(window.navigator, "language", "get").mockReturnValue("ja-JP");

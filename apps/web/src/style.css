@@ -88,23 +88,6 @@ summary,
   gap: 0.5rem;
 }
 
-.language-picker select {
-  min-height: 2.5rem;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid #59667d;
-  border-radius: 0.5rem;
-  color: white;
-  background: #172033;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.language-picker select:focus-visible {
-  outline: 3px solid #d9ff70;
-  outline-offset: 2px;
-}
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -383,6 +366,31 @@ button.toolbar-button:not(:disabled),
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem 1rem;
+}
+
+.settings-field {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 24rem;
+}
+
+.settings-field span {
+  color: #26324a;
+  font-weight: 750;
+}
+
+.settings-field select {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #aab5c9;
+  border-radius: 0.5rem;
+  color: #172033;
+  background: white;
+}
+
+.settings-field select:focus-visible {
+  outline: 3px solid rgb(89 108 255 / 25%);
+  outline-offset: 2px;
 }
 
 .diagnostic-summary {
@@ -764,10 +772,6 @@ main {
   .toolbar__actions {
     justify-content: flex-end;
     min-width: 0;
-  }
-
-  .language-picker select {
-    max-width: 4.75rem;
   }
 
   .toolbar__brand {
