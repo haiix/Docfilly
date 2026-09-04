@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { openSample, readableFile, renderApp, setupAppTests } from "./app-test-utils";
 
 setupAppTests();
@@ -47,6 +47,25 @@ describe("App localization", () => {
     expect(screen.getByRole("heading", { name: "Atlas 5分チュートリアル" })).toBeTruthy();
     expect(screen.getByText("サンプル.md")).toBeTruthy();
     expect(screen.queryByLabelText("Project name")).toBeNull();
+  });
+
+  it("keeps a preference save warning after an open document rerenders", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await openSample(user);
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+
+    await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
+    await user.selectOptions(screen.getByLabelText("言語"), "en");
+    await waitFor(() => expect(document.documentElement.lang).toBe("en"));
+
+    expect(screen.getByRole("status").textContent).toContain(
+      "the setting could not be saved in this browser profile",
+    );
+    expect(screen.getByRole("status").classList.contains("is-warning")).toBe(true);
+    setItem.mockRestore();
   });
 
   it("persists an explicit language and can return to the browser language", async () => {

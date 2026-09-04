@@ -60,6 +60,7 @@ export function App() {
   const restoreResetDataFocusRef = useRef(false);
   const resetInProgressRef = useRef(false);
   const fileLoadGenerationRef = useRef(0);
+  const viewerStatusOverrideRef = useRef<ViewerStatus | null>(null);
 
   const {
     beginDocumentSelection,
@@ -116,6 +117,7 @@ export function App() {
     (nextDocument: LoadedDocument): void => {
       invalidatePendingFileLoad();
       activateDocument(nextDocument);
+      viewerStatusOverrideRef.current = null;
       setStatus({ message: messages.loading, isWarning: false });
       openDocument(nextDocument);
     },
@@ -127,11 +129,11 @@ export function App() {
     if (nextLocale !== locale) prepareLocaleChange();
     setLanguagePreference(nextPreference);
     setLocale(nextLocale);
-    setStatus(
-      writeUserPreferences({ language: nextPreference })
-        ? null
-        : { message: webMessages[nextLocale].preferenceSaveFailed, isWarning: true },
-    );
+    const preferenceStatus = writeUserPreferences({ language: nextPreference })
+      ? null
+      : { message: webMessages[nextLocale].preferenceSaveFailed, isWarning: true };
+    viewerStatusOverrideRef.current = preferenceStatus;
+    setStatus(preferenceStatus);
   };
 
   const handleValuesChange = useCallback(
@@ -144,7 +146,9 @@ export function App() {
 
   const handleViewerStatusChange = useCallback(
     (nextStatus: ViewerStatus): void => {
-      if (shouldApplyViewerStatus()) setStatus(nextStatus);
+      if (shouldApplyViewerStatus() && viewerStatusOverrideRef.current === null) {
+        setStatus(nextStatus);
+      }
     },
     [shouldApplyViewerStatus],
   );
@@ -152,6 +156,7 @@ export function App() {
   const resetAppData = useCallback(async (): Promise<void> => {
     if (resetInProgressRef.current) return;
     resetInProgressRef.current = true;
+    viewerStatusOverrideRef.current = null;
     invalidatePendingFileLoad();
     setIsResettingAppData(true);
     resetDocumentWorkspace();
