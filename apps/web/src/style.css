@@ -1,4 +1,6 @@
 :root {
+  --app-toolbar-height: 4.25rem;
+
   color-scheme: light;
   color: #172033;
   background: #f3f5f8;
@@ -612,21 +614,41 @@ main {
 .docfilly {
   display: grid;
   grid-template-columns: minmax(240px, 0.38fr) minmax(0, 1fr);
-  overflow: hidden;
+  overflow: clip;
   border: 1px solid #dce1e8;
   border-radius: 1rem;
   background: white;
   box-shadow: 0 18px 50px rgb(23 32 51 / 8%);
 }
 
+.docfilly::before {
+  content: "";
+  grid-row: 1;
+  grid-column: 1;
+  border-right: 1px solid #e4e8ee;
+  background: #fafbfc;
+}
+
 .docfilly--without-form {
   grid-template-columns: 1fr;
 }
 
+.docfilly--without-form::before {
+  display: none;
+}
+
 .docfilly__form {
+  position: sticky;
+  z-index: 1;
+  top: calc(var(--app-toolbar-height) + 1rem);
+  grid-row: 1;
+  grid-column: 1;
+  align-self: start;
   min-width: 0;
+  max-height: calc(100dvh - var(--app-toolbar-height) - 2rem);
   padding: 1.5rem;
   border-right: 1px solid #e4e8ee;
+  overflow-y: auto;
   background: #fafbfc;
 }
 
@@ -679,10 +701,16 @@ main {
 }
 
 .docfilly__output {
+  grid-row: 1;
+  grid-column: 2;
   min-width: 0;
   min-height: 28rem;
   padding: clamp(1.5rem, 4vw, 3rem);
   overflow-wrap: anywhere;
+}
+
+.docfilly--without-form .docfilly__output {
+  grid-column: 1;
 }
 
 .docfilly__output--text,
@@ -773,6 +801,11 @@ main {
 [data-theme="dark"] .dialog-cancel-action:hover:not(:disabled),
 [data-theme="dark"] .text-button:hover {
   color: #f4f7fb;
+  background: #273449;
+}
+
+[data-theme="dark"] .docfilly::before {
+  border-color: #526076;
   background: #273449;
 }
 
@@ -900,9 +933,35 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .docfilly__form {
+  .docfilly::before {
+    grid-row: 1;
+    grid-column: 1;
     border-right: 0;
     border-bottom: 1px solid #e4e8ee;
+  }
+
+  .docfilly__form {
+    position: static;
+    grid-row: 1;
+    grid-column: 1;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid #e4e8ee;
+    overflow-y: visible;
+  }
+
+  .docfilly__output {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .docfilly--without-form .docfilly__output {
+    grid-row: 1;
+  }
+
+  [data-theme="dark"] .docfilly::before,
+  [data-theme="dark"] .docfilly__form {
+    border-bottom-color: #526076;
   }
 }
 

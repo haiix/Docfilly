@@ -9,7 +9,7 @@ team_work | Working with a team = [x]
 
 # [[project_name]] five-minute tutorial
 
-Start by changing **Project name**, **Environment**, and **Working with a team** in the form on the left. The heading and instructions on the right update immediately.
+Start by changing **Project name**, **Environment**, and **Working with a team** in the form on the left. The heading and instructions on the right update immediately. On desktop, the form stays below the toolbar as you continue through the document.
 
 Docfilly adds a small set of features to ordinary Markdown and text so readers can adapt a document without repeatedly editing it by hand.
 
