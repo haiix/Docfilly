@@ -11,13 +11,14 @@ describe("user preferences", () => {
     const storage = window.localStorage;
     storage.clear();
 
-    expect(readUserPreferences(storage)).toEqual({ language: "browser" });
-    expect(writeUserPreferences({ language: "ja" }, storage)).toBe(true);
+    expect(readUserPreferences(storage)).toEqual({ language: "browser", theme: "system" });
+    expect(writeUserPreferences({ language: "ja", theme: "dark" }, storage)).toBe(true);
     expect(JSON.parse(storage.getItem("docfilly-web-preferences")!)).toEqual({
       version: 1,
       language: "ja",
+      theme: "dark",
     });
-    expect(readUserPreferences(storage)).toEqual({ language: "ja" });
+    expect(readUserPreferences(storage)).toEqual({ language: "ja", theme: "dark" });
   });
 
   it("ignores malformed, unknown-version, and unsupported settings", () => {
@@ -28,8 +29,20 @@ describe("user preferences", () => {
       JSON.stringify({ version: 1, language: "fr" }),
     ]) {
       storage.setItem("docfilly-web-preferences", value);
-      expect(readUserPreferences(storage)).toEqual({ language: "browser" });
+      expect(readUserPreferences(storage)).toEqual({ language: "browser", theme: "system" });
     }
+  });
+
+  it("defaults legacy preferences to the system theme and rejects unsupported themes", () => {
+    const storage = window.localStorage;
+    storage.setItem("docfilly-web-preferences", JSON.stringify({ version: 1, language: "ja" }));
+    expect(readUserPreferences(storage)).toEqual({ language: "ja", theme: "system" });
+
+    storage.setItem(
+      "docfilly-web-preferences",
+      JSON.stringify({ version: 1, language: "ja", theme: "sepia" }),
+    );
+    expect(readUserPreferences(storage)).toEqual({ language: "browser", theme: "system" });
   });
 
   it("uses the browser locale only for the browser preference", () => {
@@ -39,9 +52,9 @@ describe("user preferences", () => {
 
   it("clears stored preferences", () => {
     const storage = window.localStorage;
-    writeUserPreferences({ language: "en" }, storage);
+    writeUserPreferences({ language: "en", theme: "light" }, storage);
 
     expect(clearUserPreferences(storage)).toBe(true);
-    expect(readUserPreferences(storage)).toEqual({ language: "browser" });
+    expect(readUserPreferences(storage)).toEqual({ language: "browser", theme: "system" });
   });
 });

@@ -69,6 +69,11 @@ export interface WebMessages {
   settingsTitle: string;
   displaySettings: string;
   languageDescription: string;
+  theme: string;
+  themeDescription: string;
+  systemTheme: string;
+  lightTheme: string;
+  darkTheme: string;
   dataPrivacySettings: string;
   storedDataDescription: string;
   preferenceSaveFailed: string;
@@ -174,15 +179,20 @@ const en: WebMessages = {
   settingsTitle: "Settings",
   displaySettings: "Display",
   languageDescription: "Choose the language used by the Docfilly interface and diagnostics.",
+  theme: "Theme",
+  themeDescription: "Choose the color theme used by the viewer.",
+  systemTheme: "Follow system settings",
+  lightTheme: "Light",
+  darkTheme: "Dark",
   dataPrivacySettings: "Data and privacy",
   storedDataDescription:
-    "This browser profile stores your language setting, the latest document and form values for restoration, and Docfilly's offline startup data. Open documents and form values are not sent to an external server.",
+    "This browser profile stores your language and theme settings, the latest document and form values for restoration, and Docfilly's offline startup data. Open documents and form values are not sent to an external server.",
   preferenceSaveFailed:
-    "The language changed, but the setting could not be saved in this browser profile.",
+    "The display setting changed, but it could not be saved in this browser profile.",
   resetAppData: "Reset app data",
   resetTitle: "Reset app data?",
   resetDescription:
-    "This returns the language to your browser setting, closes the displayed document, and deletes user settings, saved recovery data, and Docfilly's offline startup data. You will need an internet connection the next time you use Docfilly.",
+    "This returns the language and theme to your system settings, closes the displayed document, and deletes user settings, saved recovery data, and Docfilly's offline startup data. You will need an internet connection the next time you use Docfilly.",
   resetSafety:
     "The installed app itself will not be uninstalled. Original local files and downloaded files will not be deleted.",
   cancel: "Cancel",
@@ -281,15 +291,20 @@ const ja: WebMessages = {
   settingsTitle: "設定",
   displaySettings: "表示",
   languageDescription: "Docfillyの画面と診断に使用する言語を選択します。",
+  theme: "テーマ",
+  themeDescription: "ビューアーで使用する配色を選択します。",
+  systemTheme: "システム設定に従う",
+  lightTheme: "ライト",
+  darkTheme: "ダーク",
   dataPrivacySettings: "データとプライバシー",
   storedDataDescription:
-    "このブラウザープロファイルには、言語設定、復元用の最後の文書とフォーム値、Docfillyのオフライン起動用データが保存されます。開いた文書とフォーム値は外部サーバーへ送信されません。",
+    "このブラウザープロファイルには、言語とテーマの設定、復元用の最後の文書とフォーム値、Docfillyのオフライン起動用データが保存されます。開いた文書とフォーム値は外部サーバーへ送信されません。",
   preferenceSaveFailed:
-    "言語は変更されましたが、このブラウザープロファイルへ設定を保存できませんでした。",
+    "表示設定は変更されましたが、このブラウザープロファイルへ保存できませんでした。",
   resetAppData: "アプリデータをリセット",
   resetTitle: "アプリデータをリセットしますか？",
   resetDescription:
-    "言語をブラウザーの設定へ戻し、表示中の文書を閉じ、ユーザー設定、保存した文書データ、Docfillyのオフライン起動用データを削除します。次回の利用にはインターネット接続が必要です。",
+    "言語とテーマをシステム設定へ戻し、表示中の文書を閉じ、ユーザー設定、保存した文書データ、Docfillyのオフライン起動用データを削除します。次回の利用にはインターネット接続が必要です。",
   resetSafety:
     "インストール済みアプリ自体はアンインストールされません。元のローカルファイルとダウンロード済みファイルは削除されません。",
   cancel: "キャンセル",

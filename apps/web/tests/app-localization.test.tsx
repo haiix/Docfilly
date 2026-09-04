@@ -62,7 +62,7 @@ describe("App localization", () => {
     await waitFor(() => expect(document.documentElement.lang).toBe("en"));
 
     expect(screen.getByRole("status").textContent).toContain(
-      "the setting could not be saved in this browser profile",
+      "it could not be saved in this browser profile",
     );
     expect(screen.getByRole("status").classList.contains("is-warning")).toBe(true);
     setItem.mockRestore();

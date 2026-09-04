@@ -43,7 +43,8 @@ describe("App menus and dialogs", () => {
     expect(within(dialog).getByRole("heading", { name: "表示" })).toBeTruthy();
     expect(within(dialog).getByRole("heading", { name: "データとプライバシー" })).toBeTruthy();
     expect(within(dialog).getByLabelText<HTMLSelectElement>("言語").value).toBe("browser");
-    expect(dialog.textContent).toContain("言語設定、復元用の最後の文書とフォーム値");
+    expect(within(dialog).getByLabelText<HTMLSelectElement>("テーマ").value).toBe("system");
+    expect(dialog.textContent).toContain("言語とテーマの設定、復元用の最後の文書とフォーム値");
     await user.keyboard("{Escape}");
     expect(document.activeElement).toBe(settingsButton);
   });

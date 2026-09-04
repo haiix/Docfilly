@@ -58,6 +58,8 @@ test("PWAをインストール可能な構成で配信し、オフラインで�
   const manifestResponse = await page.request.get(new URL(manifestUrl!, page.url()).toString());
   expect(manifestResponse.ok()).toBe(true);
   const manifest = (await manifestResponse.json()) as {
+    theme_color?: string;
+    background_color?: string;
     display?: string;
     start_url?: string;
     scope?: string;
@@ -66,6 +68,8 @@ test("PWAをインストール可能な構成で配信し、オフラインで�
   expect(manifest.display).toBe("standalone");
   expect(manifest.start_url).toBe(".");
   expect(manifest.scope).toBe(".");
+  expect(manifest.theme_color).toBe("#172033");
+  expect(manifest.background_color).toBe("#f3f5f8");
   expect(manifest.icons?.map(({ sizes }) => sizes)).toEqual(["192x192", "512x512"]);
 
   await page.evaluate(async () => {
@@ -428,5 +432,35 @@ test.describe("English and Japanese locales", () => {
     await page.getByLabel("言語").selectOption("browser");
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByLabel("Language")).toHaveValue("browser");
+  });
+});
+
+test.describe("themes", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("follows the system theme and persists an explicit choice without reload flashing", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#111827");
+
+    await page.getByRole("button", { name: "設定", exact: true }).first().click();
+    await expect(page.getByLabel("テーマ")).toHaveValue("system");
+    await expect(page.getByRole("button", { name: "アプリデータをリセット" })).toHaveCSS(
+      "background-color",
+      "rgb(180, 35, 24)",
+    );
+    await page.getByLabel("テーマ").selectOption("light");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+    await page.getByRole("button", { name: "設定", exact: true }).first().click();
+    await page.getByLabel("テーマ").selectOption("system");
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
 });

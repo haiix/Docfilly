@@ -137,6 +137,8 @@ describe("App persistence", () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
     await user.click(screen.getAllByRole("button", { name: "設定" })[0]);
     await user.selectOptions(screen.getByLabelText("言語"), "ja");
+    await user.selectOptions(screen.getByLabelText("テーマ"), "dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
     expect(window.localStorage.getItem("docfilly-web-preferences")).not.toBeNull();
 
     const resetDataButton = screen.getByRole<HTMLButtonElement>("button", {
@@ -147,6 +149,7 @@ describe("App persistence", () => {
       name: "アプリデータをリセットしますか？",
     });
     expect(confirmation.textContent).toContain("表示中の文書を閉じ");
+    expect(confirmation.textContent).toContain("言語とテーマをシステム設定へ戻し");
     expect(confirmation.textContent).toContain("ユーザー設定");
     expect(confirmation.textContent).toContain("オフライン起動用データを削除");
     expect(confirmation.textContent).toContain("次回の利用にはインターネット接続が必要");
@@ -167,6 +170,7 @@ describe("App persistence", () => {
     );
     expect(screen.queryByRole("dialog", { name: "設定" })).toBeNull();
     expect(window.localStorage.getItem("docfilly-web-preferences")).toBeNull();
+    expect(document.documentElement.dataset.theme).toBe("light");
     expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
     firstRender.unmount();
     renderApp();
