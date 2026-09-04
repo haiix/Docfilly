@@ -946,6 +946,7 @@ main {
     grid-column: 1;
     max-height: none;
     border-right: 0;
+    border-bottom: 1px solid #e4e8ee;
     overflow-y: visible;
   }
 
@@ -958,7 +959,8 @@ main {
     grid-row: 1;
   }
 
-  [data-theme="dark"] .docfilly::before {
+  [data-theme="dark"] .docfilly::before,
+  [data-theme="dark"] .docfilly__form {
     border-bottom-color: #526076;
   }
 }

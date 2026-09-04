@@ -163,6 +163,8 @@ test.describe("モバイルのフォームスクロール", () => {
     const form = page.locator(".docfilly__form");
     await expect(form).toHaveCSS("position", "static");
     await expect(form).toHaveCSS("border-right-width", "0px");
+    await expect(form).toHaveCSS("border-bottom-width", "1px");
+    await expect(form).toHaveCSS("border-bottom-style", "solid");
     await expect(form).toHaveCSS("overflow-y", "visible");
     const formSize = await form.evaluate((element) => ({
       clientHeight: element.clientHeight,
