@@ -129,6 +129,38 @@ test("ページ再読み込み後に文書とフォーム値を復元する", as
   await expect(page.getByLabel("作成者")).toHaveValue("復元する名前");
 });
 
+test("文書の復元をオフにすると保存せず、再びオンにすると表示中の文書を保存する", async ({
+  page,
+}) => {
+  await openSample(page);
+  await page.getByLabel("作成者").fill("保存しない名前");
+  await expect.poll(() => hasSavedValue(page, "author", "保存しない名前")).toBe(true);
+
+  await page.getByRole("button", { name: "設定", exact: true }).first().click();
+  const restoreDocument = page.getByRole("checkbox", { name: "前回の文書を復元する" });
+  await restoreDocument.uncheck();
+  await expect(page.getByText("サンプル.md")).toBeVisible();
+  await expect.poll(() => hasSavedValue(page, "author", "保存しない名前")).toBe(false);
+  await page.keyboard.press("Escape");
+
+  await page.getByLabel("作成者").fill("オフの間の名前");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Docfilly文書を開く" })).toBeVisible();
+  await page.getByRole("button", { name: "設定", exact: true }).first().click();
+  await expect(restoreDocument).not.toBeChecked();
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "サンプルを開く" }).click();
+  await page.getByLabel("作成者").fill("再び保存する名前");
+  await page.getByRole("button", { name: "設定", exact: true }).first().click();
+  await restoreDocument.check();
+  await expect.poll(() => hasSavedValue(page, "author", "再び保存する名前")).toBe(true);
+
+  await page.reload();
+  await expect(page.getByText("サンプル.md")).toBeVisible();
+  await expect(page.getByLabel("作成者")).toHaveValue("再び保存する名前");
+});
+
 test("文書を閉じると復元せず、空状態から別の文書を開ける", async ({ page }) => {
   await openSample(page);
   await page.getByLabel("作成者").fill("閉じる直前の値");

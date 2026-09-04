@@ -33,12 +33,14 @@ function createStore(overrides: Partial<DocumentPersistenceStore> = {}): Documen
 
 function createOptions(store: DocumentPersistenceStore) {
   return {
+    enabled: true,
     store,
     saveDelayMs: 50,
     onRestore: vi.fn(),
     onRestoreComplete: vi.fn(),
     onRestoreFailure: vi.fn(),
     onSaveFailure: vi.fn(),
+    onClearFailure: vi.fn(),
   };
 }
 
@@ -119,6 +121,96 @@ describe("document persistence", () => {
 
     expect(store.clear).toHaveBeenCalledOnce();
     expect(store.save).not.toHaveBeenCalled();
+  });
+
+  it("skips restoration and removes stale data when persistence starts disabled", async () => {
+    const store = createStore();
+    const options = { ...createOptions(store), enabled: false };
+    renderHook(() => useDocumentPersistence(options));
+
+    await waitFor(() => expect(store.clear).toHaveBeenCalledOnce());
+    expect(store.load).not.toHaveBeenCalled();
+    expect(options.onRestore).not.toHaveBeenCalled();
+  });
+
+  it("cancels a pending save and clears recovery data when persistence is disabled", async () => {
+    vi.useFakeTimers();
+    const store = createStore();
+    const options = createOptions(store);
+    const { result } = renderHook(() => useDocumentPersistence(options));
+    act(() => {
+      result.current.activateDocument(document);
+      result.current.persistValues(new Map([["name", "Sensitive"]]));
+    });
+
+    await act(() => result.current.setPersistenceEnabled(false, new Map([["name", "Sensitive"]])));
+    await act(() => vi.advanceTimersByTimeAsync(50));
+
+    expect(store.clear).toHaveBeenCalledOnce();
+    expect(store.save).not.toHaveBeenCalled();
+  });
+
+  it("clears recovery data after an in-progress save finishes when persistence is disabled", async () => {
+    vi.useFakeTimers();
+    const saving = deferred<void>();
+    const operations: string[] = [];
+    const store = createStore({
+      save: vi.fn(() => {
+        operations.push("save");
+        return saving.promise;
+      }),
+      clear: vi.fn(() => {
+        operations.push("clear");
+        return Promise.resolve();
+      }),
+    });
+    const options = createOptions(store);
+    const { result } = renderHook(() => useDocumentPersistence(options));
+    act(() => {
+      result.current.activateDocument(document);
+      result.current.persistValues(new Map([["name", "Saving"]]));
+    });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+
+    let disabling!: Promise<void>;
+    act(() => {
+      disabling = result.current.setPersistenceEnabled(false, new Map([["name", "Saving"]]));
+    });
+    expect(store.clear).not.toHaveBeenCalled();
+
+    saving.resolve();
+    await act(() => disabling);
+
+    expect(operations).toEqual(["save", "clear"]);
+  });
+
+  it("reports stale recovery data that cannot be cleared on disabled startup", async () => {
+    const store = createStore({ clear: vi.fn(() => Promise.reject(new Error("failed"))) });
+    const options = { ...createOptions(store), enabled: false };
+    renderHook(() => useDocumentPersistence(options));
+
+    await waitFor(() => expect(options.onClearFailure).toHaveBeenCalledOnce());
+    expect(options.onRestore).not.toHaveBeenCalled();
+  });
+
+  it("keeps documents opened while disabled out of storage and saves the current one when enabled", async () => {
+    vi.useFakeTimers();
+    const store = createStore();
+    const options = { ...createOptions(store), enabled: false };
+    const { result } = renderHook(() => useDocumentPersistence(options));
+    await act(async () => Promise.resolve());
+
+    act(() => {
+      result.current.activateDocument(document);
+      result.current.persistValues(new Map([["name", "Private"]]));
+    });
+    await act(() => vi.advanceTimersByTimeAsync(50));
+    expect(store.save).not.toHaveBeenCalled();
+
+    await act(() => result.current.setPersistenceEnabled(true, new Map([["name", "Save now"]])));
+    await act(() => vi.advanceTimersByTimeAsync(50));
+
+    expect(store.save).toHaveBeenCalledWith(document, new Map([["name", "Save now"]]));
   });
 
   it("clears the session after an in-progress save completes", async () => {

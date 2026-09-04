@@ -400,6 +400,27 @@ button.toolbar-button:not(:disabled),
   outline-offset: 2px;
 }
 
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: fit-content;
+  color: #26324a;
+  font-weight: 750;
+}
+
+.settings-toggle input {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: 0;
+  accent-color: #4054d8;
+}
+
+.settings-toggle input:focus-visible {
+  outline: 3px solid rgb(89 108 255 / 25%);
+  outline-offset: 2px;
+}
+
 .diagnostic-summary {
   margin-top: 1.25rem;
 }
@@ -786,6 +807,10 @@ main {
   color: #f4f7fb;
 }
 
+[data-theme="dark"] .settings-toggle {
+  color: #f4f7fb;
+}
+
 [data-theme="dark"] .app-dialog__content a {
   color: #aeb8ff;
 }
@@ -807,6 +832,7 @@ main {
 [data-theme="dark"] .app-dialog a:focus-visible,
 [data-theme="dark"] .dialog-cancel-action:focus-visible,
 [data-theme="dark"] .settings-field select:focus-visible,
+[data-theme="dark"] .settings-toggle input:focus-visible,
 [data-theme="dark"] .primary-button:focus-visible,
 [data-theme="dark"] .text-button:focus-visible,
 [data-theme="dark"] .docfilly__field input:focus,

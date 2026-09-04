@@ -20,19 +20,23 @@ const defaultStore: DocumentPersistenceStore = {
 };
 
 interface DocumentPersistenceOptions {
+  enabled: boolean;
   onRestore: (session: SavedDocumentSession) => void;
   onRestoreComplete: () => void;
   onRestoreFailure: () => void;
   onSaveFailure: () => void;
+  onClearFailure: () => void;
   saveDelayMs?: number;
   store?: DocumentPersistenceStore;
 }
 
 export function useDocumentPersistence({
+  enabled,
   onRestore,
   onRestoreComplete,
   onRestoreFailure,
   onSaveFailure,
+  onClearFailure,
   saveDelayMs = 500,
   store = defaultStore,
 }: DocumentPersistenceOptions) {
@@ -41,8 +45,15 @@ export function useDocumentPersistence({
     onRestoreComplete,
     onRestoreFailure,
     onSaveFailure,
+    onClearFailure,
   });
-  callbacksRef.current = { onRestore, onRestoreComplete, onRestoreFailure, onSaveFailure };
+  callbacksRef.current = {
+    onRestore,
+    onRestoreComplete,
+    onRestoreFailure,
+    onSaveFailure,
+    onClearFailure,
+  };
   const storeRef = useRef(store);
   const documentRef = useRef<LoadedDocument | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -51,7 +62,8 @@ export function useDocumentPersistence({
   const operationGenerationRef = useRef(0);
   const restoreStartedGenerationRef = useRef(operationGenerationRef.current);
   const restoredRenderGenerationRef = useRef<number | undefined>(undefined);
-  const persistenceSuppressedRef = useRef(false);
+  const persistenceEnabledRef = useRef(enabled);
+  const persistenceSuppressedRef = useRef(!enabled);
 
   const cancelPendingSave = useCallback((): void => {
     if (saveTimerRef.current === undefined) return;
@@ -70,23 +82,29 @@ export function useDocumentPersistence({
 
   useEffect(() => {
     let active = true;
-    void storeRef.current
-      .load()
-      .then((session) => {
-        if (!active || restoreCancelledRef.current || session === null) return;
-        documentRef.current = session;
-        restoredRenderGenerationRef.current = restoreStartedGenerationRef.current;
-        callbacksRef.current.onRestore(session);
-      })
-      .catch(() => {
-        if (active && !restoreCancelledRef.current) callbacksRef.current.onRestoreFailure();
+    if (persistenceEnabledRef.current) {
+      void storeRef.current
+        .load()
+        .then((session) => {
+          if (!active || restoreCancelledRef.current || session === null) return;
+          documentRef.current = session;
+          restoredRenderGenerationRef.current = restoreStartedGenerationRef.current;
+          callbacksRef.current.onRestore(session);
+        })
+        .catch(() => {
+          if (active && !restoreCancelledRef.current) callbacksRef.current.onRestoreFailure();
+        });
+    } else {
+      void enqueueOperation(() => storeRef.current.clear()).catch(() => {
+        if (active && !persistenceEnabledRef.current) callbacksRef.current.onClearFailure();
       });
+    }
 
     return () => {
       active = false;
       cancelPendingSave();
     };
-  }, [cancelPendingSave]);
+  }, [cancelPendingSave, enqueueOperation]);
 
   const beginDocumentSelection = useCallback((): void => {
     operationGenerationRef.current += 1;
@@ -110,7 +128,7 @@ export function useDocumentPersistence({
       operationGenerationRef.current += 1;
       restoreCancelledRef.current = true;
       restoredRenderGenerationRef.current = undefined;
-      persistenceSuppressedRef.current = false;
+      persistenceSuppressedRef.current = !persistenceEnabledRef.current;
       documentRef.current = document;
     },
     [cancelPendingSave],
@@ -151,12 +169,32 @@ export function useDocumentPersistence({
     await enqueueOperation(() => storeRef.current.clear());
   }, [cancelPendingSave, enqueueOperation]);
 
+  const setPersistenceEnabled = useCallback(
+    async (nextEnabled: boolean, values: ReadonlyMap<string, string> | null): Promise<void> => {
+      operationGenerationRef.current += 1;
+      restoreCancelledRef.current = true;
+      restoredRenderGenerationRef.current = undefined;
+      cancelPendingSave();
+      persistenceEnabledRef.current = nextEnabled;
+      persistenceSuppressedRef.current = !nextEnabled;
+
+      if (!nextEnabled) {
+        await enqueueOperation(() => storeRef.current.clear());
+        return;
+      }
+
+      if (documentRef.current !== null && values !== null) persistValues(values);
+    },
+    [cancelPendingSave, enqueueOperation, persistValues],
+  );
+
   return {
     beginDocumentSelection,
     invalidateRestoreCompletion,
     shouldApplyViewerStatus,
     activateDocument,
     persistValues,
+    setPersistenceEnabled,
     closeDocument,
   };
 }

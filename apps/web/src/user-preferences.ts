@@ -6,11 +6,16 @@ export type ThemePreference = "system" | "light" | "dark";
 export interface UserPreferences {
   language: LanguagePreference;
   theme: ThemePreference;
+  restoreDocument: boolean;
 }
 
 const storageKey = "docfilly-web-preferences";
 const currentVersion = 1;
-const defaultPreferences: UserPreferences = { language: "browser", theme: "system" };
+const defaultPreferences: UserPreferences = {
+  language: "browser",
+  theme: "system",
+  restoreDocument: true,
+};
 
 function getStorage(storage?: Storage): Storage | null {
   if (storage !== undefined) return storage;
@@ -40,7 +45,10 @@ export function readUserPreferences(storage?: Storage): UserPreferences {
       return defaultPreferences;
     }
 
-    return { language: stored.language, theme };
+    const restoreDocument = "restoreDocument" in stored ? stored.restoreDocument : true;
+    if (typeof restoreDocument !== "boolean") return defaultPreferences;
+
+    return { language: stored.language, theme, restoreDocument };
   } catch {
     return defaultPreferences;
   }
