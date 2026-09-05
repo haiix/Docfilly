@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/haiix/Docfilly/compare/v0.2.0...v0.3.0) (2026-09-05)
+
+
+### Added
+
+* **web:** add document restoration setting ([#132](https://github.com/haiix/Docfilly/issues/132)) ([3b1b4af](https://github.com/haiix/Docfilly/commit/3b1b4af8211a9794679251c0fc2d49e5f277e4ec))
+* **web:** add persistent settings dialog ([#130](https://github.com/haiix/Docfilly/issues/130)) ([c7da10d](https://github.com/haiix/Docfilly/commit/c7da10dab5eb026d940774364ecb4528efdd5c83))
+* **web:** add system-aware dark theme ([#131](https://github.com/haiix/Docfilly/issues/131)) ([f0fff1e](https://github.com/haiix/Docfilly/commit/f0fff1ed9ae98848e5839e7c19c8aaa1c13a66b0))
+* **web:** make the settings form follow the scroll on desktop ([#133](https://github.com/haiix/Docfilly/issues/133)) ([5f54bce](https://github.com/haiix/Docfilly/commit/5f54bce41bdfbc466fe877f9a2d3b550f7a55b19))
+
+
+### Fixed
+
+* **web:** close help after app data reset ([#124](https://github.com/haiix/Docfilly/issues/124)) ([f3a6f29](https://github.com/haiix/Docfilly/commit/f3a6f291915c7016e3d68f05cca96b0d8deec351))
+
+
+### Documentation
+
+* **web:** improve built-in tutorial samples ([#123](https://github.com/haiix/Docfilly/issues/123)) ([52b9796](https://github.com/haiix/Docfilly/commit/52b9796f87086c4bfc452e768bf919c592f14503))
+
 ## [0.2.0](https://github.com/haiix/Docfilly/compare/v0.1.0...v0.2.0) (2026-08-28)
 
 
