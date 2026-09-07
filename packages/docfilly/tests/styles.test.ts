@@ -22,6 +22,9 @@ describe("official styles", () => {
     expect(styles).toContain(".docfilly__output--fallback");
     expect(styles).toContain("@container (min-width: 47.5rem)");
     expect(styles).toContain("@media (prefers-color-scheme: dark)");
+    expect(styles).toContain('.docfilly[data-docfilly-theme="light"]');
+    expect(styles).toContain('.docfilly[data-docfilly-theme="dark"]');
+    expect(styles).not.toContain("light-dark(");
   });
 
   it("exposes customization properties without global selectors or app variables", () => {
@@ -29,6 +32,7 @@ describe("official styles", () => {
     expect(styles).toContain("--docfilly-spacing");
     expect(styles).toContain("--docfilly-form-width");
     expect(styles).toContain("--docfilly-sticky-top");
+    expect(styles).toMatch(/\.docfilly__form\s*{[^}]*box-sizing: border-box;/s);
     expect(styles).not.toMatch(/(^|[}\n]\s*)(:root|body|html|\*)\s*[{,]/m);
     expect(styles).not.toContain("> *");
     expect(styles).not.toContain(".docfilly *");

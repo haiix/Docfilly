@@ -374,7 +374,7 @@ type DocfillyVariable =
 import "docfilly/styles.css";
 ```
 
-公式CSSは`.docfilly`以下だけへ適用され、コンテナ幅が47.5rem以上ならフォームと本文を左右に、それ未満なら上下に配置します。配色は`prefers-color-scheme`に従い、`--docfilly-color-scheme`で明示的に切り替えられます。CSSをimportしなければ、従来どおり構造だけが生成されます。
+公式CSSは`.docfilly`以下だけへ適用され、コンテナ幅が47.5rem以上ならフォームと本文を左右に、それ未満なら上下に配置します。配色は`prefers-color-scheme`に従います。特定のビューだけを明示的に切り替える場合は、`.docfilly`自身またはその祖先へ`data-docfilly-theme="light"`／`"dark"`を設定します。`.docfilly`自身の指定が祖先の指定より優先されます。CSSをimportしなければ、従来どおり構造だけが生成されます。
 
 独自CSSでは次の公開クラスを装飾できます。
 
@@ -397,7 +397,6 @@ import "docfilly/styles.css";
 
 | プロパティ                                                        | 用途                                   |
 | ----------------------------------------------------------------- | -------------------------------------- |
-| `--docfilly-color-scheme`                                         | `light`または`dark`の配色選択          |
 | `--docfilly-color`、`--docfilly-background`                       | 本文色と背景色                         |
 | `--docfilly-form-background`                                      | フォーム領域の背景色                   |
 | `--docfilly-muted-color`、`--docfilly-label-color`                | 説明文とラベルの文字色                 |

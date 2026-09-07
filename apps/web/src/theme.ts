@@ -19,6 +19,7 @@ export function resolvePreferredTheme(
 export function applyTheme(theme: ResolvedTheme, documentNode: Document = document): void {
   const root = documentNode.documentElement;
   root.dataset.theme = theme;
+  root.dataset.docfillyTheme = theme;
   root.style.colorScheme = theme;
   documentNode
     .querySelector<HTMLMetaElement>('meta[name="theme-color"]')

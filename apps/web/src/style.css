@@ -616,14 +616,6 @@ main .docfilly {
   --docfilly-form-max-height: calc(100dvh - var(--app-toolbar-height) - 2rem);
 }
 
-[data-theme="light"] .docfilly {
-  --docfilly-color-scheme: light;
-}
-
-[data-theme="dark"] .docfilly {
-  --docfilly-color-scheme: dark;
-}
-
 [data-theme="dark"] .toolbar-overflow__menu,
 [data-theme="dark"] .app-status,
 [data-theme="dark"] .pwa-update,

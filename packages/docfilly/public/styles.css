@@ -1,15 +1,14 @@
 .docfilly {
-  --docfilly-color-scheme: light;
-  --docfilly-color: light-dark(#172033, #e5eaf2);
-  --docfilly-background: light-dark(#ffffff, #1f2937);
-  --docfilly-form-background: light-dark(#fafbfc, #273449);
-  --docfilly-muted-color: light-dark(#637087, #b8c2d1);
-  --docfilly-label-color: light-dark(#48556b, #b8c2d1);
-  --docfilly-border-color: light-dark(#dce1e8, #526076);
-  --docfilly-field-border-color: light-dark(#cbd3df, #526076);
-  --docfilly-code-background: light-dark(#eef1f5, #2b374a);
-  --docfilly-code-block-color: light-dark(#edf1f8, #f4f7fb);
-  --docfilly-code-block-background: light-dark(#172033, #0b1020);
+  --docfilly-color: #172033;
+  --docfilly-background: #ffffff;
+  --docfilly-form-background: #fafbfc;
+  --docfilly-muted-color: #637087;
+  --docfilly-label-color: #48556b;
+  --docfilly-border-color: #dce1e8;
+  --docfilly-field-border-color: #cbd3df;
+  --docfilly-code-background: #eef1f5;
+  --docfilly-code-block-color: #edf1f8;
+  --docfilly-code-block-background: #172033;
   --docfilly-accent-color: #596cff;
   --docfilly-focus-ring-color: rgb(89 108 255 / 18%);
   --docfilly-spacing: 1.5rem;
@@ -26,18 +25,62 @@
   border: 1px solid var(--docfilly-border-color);
   border-radius: 1rem;
   color: var(--docfilly-color);
-  color-scheme: var(--docfilly-color-scheme);
+  color-scheme: light;
   background: var(--docfilly-background);
   box-shadow: 0 18px 50px rgb(23 32 51 / 8%);
 }
 
 @media (prefers-color-scheme: dark) {
   .docfilly {
-    --docfilly-color-scheme: dark;
+    --docfilly-color: #e5eaf2;
+    --docfilly-background: #1f2937;
+    --docfilly-form-background: #273449;
+    --docfilly-muted-color: #b8c2d1;
+    --docfilly-label-color: #b8c2d1;
+    --docfilly-border-color: #526076;
+    --docfilly-field-border-color: #526076;
+    --docfilly-code-background: #2b374a;
+    --docfilly-code-block-color: #f4f7fb;
+    --docfilly-code-block-background: #0b1020;
+
+    color-scheme: dark;
   }
 }
 
+.docfilly[data-docfilly-theme="light"],
+:where([data-docfilly-theme="light"]) .docfilly {
+  --docfilly-color: #172033;
+  --docfilly-background: #ffffff;
+  --docfilly-form-background: #fafbfc;
+  --docfilly-muted-color: #637087;
+  --docfilly-label-color: #48556b;
+  --docfilly-border-color: #dce1e8;
+  --docfilly-field-border-color: #cbd3df;
+  --docfilly-code-background: #eef1f5;
+  --docfilly-code-block-color: #edf1f8;
+  --docfilly-code-block-background: #172033;
+
+  color-scheme: light;
+}
+
+.docfilly[data-docfilly-theme="dark"],
+:where([data-docfilly-theme="dark"]) .docfilly {
+  --docfilly-color: #e5eaf2;
+  --docfilly-background: #1f2937;
+  --docfilly-form-background: #273449;
+  --docfilly-muted-color: #b8c2d1;
+  --docfilly-label-color: #b8c2d1;
+  --docfilly-border-color: #526076;
+  --docfilly-field-border-color: #526076;
+  --docfilly-code-background: #2b374a;
+  --docfilly-code-block-color: #f4f7fb;
+  --docfilly-code-block-background: #0b1020;
+
+  color-scheme: dark;
+}
+
 .docfilly__form {
+  box-sizing: border-box;
   grid-row: 1;
   grid-column: 1 / -1;
   min-width: 0;
