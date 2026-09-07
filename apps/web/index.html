@@ -21,6 +21,7 @@
               : "light"
             : preference;
         document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.docfillyTheme = theme;
         document.documentElement.style.colorScheme = theme;
         document.querySelector('meta[name="theme-color"]').content =
           theme === "dark" ? "#111827" : "#f3f5f8";

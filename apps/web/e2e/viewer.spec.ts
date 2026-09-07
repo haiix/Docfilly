@@ -67,11 +67,34 @@ test.describe("デスクトップの追従フォーム", () => {
     });
 
     const toolbar = page.locator(".toolbar");
+    const viewer = page.locator(".docfilly");
     const form = page.locator(".docfilly__form");
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    const output = page.locator(".docfilly__output");
+    const columnLayout = await page.evaluate(() => {
+      const viewerElement = document.querySelector<HTMLElement>(".docfilly");
+      const formElement = document.querySelector<HTMLElement>(".docfilly__form");
+      const outputElement = document.querySelector<HTMLElement>(".docfilly__output");
+      if (viewerElement === null || formElement === null || outputElement === null) {
+        throw new Error("The document viewer was not rendered.");
+      }
+      return {
+        viewerBackground: getComputedStyle(viewerElement).backgroundColor,
+        formBackground: getComputedStyle(formElement).backgroundColor,
+        viewerHeight: viewerElement.getBoundingClientRect().height,
+        formHeight: formElement.getBoundingClientRect().height,
+        outputHeight: outputElement.getBoundingClientRect().height,
+      };
+    });
 
-    await expect(form).toHaveCSS("border-right-width", "1px");
-    await expect(form).toHaveCSS("border-right-style", "solid");
+    expect(columnLayout.viewerBackground).toBe(columnLayout.formBackground);
+    expect(columnLayout.viewerHeight).toBeGreaterThan(columnLayout.formHeight);
+    expect(columnLayout.outputHeight).toBe(columnLayout.viewerHeight - 2);
+    await expect(viewer).toHaveCSS("background-color", "rgb(250, 251, 252)");
+    await expect(form).toHaveCSS("border-right-width", "0px");
+    await expect(output).toHaveCSS("border-left-width", "1px");
+    await expect(output).toHaveCSS("border-left-style", "solid");
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
     await expect
       .poll(async () => {
         const toolbarBox = await toolbar.boundingBox();
@@ -607,6 +630,28 @@ test.describe("themes", () => {
     await page.goto("./");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#111827");
+    await page.getByRole("button", { name: "サンプルを開く" }).click();
+    const output = page.locator(".docfilly__output");
+    await expect(output).toHaveCSS("background-color", "rgb(31, 41, 55)");
+    await page.locator(".docfilly").evaluate((element) => {
+      element.setAttribute("data-docfilly-theme", "light");
+    });
+    await expect(output).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await page.evaluate(() => {
+      const style = document.createElement("style");
+      style.dataset.docfillyTestStyle = "custom-background";
+      style.textContent = ".docfilly { --docfilly-background: rgb(1 2 3); }";
+      document.head.append(style);
+    });
+    await expect(output).toHaveCSS("background-color", "rgb(1, 2, 3)");
+    await page.evaluate(() => {
+      document.querySelector('style[data-docfilly-test-style="custom-background"]')?.remove();
+    });
+    await expect(output).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await page.locator(".docfilly").evaluate((element) => {
+      element.removeAttribute("data-docfilly-theme");
+    });
+    await expect(output).toHaveCSS("background-color", "rgb(31, 41, 55)");
 
     await page.getByRole("button", { name: "設定", exact: true }).first().click();
     await expect(page.getByLabel("テーマ")).toHaveValue("system");
@@ -616,6 +661,7 @@ test.describe("themes", () => {
     );
     await page.getByLabel("テーマ").selectOption("light");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(output).toHaveCSS("background-color", "rgb(255, 255, 255)");
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 

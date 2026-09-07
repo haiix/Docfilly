@@ -5,6 +5,9 @@ import { VitePWA } from "vite-plugin-pwa";
 const docfillyEntry = decodeURIComponent(
   new URL("../../packages/docfilly/src/index.ts", import.meta.url).pathname,
 ).replace(/^\/([A-Za-z]:\/)/, "$1");
+const docfillyStyles = decodeURIComponent(
+  new URL("../../packages/docfilly/public/styles.css", import.meta.url).pathname,
+).replace(/^\/([A-Za-z]:\/)/, "$1");
 const docfillyReactEntry = decodeURIComponent(
   new URL("../../packages/react/src/index.ts", import.meta.url).pathname,
 ).replace(/^\/([A-Za-z]:\/)/, "$1");
@@ -49,9 +52,10 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    alias: {
-      "@docfilly/react": docfillyReactEntry,
-      docfilly: docfillyEntry,
-    },
+    alias: [
+      { find: "docfilly/styles.css", replacement: docfillyStyles },
+      { find: /^docfilly$/, replacement: docfillyEntry },
+      { find: "@docfilly/react", replacement: docfillyReactEntry },
+    ],
   },
 });

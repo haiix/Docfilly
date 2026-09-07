@@ -35,11 +35,13 @@ describe("App theme", () => {
     renderApp();
 
     expect(document.documentElement.dataset.theme).toBe("light");
+    expect(document.documentElement.dataset.docfillyTheme).toBe("light");
     expect(document.documentElement.style.colorScheme).toBe("light");
     expect(meta.content).toBe("#f3f5f8");
 
     changeColorScheme(true);
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe("dark"));
+    expect(document.documentElement.dataset.docfillyTheme).toBe("dark");
     expect(meta.content).toBe("#111827");
     meta.remove();
   });
@@ -52,6 +54,7 @@ describe("App theme", () => {
     await user.selectOptions(screen.getByLabelText("テーマ"), "light");
 
     expect(document.documentElement.dataset.theme).toBe("light");
+    expect(document.documentElement.dataset.docfillyTheme).toBe("light");
     expect(JSON.parse(localStorage.getItem("docfilly-web-preferences")!)).toMatchObject({
       theme: "light",
     });

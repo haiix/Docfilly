@@ -78,12 +78,13 @@ Docfillyがnpmなどへ公開された後は、利用側プロジェクトへ通
 
 ```ts
 import { createDocfilly } from "docfilly";
+import "docfilly/styles.css";
 
 const view = createDocfilly(source, "md");
 document.body.append(view.element);
 ```
 
-`view.element`には、読者が入力するフォームと、カスタマイズされた文書の表示領域が含まれます。構文上の注意点を執筆者へ知らせる場合は`view.diagnostics`を利用できます。
+`view.element`には、読者が入力するフォームと、カスタマイズされた文書の表示領域が含まれます。`docfilly/styles.css`は標準スタイルを明示的に利用するためのimportであり、JavaScriptから自動注入されません。既存アプリのデザインを使う場合はCSS importを省略して独自に装飾できます。構文上の注意点を執筆者へ知らせる場合は`view.diagnostics`を利用できます。
 
 ## プレーンテキストを表示する
 
@@ -95,13 +96,7 @@ const view = createDocfilly("#!docfilly\n名前 = Alice\n---\nこんにちは、
 document.body.append(view.element);
 ```
 
-テキスト出力ではHTMLを使用せず、`textContent`へ結果を設定します。改行を表示するには、出力要素へ`white-space: pre-wrap`を指定してください。
-
-```css
-.docfilly__output--text {
-  white-space: pre-wrap;
-}
-```
+テキスト出力ではHTMLを使用せず、`textContent`へ結果を設定します。公式CSSを利用すると改行を保持する等幅フォントの表示になり、独自CSSを使う場合は`.docfilly__output--text`を装飾してください。
 
 ## 再描画の待ち時間を変更する
 
