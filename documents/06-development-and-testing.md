@@ -1,90 +1,99 @@
-# 開発とテスト
+# Development and testing
 
-変更時は技術的な正しさに加え、Docfillyの中心的な体験である「読者の読み替えを最初のフォーム入力へ移すこと」を維持してください。構文やUIを追加する場合も、読者に構文理解を要求せず、文書を主役にできるかを判断基準にします。
+Changes must preserve Docfilly's core experience: moving the reader's repeated substitutions
+into an initial form. When adding syntax or interface behavior, ask whether readers can continue
+to focus on the document without learning that syntax.
 
-## 必要な環境
+English is the canonical language for project documentation. Update the relevant English files
+under `documents/` whenever behavior, APIs, or development practices change.
+
+## Requirements
 
 - Node.js 24
 - pnpm 11
 
-Node.jsのメジャーバージョンは`.node-version`、対応範囲はルート`package.json`の`engines`で定義します。対応するバージョン管理ツールを使う場合は、リポジトリへ移動した時点で`.node-version`を適用してください。pnpmは`packageManager`で固定したバージョンを使用します。
+`.node-version` defines the Node.js major version and the root `package.json` `engines` field
+defines the supported range. Apply `.node-version` on entering the repository if your version
+manager supports it. Use the pnpm version pinned by `packageManager`.
 
-## ルートコマンド
+## Root commands
 
-すべてリポジトリのルートで実行します。
+Run all commands from the repository root.
 
 ```sh
 pnpm install
 ```
 
-workspace全体の依存関係をインストールします。
+Installs dependencies for every workspace.
 
 ```sh
 pnpm dev
 ```
 
-WebデモのVite開発サーバーを起動します。
+Starts the web app's Vite development server.
 
 ```sh
 pnpm build
 ```
 
-ライブラリとWebデモをビルドします。
+Builds the libraries and web app.
 
 ```sh
 pnpm typecheck
 ```
 
-全workspaceのTypeScript型チェックを実行します。
+Runs TypeScript type checking across the workspace.
 
 ```sh
 pnpm lint
 ```
 
-ESLintでJavaScript／TypeScriptの問題を検査します。自動修正可能な問題には`pnpm lint:fix`を使用できます。
+Checks JavaScript and TypeScript with ESLint. Use `pnpm lint:fix` for automatically fixable
+problems.
 
 ```sh
 pnpm format
 ```
 
-Prettierで対応ファイルを整形します。変更せずに整形状態だけを確認する場合は`pnpm format:check`を使用します。
+Formats supported files with Prettier. Use `pnpm format:check` to verify formatting without
+changing files.
 
 ```sh
 pnpm test
 ```
 
-ライブラリのVitestテストを1回実行します。
+Runs the Vitest suites once.
 
 ```sh
 pnpm test:watch
 ```
 
-Vitestをウォッチモードで起動します。
+Starts Vitest in watch mode.
 
 ```sh
 pnpm version:check
 ```
 
-`version.txt`と各workspaceのバージョンが一致することを確認します。
+Verifies that `version.txt` and all workspace versions match.
 
 ```sh
 pnpm test:e2e
 ```
 
-WebアプリのPlaywrightテストを実行します。初回実行前にChromiumをインストールしてください。
+Runs the web app's Playwright suite. Install Chromium before the first run:
 
 ```sh
 pnpm --filter @docfilly/web exec playwright install chromium
 ```
 
-## ライブラリのビルド
+## Library build
 
-`packages/docfilly`では次の順序でビルドします。
+`packages/docfilly` builds in this order:
 
-1. ViteでES ModulesとCommonJSを生成
-2. TypeScriptで型定義ファイルを生成
+1. Vite produces ES Modules and CommonJS.
+2. TypeScript produces declarations.
 
-出力先は`packages/docfilly/dist`です。
+Output is written to `packages/docfilly/dist`:
 
 ```text
 dist/
@@ -93,89 +102,92 @@ dist/
 └─ index.d.ts
 ```
 
-## テスト環境
+## Test environment
 
-- テストランナー: Vitest
-- DOM実装: jsdom
-- 設定: `packages/docfilly/vitest.config.ts`
-- 解析テスト: `packages/docfilly/tests/parser.test.ts`
-- DOM表示テスト: `packages/docfilly/tests/docfilly.test.ts`
-- Webアプリ設定: `apps/web/vitest.config.ts`
-- Webアプリテスト: `apps/web/tests/`
-- WebアプリUIテスト: React Testing Library
+- Runner: Vitest
+- DOM implementation: jsdom
+- Core configuration: `packages/docfilly/vitest.config.ts`
+- Parser tests: `packages/docfilly/tests/parser.test.ts`
+- DOM rendering tests: `packages/docfilly/tests/docfilly.test.ts`
+- Web configuration: `apps/web/vitest.config.ts`
+- Web tests: `apps/web/tests/`
+- Web UI tests: React Testing Library
 
-jsdomを使うことで、ブラウザを起動せずにフォーム要素、イベント、Markdown出力を検証しています。
+jsdom verifies form elements, events, and Markdown output without launching a browser.
 
-## ブラウザーE2Eテスト
+## Browser end-to-end tests
 
-Playwrightは`apps/web`のViteサーバーを起動し、GitHub Pagesと同じ`/Docfilly/`ベースパスで実行します。ローカルでは既存サーバーを再利用し、CIではワーカーを1つに制限します。失敗時のスクリーンショットとtraceは`apps/web/test-results`、HTMLレポートは`apps/web/playwright-report`に保存されます。
+Playwright starts the `apps/web` Vite server with the same `/Docfilly/` base path as GitHub
+Pages. It reuses an existing server locally and uses one worker in CI. Failed-run screenshots
+and traces go to `apps/web/test-results`; the HTML report goes to
+`apps/web/playwright-report`.
 
-テストは`apps/web/e2e`へ利用者シナリオ単位で追加します。CSSクラスやDOM階層ではなくrole、label、表示文言を優先し、固定時間の待機ではなくlocatorとweb-first assertionを使用してください。各テストは独立させ、細かなロジック、コンポーネント分岐、境界値はVitestで検証します。
+Add user scenarios under `apps/web/e2e`. Prefer roles, labels, and visible text over CSS classes
+or DOM structure. Use locators and web-first assertions rather than fixed delays. Keep tests
+independent, and cover small logic branches, component branches, and boundaries with Vitest.
 
-## 現在のテスト範囲
+## Current coverage
 
-### パーサー
+### Parser
 
-- テキスト、ドロップダウン、チェックボックス
-- ラベルの省略
-- CRLF
-- UTF-8 BOM
-- 小文字`[x]`と大文字`[X]`を初期状態ONとして扱うこと
-- `[True]`と`[False]`を選択肢として扱うこと
-- 日本語の設定名
-- `#!docfilly`識別子と大文字・前後空白の許容
-- 識別子がない文書を通常文書として扱うこと
-- 識別子がなければ`---`を設定区切りとして解釈しないこと
-- 空白付き区切り行
-- 区切り行前後の空行の有無が解析結果や注意点に影響しないこと
-- 区切り行直後の空行を本文先頭へ保持すること
-- 識別子があるのに区切り行がない場合のフォールバック
-- `=`不足行の読み飛ばし
-- 使用できない設定名の読み飛ばし
-- 設定名重複時の先勝ち
-- 空のドロップダウン項目の除外とテキストへのフォールバック
-- ラベル、テキスト値、ドロップダウン選択肢のCSV風引用
-- 引用された型記法をテキストとして扱うこと
-- 不正な引用の読み飛ばしと診断
-- ifブロックの構文木生成、ネスト、不正構文からの原文復旧
+- Text fields, dropdowns, and checkboxes
+- Omitted labels
+- CRLF and UTF-8 BOM
+- Lowercase `[x]` and uppercase `[X]` as initially on
+- `[True]` and `[False]` as dropdown options
+- Non-ASCII variable names, including Japanese
+- `#!docfilly` recognition with case and surrounding-whitespace tolerance
+- Ordinary handling of unmarked source, including an unrecognized `---`
+- Separator lines with surrounding whitespace
+- Blank lines around the separator not affecting parsing or diagnostics
+- Preservation of a blank first body line after the separator
+- Fallback when a marked document has no separator
+- Skipping lines without `=` and definitions with invalid names
+- First-definition-wins handling of duplicate names
+- Empty dropdown-option removal and text-field fallback
+- CSV-style quoting for labels, text values, and dropdown options
+- Quoted type-like notation treated as text
+- Invalid-quoting recovery and diagnostics
+- Conditional syntax trees, nesting, and source-preserving invalid-syntax recovery
 
-### 文書評価
+### Document evaluation
 
-- テンプレート評価後のMarkdown／text出力ソース
-- Markdown用の変数値エスケープとHTMLサニタイズ
-- Markdown変換失敗時のtextフォールバック
-- parse diagnosticsと最新render diagnosticsの合成
+- Markdown and plain-text output source after template evaluation
+- Variable-value escaping and HTML sanitization for Markdown
+- Plain-text fallback after Markdown conversion failure
+- Combination of parse diagnostics with diagnostics from the latest render
 
-### DOM統合
+### DOM integration
 
-- フォーム要素の生成
-- Markdownの初期描画
-- 現在値の取得
-- 入力イベント後の遅延描画
-- 未定義プレースホルダーの維持
-- 6種類の文字列ケース変換とフィルター合成
-- 未知のフィルターと不正なプレースホルダーの診断
-- 設定項目がない文書でのフォーム非表示
-- 文書評価結果のDOM反映
-- `docfilly:render`イベント
-- `destroy()`によるDOM削除
-- チェックボックス条件と`#else`の再描画
-- テキスト／ドロップダウンの`=`／`!=`比較とCSV風引用
-- ifブロックのネスト、32階層の上限、エスケープ
-- 不正なifブロックの原文保持と行番号付き診断
-- 入力値をディレクティブとして再解釈しないこと
+- Form element creation and initial Markdown rendering
+- Current value access and delayed rendering after input
+- Preservation of undefined placeholders
+- Six case transformations and filter chaining
+- Diagnostics for unknown filters and invalid placeholders
+- Hiding the form when no fields or instructions exist
+- Applying document-evaluation results to the DOM
+- `docfilly:render` events and `destroy()` cleanup
+- Checkbox conditions and `#else` rerendering
+- `=` and `!=` comparisons for text and dropdowns, including CSV-style quoting
+- Nested blocks, the 32-level limit, and escaping
+- Source preservation and line-numbered diagnostics for invalid blocks
+- No reinterpretation of user values as directives
 
-### Webアプリ
+### Web app
 
-- `.md`、`.markdown`、`.txt`のファイル形式判定
-- 対応外のファイル形式の拒否
-- ドラッグ中のドロップ領域表示
-- 1ファイルのドロップ受付と複数ファイルの拒否
-- サンプル文書とローカルファイルのReact統合表示
-- React再レンダー時のフォーム値保持とDOM重複防止
-- Reactラッパーから受け取った通常文書状態とdiagnosticsの表示
+- Type detection for `.md`, `.markdown`, and `.txt`
+- Rejection of unsupported formats
+- Drop overlay while dragging
+- Single-file acceptance and multiple-file rejection
+- React integration for samples and local files
+- Form-value preservation and prevention of duplicate DOM on React rerender
+- Ordinary-document state and diagnostics received through the React adapter
 
-## 変更時の確認手順
+The web unit suite additionally covers localization, preferences, persistence, dialogs, export,
+data reset, and the PWA update prompt. Playwright covers user-visible flows, the production PWA
+manifest and service worker, and offline startup.
+
+## Before submitting a change
 
 ```sh
 pnpm lint
@@ -186,21 +198,22 @@ pnpm typecheck
 pnpm build
 ```
 
-フォーマット仕様や公開APIを変更した場合は、テストと合わせて`documents/`内の該当ドキュメントも更新してください。
+Run `pnpm test:e2e` for user-visible web flows. If format syntax or a public API changes, update
+its documentation together with its tests.
 
-文書またはUIの変更では、次の点も確認します。
+For documentation and UI changes, also verify that:
 
-- 読者がDocfillyの内部構文を知らなくても操作できる
-- 同じ値を何度も読み替えず、最初の入力だけで本文全体へ反映できる
-- 執筆者が通常のMarkdown／テキストへ少数の構文を加えるだけで済む
-- Docfillyを通さずにソースを開いても、本文をできるだけ理解できる
-- 注意点は読者の閲覧を止めず、執筆者が修正に使える
+- readers can operate the result without learning internal syntax;
+- one initial value applies throughout the body instead of requiring repeated substitution;
+- authors need only a small addition to ordinary Markdown or text;
+- source remains understandable without Docfilly where possible; and
+- diagnostics help authors without blocking readers.
 
-## CI
+## Continuous integration
 
-GitHub Actionsの`.github/workflows/ci.yml`は、Pull Request、`main`へのpush、または手動実行で起動します。
+`.github/workflows/ci.yml` runs for pull requests, pushes to `main`, and manual dispatch.
 
-CIではNode.js 24と`package.json`で固定したpnpmを使用し、次の処理を順番に実行します。
+CI uses Node.js 24 and the pnpm version pinned in `package.json`, then runs:
 
 1. `pnpm install --frozen-lockfile`
 2. `pnpm lint`
@@ -210,17 +223,24 @@ CIではNode.js 24と`package.json`で固定したpnpmを使用し、次の処�
 6. `pnpm typecheck`
 7. `pnpm build`
 
-別のE2EジョブではChromiumをインストールし、`pnpm test:e2e`を実行します。失敗時のレポートとテスト成果物はGitHub Actionsへアップロードされます。
+A separate E2E job installs Chromium and runs `pnpm test:e2e`. On failure, reports and test
+artifacts are uploaded to GitHub Actions.
 
-`main`上のCIでは、通常検証とE2Eの両方が成功した場合だけ、再利用可能な`.github/workflows/deploy-pages.yml`を呼び出してWebアプリをGitHub Pagesへデプロイします。Pages workflowを単独で手動実行する経路は設けず、再デプロイもCIの手動実行を通します。
+On `main`, CI calls the reusable `.github/workflows/deploy-pages.yml` workflow only after the
+regular and E2E jobs both succeed. Pages cannot be dispatched directly; manual redeployment also
+runs through CI.
 
-外部のGitHub Actionsは完全なcommit SHAで固定し、末尾コメントに対応するリリースタグを記載します。更新はGitHub Actions向けDependabot PRで行い、タグの参照先を手作業で更新する場合はGitHub APIの`repos/{owner}/{repo}/git/ref/tags/{tag}`でcommitを確認します。注釈付きタグの場合は、返されたtag objectを`repos/{owner}/{repo}/git/tags/{sha}`で参照し、最終的なcommit SHAまで解決します。
+Third-party GitHub Actions are pinned to complete commit SHAs, with the matching release tag in
+a trailing comment. Dependabot pull requests update Actions. To update a tag target manually,
+verify its commit through the GitHub API endpoint
+`repos/{owner}/{repo}/git/ref/tags/{tag}`. For an annotated tag, follow the returned tag object
+through `repos/{owner}/{repo}/git/tags/{sha}` to the final commit.
 
-同じブランチで新しい実行が開始された場合、古い実行はキャンセルされます。
+A newer run on the same branch cancels the older run.
 
-## テスト追加の方針
+## Adding tests
 
-- 構文解析だけで確認できる内容は`parseDocfillySource`を直接テストする
-- フォームや描画に関係する内容は`createDocfilly`を使ってjsdom上でテストする
-- タイマーを含む処理は`vi.useFakeTimers()`を使う
-- セキュリティ修正には回帰テストを追加する
+- Test syntax-only behavior directly with `parseDocfillySource`.
+- Test forms and rendering with `createDocfilly` under jsdom.
+- Use `vi.useFakeTimers()` for timer-dependent behavior.
+- Add a regression test for every security fix.

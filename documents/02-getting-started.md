@@ -1,68 +1,73 @@
-# はじめに
+# Getting started
 
-このページでは、執筆者が最初のDocfilly文書を作り、読者向けの表示を確認するまでを説明します。ライブラリを別のアプリへ組み込む方法も後半で扱います。
+This guide takes authors from their first Docfilly document to a reader-facing preview. It also
+shows how to embed the library in another application.
 
-## 最初の文書を作る
+## Create your first document
 
-次の内容を`setup.md`として保存します。
+Save the following as `setup.md`:
 
 ````text
 #!docfilly
-プロジェクト名 = MyProject
-実行環境 = [development, staging, *production]
-公開する = [x]
+projectName = MyProject
+environment = [development, staging, *production]
+publish = [x]
 
 ---
 
-# [[プロジェクト名]] のセットアップ
+# Set up [[projectName]]
 
-対象は **[[実行環境]]** 環境です。
+The target is the **[[environment]]** environment.
 
 ```sh
-deploy --project [[プロジェクト名]] --environment [[実行環境]]
+deploy --project [[projectName]] --environment [[environment]]
 ```
 ````
 
-この文書では、区切り行`---`より前が入力項目、後ろが読者に表示する本文です。Markdownとして直接表示した場合の見え方を保つため、区切り行の前後には空行を入れています。空行はDocfilly構文上の必須条件ではありません。読者が「プロジェクト名」と「実行環境」をフォームで指定すると、見出し、説明、コマンドのすべてに同じ値が反映されます。
+Everything before the `---` separator defines fields; everything after it is the body shown to
+readers. Blank lines surround the separator so the source also displays cleanly as Markdown.
+They are not required by the Docfilly syntax. When readers change `projectName` or `environment`
+in the form, the heading, explanation, and command all update to the same values.
 
-執筆者は同じ値を使う箇所へ`[[設定名]]`を書く必要がありますが、読者はこの構文を扱いません。詳しい記法は[ソースフォーマット仕様](./03-source-format.md)を参照してください。
+Authors place `[[variableName]]` wherever a value is reused. Readers never work with this syntax.
+See the [Source format](./03-source-format.md) for the complete grammar.
 
-チェックボックスやドロップダウンに応じて手順そのものを切り替える場合は、ifブロックを使用できます。
+Use `if` blocks when an entire instruction depends on a checkbox or selected value:
 
 ```text
-[[#if 公開する]]
-公開時だけ必要な手順です。
+[[#if publish]]
+This step is required only when publishing.
 [[#endif]]
 
-[[#if 実行環境 = production]]
-本番環境向けの注意事項です。
+[[#if environment = production]]
+Review the production checklist before continuing.
 [[#endif]]
 ```
 
-## Webデモで確認する
+## Preview it in the web app
 
-### 必要な環境
+### Requirements
 
-- Node.js
-- pnpm 11系（リポジトリでは`pnpm@11.9.0`を指定）
-- DOM APIを利用できるブラウザ
+- Node.js 24
+- pnpm 11 (the repository pins `pnpm@11.9.0`)
+- A browser with DOM APIs
 
-リポジトリのルートで実行します。
+From the repository root, run:
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-`pnpm dev`は`apps/web`のVite開発サーバーを起動します。ブラウザで開発サーバーを開き、作成した`setup.md`を選択またはドラッグ＆ドロップしてください。
+Open the Vite development server, then select or drag and drop `setup.md`. Changing a form value
+updates the customized body—this is the reader's core experience.
 
-フォームの値を変更すると、カスタマイズされた本文が更新されます。これが読者の基本体験です。
+You can also open ordinary Markdown or text without the leading `#!docfilly` marker. Docfilly
+displays the full document unchanged and does not generate a form.
 
-先頭に`#!docfilly`がない通常のMarkdown／テキストも読み込めます。その場合はフォームを生成せず、文書全体をそのまま表示します。
+## Embed the library
 
-## ライブラリを組み込む
-
-Webデモでは、次のworkspace依存として登録されています。
+The web app currently registers the library as a workspace dependency:
 
 ```json
 {
@@ -72,9 +77,10 @@ Webデモでは、次のworkspace依存として登録されています。
 }
 ```
 
-Docfillyがnpmなどへ公開された後は、利用側プロジェクトへ通常のパッケージとして追加できます。現在のリポジトリ内ではworkspace依存を使用してください。
+After Docfilly is published to npm or another registry, consumers can install it as a regular
+package. Within this repository, use the workspace dependency.
 
-文書のソースを`createDocfilly`へ渡し、返された要素をページへ追加します。
+Pass the source to `createDocfilly` and append its returned element to the page:
 
 ```ts
 import { createDocfilly } from "docfilly";
@@ -84,23 +90,28 @@ const view = createDocfilly(source, "md");
 document.body.append(view.element);
 ```
 
-`view.element`には、読者が入力するフォームと、カスタマイズされた文書の表示領域が含まれます。`docfilly/styles.css`は標準スタイルを明示的に利用するためのimportであり、JavaScriptから自動注入されません。既存アプリのデザインを使う場合はCSS importを省略して独自に装飾できます。構文上の注意点を執筆者へ知らせる場合は`view.diagnostics`を利用できます。
+`view.element` contains the reader form and customized output. Importing
+`docfilly/styles.css` opts into the standard styles; JavaScript does not inject them. Omit the
+import and style the public classes when integrating with an existing design. Use
+`view.diagnostics` to present source problems to authors.
 
-## プレーンテキストを表示する
+## Render plain text
 
-第2引数へ`"text"`を指定します。
+Pass `"text"` as the second argument:
 
 ```ts
-const view = createDocfilly("#!docfilly\n名前 = Alice\n---\nこんにちは、[[名前]]さん。", "text");
+const view = createDocfilly("#!docfilly\nname = Alice\n---\nHello, [[name]].", "text");
 
 document.body.append(view.element);
 ```
 
-テキスト出力ではHTMLを使用せず、`textContent`へ結果を設定します。公式CSSを利用すると改行を保持する等幅フォントの表示になり、独自CSSを使う場合は`.docfilly__output--text`を装飾してください。
+Plain-text output is assigned through `textContent`, not `innerHTML`. The official CSS preserves
+line breaks and uses a monospace font. If you use custom styles, target
+`.docfilly__output--text`.
 
-## 再描画の待ち時間を変更する
+## Change the render delay
 
-入力イベントから描画までの待ち時間は、既定で200ミリ秒です。
+The default delay between an input event and rendering is 200 milliseconds:
 
 ```ts
 const view = createDocfilly(source, "md", {
@@ -108,14 +119,14 @@ const view = createDocfilly(source, "md", {
 });
 ```
 
-プログラムから入力値を変更し、すぐに本文へ反映したい場合は`view.render()`を呼び出せます。
+After changing an input programmatically, call `view.render()` to update the body immediately.
 
-## 後片付け
+## Clean up
 
-画面遷移などで利用を終了するときは`destroy()`を呼び出します。
+Call `destroy()` when navigation or another lifecycle event removes the view:
 
 ```ts
 view.destroy();
 ```
 
-保留中のタイマーとイベントリスナーが解除され、`view.element`もDOMから削除されます。
+This clears pending timers and event listeners and removes `view.element` from the DOM.
