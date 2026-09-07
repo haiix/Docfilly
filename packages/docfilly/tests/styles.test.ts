@@ -22,8 +22,8 @@ describe("official styles", () => {
     expect(styles).toContain(".docfilly__output--fallback");
     expect(styles).toContain("@container (min-width: 47.5rem)");
     expect(styles).toContain("@media (prefers-color-scheme: dark)");
-    expect(styles).toContain('.docfilly[data-docfilly-theme="light"]');
-    expect(styles).toContain('.docfilly[data-docfilly-theme="dark"]');
+    expect(styles).toContain(':where(.docfilly)[data-docfilly-theme="light"]');
+    expect(styles).toContain(':where(.docfilly)[data-docfilly-theme="dark"]');
     expect(styles).not.toContain("light-dark(");
     expect(styles).toMatch(/\.docfilly\s*{[^}]*background: var\(--docfilly-form-background\);/s);
     expect(styles).toMatch(/\.docfilly__output\s*{[^}]*background: var\(--docfilly-background\);/s);
