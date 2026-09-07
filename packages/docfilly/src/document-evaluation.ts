@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { marked } from "marked";
+import { marked, Renderer } from "marked";
 import { diagnosticMessage } from "./messages";
 import { escapeHtml, type CompiledTemplate } from "./template";
 import type { DocfillyDiagnostic, DocfillySourceType, SupportedLocale } from "./types";
@@ -25,10 +25,20 @@ interface DocumentEvaluationDependencies {
   markdownToSafeHtml(source: string): string;
 }
 
+const markdownRenderer = new Renderer();
+const renderMarkdownLink = markdownRenderer.link.bind(markdownRenderer);
+
+markdownRenderer.link = function (token) {
+  const html = renderMarkdownLink(token);
+  if (!/^(?:https?:)?\/\//i.test(token.href)) return html;
+
+  return html.replace("<a ", '<a target="_blank" rel="noopener noreferrer" ');
+};
+
 const defaultDependencies: DocumentEvaluationDependencies = {
   markdownToSafeHtml: (source) => {
-    const html = marked.parse(source, { async: false });
-    return DOMPurify.sanitize(html);
+    const html = marked.parse(source, { async: false, renderer: markdownRenderer });
+    return DOMPurify.sanitize(html, { ADD_ATTR: ["target"] });
   },
 };
 
