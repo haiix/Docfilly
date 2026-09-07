@@ -44,6 +44,44 @@ describe("evaluateDocument", () => {
     expect(result.payload.html).not.toContain("<script");
   });
 
+  it("opens external Markdown links in a new tab without changing local links", () => {
+    const result = evaluateDocument({
+      compiledTemplate: compileTemplate(
+        [
+          "[External](https://example.com/docs)",
+          "[Protocol relative](//example.com/docs)",
+          "[Relative](./guide.md)",
+          "[Heading](#details)",
+        ].join("\n\n"),
+        [],
+      ),
+      values: new Map(),
+      sourceType: "md",
+      locale: "en",
+      parseDiagnostics: [],
+    });
+
+    expect(result.payload.kind).toBe("html");
+    if (result.payload.kind !== "html") throw new Error("Expected an HTML payload");
+
+    const container = document.createElement("div");
+    container.innerHTML = result.payload.html;
+    const links = container.querySelectorAll("a");
+
+    expect(links[0]).toMatchObject({
+      target: "_blank",
+      rel: "noopener noreferrer",
+    });
+    expect(links[1]).toMatchObject({
+      target: "_blank",
+      rel: "noopener noreferrer",
+    });
+    expect(links[2]?.hasAttribute("target")).toBe(false);
+    expect(links[2]?.hasAttribute("rel")).toBe(false);
+    expect(links[3]?.hasAttribute("target")).toBe(false);
+    expect(links[3]?.hasAttribute("rel")).toBe(false);
+  });
+
   it("combines parse and current render diagnostics without accumulating them", () => {
     const parseDiagnostic: DocfillyDiagnostic = {
       code: "missing-equals",
