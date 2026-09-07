@@ -1,75 +1,102 @@
-# セキュリティと制約
+# Security and limitations
 
-Docfillyは読者の入力を文書へ反映するため、読者が構文を意識しなくてよい体験と同時に、入力値を安全に表示することを重視します。
+Because Docfilly inserts reader input into documents, it prioritizes safe rendering alongside an
+experience in which readers do not need to understand the syntax.
 
-## Markdown出力の安全性
+## Markdown output safety
 
-Markdown表示では次の3段階で処理します。
+Markdown is processed in three stages:
 
-1. 解析済みのifブロックを現在値で評価
-2. フォームから入力された値をHTMLエスケープして本文へ挿入
-3. `marked`でHTMLへ変換した後、DOMPurifyでサニタイズ
+1. Evaluate parsed conditional blocks using current values.
+2. HTML-escape form values before inserting them into the body.
+3. Convert the Markdown with `marked`, then sanitize the HTML with DOMPurify.
 
-これにより、読者が入力した値へ`<script>`やイベントハンドラーが含まれていても、実行可能なDOMとして挿入されないようにしています。執筆者のMarkdown本文に含まれるHTMLも最終段階でサニタイズされます。
+As a result, a reader value containing `<script>` or an event handler is not inserted as
+executable DOM. HTML written by the author in the Markdown body is also sanitized in the final
+stage.
 
-ifブロックの構文解析は値の挿入前に一度だけ行います。フォームの入力値に`[[#endif]]`などが含まれていてもディレクティブとして再解釈されません。条件式から任意のJavaScriptを実行する機能もありません。
+Conditional syntax is parsed once before values are inserted. A form value containing
+`[[#endif]]`, for example, is never reinterpreted as a directive. Conditions cannot execute
+arbitrary JavaScript.
 
-## テキスト出力の安全性
+## Plain-text output safety
 
-プレーンテキストは`innerHTML`を使わず、`textContent`へ設定します。HTMLのような文字列もマークアップとして解釈されません。
+Plain text is assigned through `textContent`, not `innerHTML`. HTML-like strings are not
+interpreted as markup.
 
-## ファイルの取り扱い
+## File handling
 
-WebデモはブラウザのFile APIだけを使用します。選択されたファイルの内容をサーバーへ送信する処理はありません。
+The web app uses only the browser File API to read selected files. It contains no operation that
+uploads their contents to a server.
 
-別のアプリケーションへ組み込む場合、保存、アップロード、ログ送信などは利用側の責任で設計してください。機密文書を扱う場合は、Docfilly以外の通信処理も確認する必要があります。
+When embedding Docfilly elsewhere, the host application is responsible for storage, upload,
+logging, and other data handling. For confidential documents, review every communication path,
+not only Docfilly.
 
-## CSPとの併用
+## Content Security Policy
 
-Docfillyはインラインスクリプトを生成しません。アプリケーション全体ではContent Security Policyを設定し、スクリプトや接続先を必要な範囲に制限することを推奨します。
+Docfilly does not generate inline scripts. Applications should still define a Content Security
+Policy that limits scripts and connection destinations to what they need.
 
-## 現在の制約
+## Current limitations
 
-### ブラウザ専用
+### Browser-oriented rendering
 
-`Docfilly`クラスはDOM APIを必要とします。SSRやNode.jsで直接インスタンスを生成する場合はDOM実装が必要です。DOMを使わない構文解析には`parseDocfillySource`を利用できます。
+The `Docfilly` class requires DOM APIs. Direct construction during SSR or under Node.js requires
+a DOM implementation. Use `parseDocfillySource` for parsing without the DOM.
 
-### 行単位の簡易構文
+### Deliberately simple, line-oriented syntax
 
-現在の設定項目は行単位の簡易フォーマットです。
+Field definitions use a simple one-line format:
 
-- 複数行の初期値は指定できない
-- ラベル、初期値、ドロップダウン選択肢ではCSV風の引用を使用できるが、複数行の引用値には対応しない
-- 設定名は引用できない
-- 設定名には日本語を含む文字、数字、アンダースコアを使用できるが、空白やハイフンは使えない
-- ifブロックは単独行のディレクティブ、チェックボックス条件、`=`／`!=`による文字列比較に限定される
-- ifブロックの最大深度は32階層で、複雑な式、論理演算、繰り返し構文はない
-- 文字列ケース変換は固定された組み込みフィルターだけを実行し、引数やユーザー定義関数には対応しない
-- 変数ごとの型検証や入力制約はない
+- Defaults cannot span lines.
+- Labels, defaults, and dropdown options support CSV-style quoting, but quoted values cannot
+  span lines.
+- Variable names cannot be quoted.
+- Variable names may contain letters from any language, including Japanese characters, digits,
+  and underscores, but not spaces or hyphens.
+- Conditional blocks are limited to whole-line directives, checkbox tests, and string
+  comparisons using `=` or `!=`.
+- Conditional nesting is limited to 32 levels. There are no complex expressions, logical
+  operators, or loops.
+- Case conversion uses fixed built-in filters only; filters have no arguments or user-defined
+  functions.
+- Variables have no per-variable type validation or input constraints.
 
-### 先頭識別子が必要
+### Leading marker required
 
-設定項目を解析するには、先頭行に`#!docfilly`が必要です。識別子がないファイルは、Docfillyの設定らしい行や`---`を含んでいても通常文書として表示します。これは既存のMarkdown／テキストを誤って解釈しないための仕様です。
+The first line must contain `#!docfilly` for fields to be parsed. Without it, a file is displayed
+as an ordinary document even if it contains field-like lines or `---`. This prevents existing
+Markdown and text from being interpreted accidentally.
 
-### Markdownとテキストの自動判定はしない
+### No automatic Markdown detection
 
-ライブラリはソース文字列だけから形式を推測しません。呼び出し側が`"md"`または`"text"`を指定します。Webデモではファイル拡張子を使って判定しています。
+The library does not infer type from the source string. Callers pass `"md"` or `"text"`. The
+web app detects type from the filename extension.
 
-### CSSは自動適用しない
+### CSS is opt-in
 
-ライブラリは意味のあるCSSクラスを付与し、`docfilly/styles.css`から公式の標準CSSも提供しますが、JavaScriptからは注入しません。標準CSSを明示的にimportするか、組み込み先で独自CSSを定義してください。公式CSSは`.docfilly`以下へスコープされ、ページ全体の要素やアプリ固有変数へ依存しません。
+The library provides meaningful classes and official styles at `docfilly/styles.css`, but does
+not inject CSS from JavaScript. Import the standard stylesheet explicitly or define host styles.
+The official CSS is scoped below `.docfilly` and does not depend on global elements or
+application-specific variables.
 
-### 初回イベント
+### Initial render event
 
-初回描画はインスタンス生成中に完了します。生成後に登録した`docfilly:render`リスナーでは初回イベントを取得できません。初期結果は`outputSource`または`output`から取得してください。
+The initial render completes during instance construction. A `docfilly:render` listener added
+after construction cannot observe that first event. Read `outputSource` or `output` for the
+initial result.
 
-## 読み取れない記述への対応
+## Recovery from invalid source
 
-Docfillyは文書の構文上の問題で読者の閲覧を停止しません。読み取れない設定行を飛ばす、最初の重複設定を使う、通常のテキスト入力へ置き換えるなど、安全な方向へ復旧します。
+Docfilly does not stop readers because of document syntax problems. It recovers conservatively
+by skipping unreadable definitions, using the first duplicate, or falling back to a text field.
 
-Markdown変換処理が予期せず失敗した場合も、元の出力ソースをプレーンテキストとして表示し、`markdown-render-fallback`の注意点を返します。
+If Markdown conversion fails unexpectedly, Docfilly displays the output source as plain text and
+returns a `markdown-render-fallback` diagnostic.
 
-復旧内容は`diagnostics`へ格納されます。執筆者が修正できるよう、利用側アプリケーションでは読者の閲覧を妨げない形でメッセージを表示してください。
+Recovery details are stored in `diagnostics`. Host applications should present them where they
+help authors without interrupting readers.
 
 ```ts
 const view = createDocfilly(source, sourceType);
@@ -80,4 +107,5 @@ if (view.diagnostics.length > 0) {
 }
 ```
 
-ファイルI/O、DOMが存在しない環境、メモリ不足など、フォーマット解析以外の実行時問題まで回復できることを保証するものではありません。
+Docfilly does not guarantee recovery from runtime failures outside format parsing, including file
+I/O errors, an environment without required DOM APIs, or exhausted memory.

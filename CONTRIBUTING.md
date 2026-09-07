@@ -1,69 +1,91 @@
 # Contributing to Docfilly
 
-## 開発フロー
+English is the canonical language for project documentation. Keep `README.md`, this guide, and
+the files under `documents/` in English when adding or changing documented behavior.
 
-変更はissue単位でブランチとPull Requestを作成し、CIとレビューを通して`main`へマージします。`main`上のCIが成功するとWebアプリをGitHub Pagesへ自動デプロイしますが、それ自体を正式なリリースとは扱いません。Pages上のアプリは常に最新の検証済み開発スナップショットです。
+## Development workflow
 
-通常のPull Requestでは、`version.txt`や各`package.json`の`version`を変更しないでください。バージョン更新はリリースPull Requestに集約します。
+Create a branch and pull request for each issue, then merge into `main` after CI and review.
+Successful CI on `main` automatically deploys the web app to GitHub Pages. That deployment is
+not a formal release; the Pages app is the latest verified development snapshot.
 
-## PRタイトルとコミット
+Do not change `version.txt` or the `version` fields in package manifests in an ordinary pull
+request. Version updates belong in the release pull request.
 
-Release Pleaseは`main`へ入ったConventional Commits形式の履歴から、次のバージョンとリリースノートを生成します。このリポジトリでは原則としてPull Requestをsquash mergeし、PRタイトルを次の形式にします。
+## Pull request titles and commits
 
-```text
-<type>(任意のscope): <変更内容>
-```
-
-主なtypeは次のとおりです。
-
-| type                           | 用途                         | CHANGELOG     | バージョンへの影響 |
-| ------------------------------ | ---------------------------- | ------------- | ------------------ |
-| `feat`                         | 利用者向け機能の追加         | Added         | minor              |
-| `fix`                          | 利用者向け不具合の修正       | Fixed         | patch              |
-| `perf`                         | 利用者に影響する性能改善     | Performance   | patch              |
-| `refactor`                     | 利用者に影響する構成変更     | Changed       | なし               |
-| `docs`                         | 利用者向けドキュメントの変更 | Documentation | なし               |
-| `revert`                       | 利用者向け変更の取り消し     | Reverted      | patch              |
-| `chore`, `test`, `ci`, `build` | 内部作業                     | 記載しない    | なし               |
-
-破壊的変更はtypeの直後に`!`を付け、コミット本文またはPR本文に影響と移行方法を記載します。
+Release Please determines the next version and release notes from Conventional Commits on
+`main`. Pull requests are normally squash merged, so use this format for the pull request title:
 
 ```text
-feat!: テンプレート構文を変更する
+<type>(optional scope): <description>
 ```
 
-## バージョン方針
+The principal types are:
 
-プロジェクトが安定版になるまではSemantic Versioningの`0.x.y`を使用します。
+| Type                           | Use                                 | CHANGELOG     | Version effect |
+| ------------------------------ | ----------------------------------- | ------------- | -------------- |
+| `feat`                         | User-facing feature                 | Added         | minor          |
+| `fix`                          | User-facing bug fix                 | Fixed         | patch          |
+| `perf`                         | User-facing performance improvement | Performance   | patch          |
+| `refactor`                     | User-facing structural change       | Changed       | none           |
+| `docs`                         | User-facing documentation change    | Documentation | none           |
+| `revert`                       | Reversal of a user-facing change    | Reverted      | patch          |
+| `chore`, `test`, `ci`, `build` | Internal work                       | omitted       | none           |
 
-- 利用者向けの不具合修正はpatchを上げます（例: `0.2.0`から`0.2.1`）。
-- 機能、API、構文の追加はminorを上げます（例: `0.2.1`から`0.3.0`）。
-- 1.0未満の破壊的変更はminorを上げます（例: `0.3.0`から`0.4.0`）。
-- 構文、コアAPI、基本的な利用方法を安定版として保証できる段階で`1.0.0`にします。
+Add `!` immediately after the type for a breaking change, and explain its impact and migration
+steps in the commit or pull request body.
 
-プロジェクトバージョンの基準は`version.txt`です。リリース時に次のファイルを同じバージョンへ自動更新します。
+```text
+feat!: change the template syntax
+```
+
+## Versioning policy
+
+The project uses Semantic Versioning in the `0.x.y` range until it is stable.
+
+- User-facing bug fixes increment the patch version (for example, `0.2.0` to `0.2.1`).
+- New features, APIs, and syntax increment the minor version (for example, `0.2.1` to `0.3.0`).
+- Breaking changes before 1.0 increment the minor version (for example, `0.3.0` to `0.4.0`).
+- The project will reach `1.0.0` when its syntax, core API, and basic usage can be guaranteed as
+  stable.
+
+`version.txt` is the source of truth for the project version. During a release, automation
+updates these files to the same version:
 
 - `version.txt`
 - `packages/docfilly/package.json`
 - `packages/react/package.json`
-- `apps/web/package.json`（非公開アプリの表示上のバージョン）
+- `apps/web/package.json` (the display version of the private app)
 
-`pnpm version:check`はこれらのバージョンが一致していることを検査し、CIでも実行します。
+`pnpm version:check`, which also runs in CI, verifies that the versions match.
 
-## リリースフロー
+## Release workflow
 
-1. 通常のPull Requestを`main`へマージすると、日本時間の毎日0時にRelease Pleaseが変更をまとめ、リリースPull Requestを作成または更新します。必要な場合は`Prepare release` workflowを手動実行できます。
-2. リリースPull Requestで、提案されたバージョン、`CHANGELOG.md`、各バージョンファイルを確認します。
-3. リリースする節目でそのPull Requestをマージします。
-4. 次回の定期実行時、または`Prepare release` workflowの手動実行時に、Release Pleaseが`v0.1.0`形式のタグとGitHub Releaseを作成します。
-5. npmへの公開は、公開方針が決まるまで自動では行いません。
+1. After ordinary pull requests are merged into `main`, Release Please collects their changes
+   at midnight Japan Standard Time each day and creates or updates a release pull request. The
+   `Prepare release` workflow can also be run manually when needed.
+2. Review the proposed version, `CHANGELOG.md`, and version files in the release pull request.
+3. Merge the pull request when the collected changes are ready for release.
+4. On the next scheduled run, or a manual `Prepare release` run, Release Please creates a tag
+   such as `v0.1.0` and a GitHub Release.
+5. npm publication remains disabled until the publication policy is finalized.
 
-次のバージョンは、前回のタグ以降にマージされた変更から決まります。バージョンを例外的に指定する場合は、対象コミットの本文に`Release-As: 0.4.0`のようなフッターを記載します。
+The next version is derived from changes merged since the previous tag. To select a version in
+an exceptional case, add a footer such as `Release-As: 0.4.0` to the relevant commit body.
 
-リリースPull Requestを標準の`GITHUB_TOKEN`で作成するには、リポジトリの **Settings → Actions → General → Workflow permissions** で **Allow GitHub Actions to create and approve pull requests** を有効にします。
+To let the standard `GITHUB_TOKEN` create the release pull request, enable **Allow GitHub Actions
+to create and approve pull requests** under **Settings → Actions → General → Workflow
+permissions**.
 
-この設定を有効にしない場合や、リリースPull Requestでも通常のCIを自動起動したい場合は、Pull Requestとcontentsへの書き込み権限を持つ専用トークンをActions secretの`RELEASE_PLEASE_TOKEN`として登録します。workflowは、このsecretがあれば専用トークンを、なければ`GITHUB_TOKEN`を使用します。
+If that setting cannot be enabled, or if regular CI must run automatically on release pull
+requests, register a dedicated token with pull request and contents write access as the
+`RELEASE_PLEASE_TOKEN` Actions secret. The workflow uses that token when present and otherwise
+uses `GITHUB_TOKEN`.
 
 ## CHANGELOG
 
-`CHANGELOG.md`は利用者に影響するリリース済み変更の記録です。通常のPull Requestから直接編集せず、Release Pleaseが生成するリリースPull Request内で内容を確認・調整します。テスト、CI、依存関係の定例更新など、利用者に影響しない変更は含めません。
+`CHANGELOG.md` records released changes that affect users. Do not edit it directly in an
+ordinary pull request. Review and adjust it only in the release pull request generated by
+Release Please. Routine test, CI, and dependency updates without user-facing effects are not
+included.

@@ -1,116 +1,139 @@
 # Docfilly
 
-Docfillyは、手順書を読む人が頭の中で行っている「自分の環境への読み替え」を、最初のフォーム入力に変えるためのドキュメントフォーマットと表示ライブラリです。
+Docfilly is a document format and rendering library that turns the mental substitutions
+readers make while following instructions into a short form they complete up front.
 
-たとえば、手順書にある`YOUR_PROJECT_NAME`を何度も自分のプロジェクト名へ置き換えながら読む代わりに、読者は最初にプロジェクト名を1回入力します。Docfillyは、その値を反映した読者向けの文書を表示します。これにより、読者は置換作業ではなく、手順の内容そのものに集中できます。
+Instead of repeatedly replacing `YOUR_PROJECT_NAME` with the name of their own project,
+readers enter the project name once. Docfilly then renders a version of the document with
+that value in place, so readers can focus on the instructions rather than on substitution.
 
-Docfillyには、2種類の利用者がいます。
+Docfilly serves two groups:
 
-- **執筆者** — 通常のMarkdown／テキストへ少数の構文を加えて、読者に入力してもらう項目を定義します。テンプレートエンジンやプログラミングの知識は前提にしません。
-- **読者** — 構文を理解する必要はありません。フォームへ自分の環境に合った値を入力し、カスタマイズされた文書を読みます。
+- **Authors** add a small amount of syntax to ordinary Markdown or plain text to define the
+  information readers should provide. No programming or template-engine experience is
+  required.
+- **Readers** do not need to understand the syntax. They fill in values for their environment
+  and read the customized document.
 
-Docfillyが目指すのは汎用テンプレートエンジンではなく、**人が読むドキュメントを、人ごとに読みやすくする仕組み**です。
+Docfilly is not intended to be a general-purpose template engine. Its purpose is to make
+**human-readable documentation easier for each reader to follow**.
 
-[Docfilly Webアプリ](https://haiix.github.io/Docfilly/)で実際の動作を試せます。
+Try it in the [Docfilly web app](https://haiix.github.io/Docfilly/).
 
-## 仕組み
+## How it works
 
-執筆者は、文書の先頭に入力項目を定義し、本文中の読み替えが必要な箇所を`[[設定名]]`で示します。
+An author defines fields at the beginning of a document and marks values that should be
+substituted in the body with `[[variableName]]`.
 
 ````text
 #!docfilly
-プロジェクト名 = MyProject
-実行環境 = [development, staging, *production]
+projectName = MyProject
+environment = [development, staging, *production]
 
 ---
 
-# [[プロジェクト名]] のセットアップ
+# Set up [[projectName]]
 
-次のコマンドを実行してください。
+Run the following command:
 
 ```sh
-deploy --project [[プロジェクト名]] --environment [[実行環境]]
+deploy --project [[projectName]] --environment [[environment]]
 ```
 ````
 
-読者には「プロジェクト名」と「実行環境」のフォーム、および入力値が反映された文書が表示されます。Markdownでは、直接表示したときに設定行がSetext形式の見出しとして解釈されないよう、区切り行`---`の前に空行を入れることを推奨します。空行の有無はDocfillyの解析結果に影響しません。先頭に`#!docfilly`がないファイルは、通常のMarkdown／テキストとしてそのまま表示します。
+The reader sees fields for `projectName` and `environment`, followed by a document rendered
+with the selected values. In Markdown, leave a blank line before `---` so the field above it is
+not interpreted as a Setext heading when the source is viewed directly. The blank line does not
+affect Docfilly parsing. A file without `#!docfilly` on its first line is rendered unchanged as
+ordinary Markdown or plain text.
 
-詳細は[Docfillyドキュメント](./documents/README.md)を参照してください。
+See the [Docfilly documentation](./documents/README.md) for complete usage and format details.
 
-## 設計原則
+## Design principles
 
-1. 読者にDocfillyの構文を要求しない
-2. 執筆者が少数の分かりやすい構文だけで書けるようにする
-3. 元のMarkdown／テキストを直接開いても、できるだけ読める状態を保つ
-4. アプリではなく、文書とその内容を主役にする
-5. 読者の頭の中の「読み替え」を、明示的なフォーム入力に変える
+1. Readers should not need to learn Docfilly syntax.
+2. Authors should need only a small, understandable set of constructs.
+3. Source Markdown and text should remain as readable as possible when opened directly.
+4. The document and its content—not the app—should remain the focus.
+5. Repeated mental substitution should become one explicit form entry.
 
-記述に問題があっても、Docfillyは読み取れる範囲で文書を表示し、執筆者が修正できるよう注意点を返します。
+When source contains a problem, Docfilly renders as much as it can and returns diagnostics that
+help the author correct it.
 
-## リポジトリ構成
+## Repository layout
 
-- `packages/docfilly`: ViteでビルドするTypeScriptライブラリ
-- `packages/react`: `docfilly`をReactへ接続するラッパーライブラリ
-- `apps/web`: `docfilly`を利用するVite Webアプリ
-- `documents`: 利用方法、フォーマット、APIなどの詳細文書
-- [`brand`](./brand/README.md): アイコンの原本、生成設定、Web用アイコンの生成方法
+- `packages/docfilly`: framework-independent TypeScript library built with Vite
+- `packages/react`: React adapter for `docfilly`
+- `apps/web`: Vite web app powered by `docfilly`
+- `documents`: detailed guides for usage, the source format, APIs, and development
+- [`brand`](./brand/README.md): source artwork, generation settings, and web icon instructions
 
-## 開発
+## Development
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-ビルド、静的検査、Vitest、Playwright、CIの詳細は[開発とテスト](./documents/06-development-and-testing.md)を参照してください。Issue、Pull Request、バージョン、デプロイ、リリースの運用は[CONTRIBUTING.md](./CONTRIBUTING.md)を参照してください。
+See [Development and testing](./documents/06-development-and-testing.md) for build, static
+analysis, Vitest, Playwright, and CI details. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the
+issue, pull request, versioning, deployment, and release workflows.
 
-## ライブラリAPI
+## Core library API
 
 ```ts
 import { createDocfilly } from "docfilly";
 import "docfilly/styles.css";
 
 const source = `#!docfilly
-プロジェクト名 = MyProject
+projectName = MyProject
 
 ---
 
-# [[プロジェクト名]]
+# [[projectName]]
 `;
 
-const view = createDocfilly(source, "md", { locale: "ja" });
+const view = createDocfilly(source, "md");
 document.body.append(view.element);
 
-view.form; // 読者が入力するフォーム
-view.output; // カスタマイズされた文書の表示要素
-view.isDocfilly; // #!docfilly識別子を認識したか
-view.outputSource; // 現在の入力値を反映した出力ソース
-view.values; // 現在のフォーム値
-view.diagnostics; // 読み飛ばしや自動補正に関する執筆者向けの注意点
+view.form; // Form completed by the reader
+view.output; // Element containing the customized document
+view.isDocfilly; // Whether the #!docfilly marker was recognized
+view.outputSource; // Current output source after substitutions
+view.values; // Current form values
+view.diagnostics; // Author-facing notices about recovery and skipped input
 ```
 
-`createDocfilly`の第2引数には`"md"`または`"text"`を指定します。MarkdownのHTML出力はDOMPurifyでサニタイズされます。
-標準スタイルは自動注入されず、上記のCSS importを追加した場合だけ適用されます。独自テーマを使う場合はimportを省略し、公開CSSクラスを直接装飾できます。
+Pass `"md"` or `"text"` as the second argument to `createDocfilly`. Markdown HTML is sanitized
+with DOMPurify. Standard styles are not injected automatically; they apply only when you import
+the CSS as shown above. Omit the import and style the public CSS classes for a custom theme.
 
-現在のフォーム値を次回の初期値としてDocfillyソースへ保存する場合は、`updateDocfillyDefaults`を使用します。
+Use `updateDocfillyDefaults` to save the current form values back into the source as defaults
+for the next session.
 
 ```ts
 import { updateDocfillyDefaults } from "docfilly";
 
-const updated = updateDocfillyDefaults(source, view.values, { locale: "ja" });
+const updated = updateDocfillyDefaults(source, view.values);
 
 if (updated.isDocfilly) {
   await saveTextFile(updated.source);
 }
 ```
 
-このAPIはHeader内の有効な変数定義だけを更新し、本文、コメント、ラベル、変数順を維持します。通常文書は変更せず、保存できない値は元の初期値を維持して`diagnostics`で通知します。
+This API updates only valid variable definitions in the header. It preserves the body,
+comments, labels, and variable order. It leaves ordinary documents unchanged and retains the
+original default for values that cannot be saved, reporting the reason in `diagnostics`.
 
-Webアプリは空状態から`.md`、`.markdown`、`.txt`ファイルを選択するか、ウィンドウ内の任意の位置へドラッグ＆ドロップして読み込めます。組み込みサンプルは空状態またはヘルプの「サンプルを開く」から表示でき、テキスト、ドロップダウン、チェックボックスと本文テンプレートの対応を5分程度で試せます。サンプルはDocfilly形式で保存し、編集して再度開くこともできます。ファイルはブラウザ内で処理され、サーバーには送信されません。
+The web app opens `.md`, `.markdown`, and `.txt` files through a picker or drag and drop. Its
+built-in sample, available from the empty state and Help dialog, demonstrates text fields,
+dropdowns, checkboxes, and body templates in about five minutes. The sample can be saved as a
+Docfilly file, edited, and opened again. Files are processed entirely in the browser and are not
+uploaded to a server.
 
 ## React API
 
-React 18または19では、`@docfilly/react`を利用できます。
+Use `@docfilly/react` with React 18 or 19.
 
 ```sh
 pnpm add @docfilly/react react react-dom
@@ -124,10 +147,10 @@ import "docfilly/styles.css";
   source={source}
   sourceType="md"
   options={{
-    locale: "ja",
+    locale: "en",
     debounceMs: 200,
     initialValues: new Map([
-      ["title", "保存済みのタイトル"],
+      ["title", "Saved title"],
       ["published", "true"],
     ]),
   }}
@@ -138,11 +161,20 @@ import "docfilly/styles.css";
 />;
 ```
 
-`DocfillyView`はマウント時にDocfillyを生成し、`source`、`sourceType`、`options.locale`、`options.debounceMs`、または`options.initialValues`の内容が変わると再生成します。アンマウント時には破棄します。`onRender`は初期表示と、その後フォーム入力によって出力が更新されるたびに呼び出されます。コールバックだけを変更した場合や、同じ内容の`initialValues` Mapを渡し直した場合は、フォームの入力状態を維持します。diagnosticsは既定で英語になり、`locale: "ja"`で日本語を指定できます。詳細は[Diagnostic localization](./documents/08-diagnostic-localization.md)を参照してください。
+`DocfillyView` creates a Docfilly instance when mounted and recreates it when the contents of
+`source`, `sourceType`, `options.locale`, `options.debounceMs`, or `options.initialValues`
+change. It destroys the instance when unmounted. `onRender` runs after the initial render and
+after each form-driven update. Changing only the callback, or passing a new `initialValues` Map
+with the same contents, preserves the current form state. Diagnostics default to English; pass
+`locale: "ja"` for Japanese. See
+[Diagnostic localization](./documents/08-diagnostic-localization.md).
 
-`className`、`id`、`aria-*`などの`HTMLAttributes<HTMLDivElement>`は外側のラッパー要素へ渡されます。`onRender`には現在の`outputSource`、`ReadonlyMap`形式の`values`、`diagnostics`、Docfilly文書かどうかを示す`isDocfilly`が渡されます。
+`HTMLAttributes<HTMLDivElement>` such as `className`, `id`, and `aria-*` are forwarded to the
+outer wrapper. `onRender` receives the current `outputSource`, `values` as a `ReadonlyMap`,
+`diagnostics`, and `isDocfilly`.
 
-出力や送信の直前に保留中のデバウンス描画を完了する場合は、refの`flush()`を使用します。戻り値は最新の`outputSource`で、ビューがまだ利用できない場合は`null`です。
+Call `flush()` through a ref before export or submission to apply any pending debounced render.
+It returns the latest `outputSource`, or `null` if the view is not available yet.
 
 ```tsx
 import { useRef } from "react";
@@ -154,4 +186,4 @@ const viewRef = useRef<DocfillyViewHandle>(null);
 const latestSource = viewRef.current?.flush();
 ```
 
-開発時のテスト方法は[開発とテスト](./documents/06-development-and-testing.md)を参照してください。
+See [Development and testing](./documents/06-development-and-testing.md) for testing guidance.

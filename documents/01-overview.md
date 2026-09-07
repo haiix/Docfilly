@@ -1,108 +1,129 @@
-# 概要
+# Overview
 
-## Docfillyが解決する問題
+## The problem Docfilly solves
 
-手順書や設定手順には、次のような案内がよくあります。
+Instructions and setup guides often say something like:
 
-> `YOUR_PROJECT_NAME`は、自分のプロジェクト名に置き換えてください。
+> Replace `YOUR_PROJECT_NAME` with the name of your project.
 
-この形式では、読者は置き換える箇所と値を理解し、同じ値を頭に置いたまま文書を読み進めなければなりません。読み替えが何度も現れるほど、本来理解したい手順へ向けられる注意が減っていきます。
+Readers must identify each placeholder, find the correct value, and remember that value while
+continuing through the document. Every repeated substitution takes attention away from the
+instructions themselves.
 
-Docfillyは、この読み替えをフォーム入力として文書の外へ切り出します。読者は必要な値を最初に入力し、自分の環境に合わせてカスタマイズされた文書を読みます。
+Docfilly moves those substitutions into a form. Readers provide the required values first and
+then follow a document customized for their environment.
 
 ```text
-従来:     読む → 読み替え箇所を探す → 値を調べる → 頭の中で置き換える → 続きを読む
-Docfilly: 値を入力する → 自分向けの文書を読む → 手順に従う
+Traditional: Read → find a placeholder → look up a value → substitute mentally → keep reading
+Docfilly:    Enter values → read your customized document → follow the instructions
 ```
 
-Docfillyが解決したいのは、単なる文字列置換ではありません。**読者が頭の中で行っていた読み替えを明示的な入力へ変え、文書の内容に集中できる状態を作ること**です。
+This is more than string replacement. Docfilly turns an implicit cognitive task into an explicit
+input step so readers can concentrate on the content.
 
-## 2種類の利用者
+## Authors and readers
 
-### 執筆者
+### Authors
 
-手順書や、その元になるテンプレートを作成する人です。プログラミングやテンプレートエンジンの知識は前提にしません。
+Authors create instructions or the templates behind them. They are not expected to know
+programming or a template engine.
 
-執筆者は、通常のMarkdown／テキストの先頭に読者が入力する項目を定義し、本文の該当箇所を`[[設定名]]`で示します。
+An author defines reader-provided fields at the beginning of ordinary Markdown or plain text and
+uses `[[variableName]]` where a value belongs in the body.
 
 ````text
 #!docfilly
-プロジェクト名 = MyProject
-実行環境 = [development, staging, *production]
+projectName = MyProject
+environment = [development, staging, *production]
 
 ---
 
-# [[プロジェクト名]] のセットアップ
+# Set up [[projectName]]
 
 ```sh
-deploy --project [[プロジェクト名]] --environment [[実行環境]]
+deploy --project [[projectName]] --environment [[environment]]
 ```
 ````
 
-Docfilly独自の記述は少数に抑え、ファイルを直接開いた場合にも内容を追いやすい形式を採用しています。
+Docfilly keeps its syntax small so the source remains easy to follow when opened directly.
 
-### 読者
+### Readers
 
-Docfillyで表示された手順書を読む人です。読者は`#!docfilly`や`[[設定名]]`といった構文を理解する必要がありません。
+Readers follow documents rendered by Docfilly. They do not need to understand constructs such as
+`#!docfilly` or `[[variableName]]`.
 
-読者に必要なのは、フォームへ自分の環境に合った値を入力することだけです。入力後は、本文の見出し、説明、コマンド例などに同じ値が反映された状態で手順を読めます。
+They provide values for their environment through the form. Docfilly then uses those same values
+throughout headings, explanations, command examples, and other content.
 
-## 基本思想
+## Product philosophy
 
-Docfillyは、汎用的なテンプレートエンジンを目指しません。複雑な式やスクリプトなどの高機能さより、**人が読むドキュメントを、人ごとに読みやすくすること**を優先します。
+Docfilly is not a general-purpose template engine. It favors making human-readable documentation
+easier for each reader over complex expressions, scripts, and other advanced templating features.
 
-テンプレートとしての複雑さは執筆者側の最小限の記述に留め、読者側にはフォームとカスタマイズされた文書だけを提示します。アプリの操作ではなく、文書そのものが主役です。
+Authors get a deliberately limited format; readers get only a form and the customized document.
+The document—not operation of the app—remains the focus.
 
-## 設計原則
+## Design principles
 
-1. **読者に構文を要求しない** — 読者が使うのはフォームと、入力値が反映された文書です。
-2. **執筆者の学習コストを低くする** — Markdown／テキストへ少数の構文を加えるだけで使えるようにします。
-3. **元の文書の可読性を維持する** — Docfillyを通さずにファイルを開いても、可能な限り内容を理解できる形式にします。
-4. **文書を主役にする** — Docfillyは文書を読むための補助であり、アプリの操作を覚えることを目的にしません。
-5. **「読み替え」を「入力」に変える** — 繰り返される認知上の置換作業を、最初の明示的な操作へまとめます。
-6. **問題があっても読める状態を保つ** — 軽微な記述ミスでは表示を止めず、執筆者が修正できる注意点を返します。
-7. **安全に表示する** — MarkdownのHTMLをサニタイズし、フォーム入力をHTMLとして実行しません。
+1. **Do not require syntax knowledge from readers.** Readers use a form and the resulting
+   document.
+2. **Keep the authoring learning curve low.** Authors add only a few constructs to Markdown or
+   plain text.
+3. **Keep source documents readable.** Content should remain understandable when opened without
+   Docfilly whenever possible.
+4. **Keep the document central.** Docfilly assists reading; learning the app is not the goal.
+5. **Turn substitution into input.** Gather repeated mental replacements in one explicit step.
+6. **Remain readable when source has problems.** Recover from minor mistakes and return useful
+   diagnostics instead of blocking the reader.
+7. **Render safely.** Sanitize Markdown HTML and never execute form input as HTML.
 
-## 主な機能
+## Main capabilities
 
-- テキスト入力、ドロップダウン、チェックボックスを文書の定義から生成
-- `[[設定名]]`を読者の入力値へリアルタイムに反映
-- チェックボックスや選択値に応じたifブロックの表示切り替え
-- Markdownとプレーンテキストの表示
-- Markdownから生成したHTMLのサニタイズ
-- 通常のMarkdown／テキストをフォームなしで表示
-- 読み取れない設定や自動補正を執筆者向けの注意点として報告
-- 日本語の設定名、LF／CRLF、UTF-8 BOMに対応
-- フォーム、表示要素、出力ソース、現在値を組み込み用APIから参照
+- Generate text fields, dropdowns, and checkboxes from document definitions
+- Substitute reader values into `[[variableName]]` references in real time
+- Include or omit `if` blocks based on checkbox and dropdown values
+- Render Markdown and plain text
+- Sanitize HTML generated from Markdown
+- Display ordinary Markdown or text without a form
+- Report invalid definitions and automatic recovery as author-facing diagnostics
+- Support non-ASCII variable names, including Japanese characters, as well as LF, CRLF, and a
+  UTF-8 BOM
+- Expose the form, output element, output source, and current values through the embedding API
 
-## 処理の流れ
+## Processing flow
 
-1. アプリケーションが文書のソース文字列を取得します。
-2. `createDocfilly`へソースと種類（`"md"`または`"text"`）を渡します。
-3. 先頭が`#!docfilly`なら、区切り行より前の入力項目を解析します。
-4. 入力項目に応じて読者向けのフォームを生成します。
-5. 現在のフォーム値でifブロックを評価し、本文中の参照を置き換えます。
-6. MarkdownはHTMLへ変換し、テキストはそのまま表示します。
-7. フォームが変わると、既定では200ミリ秒後に文書を再描画します。
-8. 読み取れない記述があれば、文書を表示したまま注意点を返します。
+1. The application obtains the document source string.
+2. It passes the source and its type (`"md"` or `"text"`) to `createDocfilly`.
+3. If the first line is `#!docfilly`, Docfilly parses fields before the separator.
+4. It creates a reader-facing form for those fields.
+5. It evaluates `if` blocks and substitutes references using the current form values.
+6. It converts Markdown to HTML or displays plain text directly.
+7. When a field changes, it rerenders after 200 milliseconds by default.
+8. If source cannot be interpreted completely, it returns diagnostics while keeping the
+   document visible.
 
-先頭に`#!docfilly`がないソースは通常文書として扱い、フォームを生成せず全文を表示します。
+Source without `#!docfilly` on the first line is an ordinary document. Docfilly displays it in
+full without generating a form.
 
-## モノレポ構成
+## Monorepo layout
 
 ```text
 Docfilly/
 ├─ apps/
-│  └─ web/                  Webデモ
+│  └─ web/                  Web app
 ├─ packages/
-│  └─ docfilly/             ライブラリ本体
-├─ documents/               プロジェクトドキュメント
+│  ├─ docfilly/             Core library
+│  └─ react/                React adapter
+├─ documents/               Project documentation
 ├─ package.json
 └─ pnpm-workspace.yaml
 ```
 
-ライブラリはViteのライブラリモードでES ModulesとCommonJSを生成し、TypeScriptの型定義も出力します。Webデモはpnpm workspaceを通じてライブラリのソースを参照します。
+The libraries use Vite library mode to produce ES Modules and CommonJS, along with TypeScript
+declarations. The web app consumes the library source through the pnpm workspace.
 
-## 対応環境
+## Supported environment
 
-DocfillyはDOM APIを利用するブラウザ向けライブラリです。`document`、`HTMLInputElement`、`CustomEvent`などが存在する環境を前提とします。Node.js上でDOMを生成する場合はjsdomなどのDOM実装が必要です。
+The `Docfilly` rendering class targets browsers and depends on DOM APIs such as `document`,
+`HTMLInputElement`, and `CustomEvent`. Creating an instance under Node.js requires a DOM
+implementation such as jsdom. Use `parseDocfillySource` for DOM-independent parsing.

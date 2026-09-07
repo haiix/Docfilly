@@ -1,32 +1,41 @@
-# Webビューアー
+# Web app
 
-## 概要
+## Overview
 
-`apps/web`は、React、TypeScript、Viteと`@docfilly/react`を利用したローカル文書ビューアーです。初期画面では文書を自動表示せず、ローカル文書または組み込みサンプルを開く空状態を表示します。読者には入力フォームと、その値を反映した文書を表示します。
+`apps/web` is a local document viewer built with React, TypeScript, Vite, and
+`@docfilly/react`. It starts in an empty state instead of opening a document automatically.
+Readers choose a local file or built-in sample, then see a form and the document customized by
+its values.
 
-このデモで確認する中心的な体験は、読者が必要な値を最初に入力し、その後はDocfillyの構文を意識せず自分向けの文書を読めることです。
+The central experience is entering required values once and then reading a relevant document
+without needing to understand Docfilly syntax.
 
 ```sh
 pnpm dev
 ```
 
-## 対応ファイル
+## Supported files
 
 - `.md`
 - `.markdown`
 - `.txt`
 
-拡張子が`.md`または`.markdown`の場合はMarkdown、それ以外の許可されたファイルはプレーンテキストとして扱います。
+`.md` and `.markdown` files are Markdown. Other accepted files are plain text.
 
-## ファイル読み込みの流れ
+## Opening a file
 
-1. ツールバーまたは空状態の「ファイルを開く」から文書を選択するか、ウィンドウ内の任意の位置へファイルをドラッグ＆ドロップします。
-2. File APIの`file.text()`でソース文字列を取得します。
-3. ファイル名から`"md"`または`"text"`を判定します。
-4. Reactの文書状態を更新し、`DocumentViewer`へソースと形式を渡します。
-5. `DocumentViewer`が`@docfilly/react`の`DocfillyView`を描画します。先頭が`#!docfilly`なら読者向けの入力フォームを生成し、識別子がなければ通常文書として表示します。
-6. `DocfillyView`の`onRender`から値、diagnostics、文書種別を受け取り、ステータスと診断一覧へ反映します。インスタンスの生成と破棄はReactラッパーが担当します。
-7. 文書情報とフォーム値をIndexedDBへ保存し、次回起動時の復元に利用します。
+1. Select a document from **Open file** in the toolbar or empty state, or drop a file anywhere
+   in the window.
+2. The app reads the source with File API's `file.text()`.
+3. It determines `"md"` or `"text"` from the filename.
+4. React document state is updated and the source and type are passed to `DocumentViewer`.
+5. `DocumentViewer` renders `DocfillyView` from `@docfilly/react`. A leading
+   `#!docfilly` marker produces a reader form; unmarked source is displayed as an ordinary
+   document.
+6. The app receives values, diagnostics, and document kind through `onRender` and updates its
+   status and diagnostic list. The React adapter owns instance creation and cleanup.
+7. Document metadata and form values are saved to IndexedDB for optional restoration on the
+   next launch.
 
 ```tsx
 const source = await file.text();
@@ -36,134 +45,250 @@ setDocument({ name: file.name, source, sourceType });
 <DocfillyView source={document.source} sourceType={document.sourceType} onRender={handleRender} />;
 ```
 
-実際の実装では`.markdown`もMarkdownとして判定し、読み飛ばした設定や自動補正があれば、画面のステータス領域へ注意点を表示します。
+The implementation also recognizes `.markdown`. When Docfilly skips or recovers source, the
+toolbar status area exposes the diagnostics.
 
-ファイルをウィンドウ内へドラッグしている間だけ全画面オーバーレイを表示し、画面内の任意の位置でドロップできます。Filesを含まないドラッグには反応しません。ブラウザーによるファイルへのページ遷移は防止します。ファイルは1つずつ読み込み、複数ファイル、対応外の拡張子、読込失敗の場合は現在の文書を維持してステータス領域へ案内を表示します。
+A full-window overlay appears only while files are being dragged. Drags without files are
+ignored, and the browser's default navigation to a dropped file is prevented. The app accepts
+one file at a time. Multiple files, unsupported extensions, and read failures leave the current
+document intact and show guidance in the status area.
 
-## プライバシー
+## Privacy and on-device data
 
-選択されたファイルはブラウザのFile APIで読み込まれます。現在のビューアーにはアップロード処理や外部API通信はなく、ファイル内容はサーバーへ送信されません。
+Selected files are read through the browser File API. The viewer has no upload flow or external
+API communication, so their contents are not sent to a server.
 
-初期設定では、最後に開いた1文書のファイル名、元ソース、Markdown／テキストの種別、現在のフォーム値、更新時刻、保存形式のスキーマバージョンは、現在のブラウザープロファイルのIndexedDBに保存されます。複数文書の履歴は保持しません。ユーザー文書をCache StorageやService Workerへ渡す処理はありません。
+By default, IndexedDB in the current browser profile stores one most-recent document: its
+filename, original source, Markdown or text type, current form values, update time, and storage
+schema version. The app does not keep a document history. User documents are never placed in
+Cache Storage or passed to the service worker.
 
-設定の「文書」にある「前回の文書を復元する」をオフにすると、保存済みの復元データを削除し、その後に開いた文書やフォーム値もIndexedDBへ保存しません。現在表示中の文書は閉じません。再びオンにすると、その時点で表示中の文書と現在のフォーム値を保存対象にします。この設定は文書データとは分離してユーザー設定へ保存されます。
+Turn off **Restore the previous document** under the **Document** settings to delete the saved
+restoration record and stop saving documents or form values opened afterward. The currently
+visible document stays open. Turning restoration on again begins by saving the visible document
+and current values. This preference is stored separately from document data.
 
-共有端末では、利用後にツールバーの「文書を閉じる」を利用してください。表示中の文書を終了して空状態へ戻し、復元用のファイル名、元ソース、形式、フォーム値を削除します。元のローカルファイルとダウンロード済みファイルは変更しません。
+On a shared device, use **Close document** when finished. This returns to the empty state and
+deletes the restorable filename, source, type, and form values. It does not modify the original
+local file or any downloaded files.
 
-## インストールとオフライン利用
+## Installation and offline use
 
-GitHub Pages上のWebビューアーを一度オンラインで開くと、対応ブラウザーのインストール操作から端末へ追加できます。インストール後はstandalone表示で起動します。ブラウザーによって操作名や場所が異なるため、アドレスバーやブラウザーメニューにある「インストール」「アプリをインストール」「ホーム画面に追加」等を利用してください。
+After opening the GitHub Pages viewer online once, install it through a supported browser. The
+exact command varies by browser; look for **Install**, **Install app**, or **Add to Home Screen**
+in the address bar or browser menu. The installed app opens in standalone mode.
 
-Service WorkerはHTML、JavaScript、CSS、英語／日本語のUIと組み込みサンプル、アイコンをアプリシェルとしてCache Storageへ保存します。一度読み込みが完了すれば、通信できない状態でもアプリの起動、両言語のサンプル表示、ローカルファイルの読み込み、フォーム操作、保存と書き出しを利用できます。外部リンクの閲覧と、初回読み込み前またはブラウザーのサイトデータ削除後のオフライン起動には通信が必要です。
+The service worker stores the application shell in Cache Storage: HTML, JavaScript, CSS, icons,
+and the bundled English and Japanese UI resources and samples. After the first load completes,
+the app can start offline and can display either sample, open local files, update forms, save
+Docfilly source, and export rendered output. External links, the first load, and the first launch
+after browser site data has been cleared require a network connection.
 
-ユーザーが開いた文書とフォーム値はService Workerへ渡さず、Cache Storageにも保存しません。言語、テーマ、文書復元などのユーザー設定はバージョン付きの小さなデータとして`localStorage`へ保存し、前回文書の復元に使うIndexedDBとは保存先と用途を分離しています。設定の「アプリデータをリセット」は、ユーザー設定を削除して言語とテーマをシステム設定、文書復元をオンの初期値へ戻し、表示中の文書を閉じ、IndexedDBの復元データ、Docfilly専用のWorkboxキャッシュ、`/Docfilly/`スコープのService Worker登録を削除します。同一オリジンにある他アプリのキャッシュは削除しません。
+User documents and form values are not sent to the service worker or stored in Cache Storage.
+Versioned preferences for language, theme, and document restoration use `localStorage`, separate
+from the IndexedDB restoration record.
 
-実行前の確認画面では、次回利用時にインターネット接続が必要になること、インストール済みアプリ自体はアンインストールされないこと、元のローカルファイルとダウンロード済みファイルは削除されないことを案内します。リセット後はページを自動再読み込みせず、そのページを閉じるまでService Workerやオフラインキャッシュを再作成しません。削除の一部に失敗した場合は警告を表示します。次回オンラインで開くとアプリ資材を再取得し、オフライン利用が再び可能になります。
+**Reset app data** in **Data and privacy**:
 
-### アプリデータリセットの削除境界
+- clears user preferences, restoring language and theme to system settings and document
+  restoration to its enabled default;
+- closes the displayed document and deletes its IndexedDB restoration record;
+- deletes Docfilly-owned Workbox caches; and
+- unregisters the service worker whose scope is exactly `/Docfilly/`.
 
-Cache Storageはオリジン単位で共有されるため、アプリデータのリセットは次の条件をすべて満たすキャッシュだけをDocfilly所有として削除します。
+It does not delete caches belonging to other apps on the same origin. The confirmation explains
+that the next use requires a network connection, that the installed app itself is not
+uninstalled, and that original local and downloaded files are not deleted. After a reset, the
+page does not reload automatically and does not recreate the service worker or offline cache
+until the page is closed. Partial deletion failures produce a warning. The next online visit
+downloads the application assets again and restores offline capability.
 
-- 現行形式は、キャッシュ名がDocfilly固有の`docfilly-`接頭辞で始まること
-- 旧形式との互換性のため、Workbox既定の`workbox-`接頭辞で始まるキャッシュも対象にできること
-- いずれの形式も、キャッシュ名がDocfillyのService Worker登録スコープの完全なURLを含む接尾辞で終わること
+### Ownership boundary for app-data reset
 
-接頭辞とスコープ接尾辞の両方が一致しなければ削除対象にしてはいけません。Cache Storage全体の一括削除、接頭辞だけによる削除、スコープURLの部分一致による削除は禁止します。識別できないキャッシュは、同一オリジンにある別プロジェクトの所有物として扱い、残します。
+Cache Storage is shared per origin. A cache is considered Docfilly-owned only when both of these
+conditions hold:
 
-Service Worker登録も同様に、登録の`scope`がDocfillyのスコープURLと完全一致する場合だけ解除します。親スコープ、子スコープ、同一オリジンの別スコープは解除してはいけません。
+- its name begins with the current Docfilly-specific `docfilly-` prefix, or the supported legacy
+  Workbox `workbox-` prefix; and
+- its name ends with the complete URL of Docfilly's service-worker registration scope.
 
-将来、Workboxの`cacheId`、キャッシュ命名規則、配信ベースパス、Service Workerスコープのいずれかを変更する場合は、この所有判定も同時に更新します。回帰テストでは、現行形式と対応対象の旧形式を削除できることに加え、同一オリジンの別スコープを持つWorkboxキャッシュ、無関係なキャッシュ、別スコープのService Worker登録が残ることを必ず検証します。
+Both the prefix and exact scope suffix must match. Reset must never delete all Cache Storage,
+match only a prefix, or use a partial scope URL. An unidentified cache is treated as belonging
+to another project on the origin and is retained.
 
-新しいデプロイを検出すると、画面下部に更新案内を表示します。「再読み込みして更新」を選ぶと新しいService Workerを適用し、不要になった旧キャッシュを削除します。「後で」を選ぶと現在の画面を継続して利用できます。表示中の文書とフォーム値はIndexedDBへ保存されるため、更新時の再読み込み後にも復元されます。
+Likewise, a service-worker registration is removed only when its `scope` exactly equals the
+Docfilly scope URL. Parent, child, and other same-origin scopes remain registered.
 
-## 文書とフォーム状態の復元
+Any future change to Workbox `cacheId`, cache naming, deployment base path, or service-worker
+scope must update this ownership test at the same time. Regression tests must prove that current
+and supported legacy caches are removed while Workbox caches for other scopes, unrelated
+caches, and service workers for other scopes remain.
 
-文書復元がオンの場合、文書を開くと初回描画で得たフォーム値と文書情報をIndexedDBへ保存します。その後のフォーム変更は、描画更新後さらに500msの待機時間にまとめることで、入力のたびに過剰な書き込みが発生するのを防ぎます。復元をオフにすると保存待ちを取り消し、実行中の保存が完了してから復元データを削除するため、遅延していた保存によって削除済みデータが復活することはありません。
+When a new deployment is available, an update prompt appears at the bottom of the screen.
+**Reload to update** activates the new service worker and removes obsolete caches. **Later**
+continues the current session. Because the visible document and values are stored in IndexedDB,
+they can be restored after the update reload.
 
-起動時に保存済みデータがあれば、元ソースと形式を読み込み、保存したフォーム値を`DocfillyView`の`initialValues`へ渡して復元します。画面には「前回の文書を復元しました」と通知します。保存データがない場合は通常の空状態を表示します。
+## Restoring documents and form state
 
-保存データは読み込み時に全項目を検証します。破損している場合や未知のスキーマバージョンで安全に移行できない場合はそのデータを削除し、空状態で起動します。IndexedDB自体を利用できない場合も、通知を表示したうえで文書の閲覧を継続できます。
+When restoration is enabled, opening a document saves its metadata and values from the first
+render to IndexedDB. Form changes are saved after rendering with an additional 500-millisecond
+delay to avoid writing after every keystroke. Turning restoration off cancels pending work,
+waits for an in-progress save, and then deletes the record so delayed writes cannot recreate it.
 
-ツールバーの「文書を閉じる」は、現在の文書を終了して空状態へ戻し、復元用の保存データも削除します。保存待ちの処理は停止するため、閉じた文書が再保存されることはありません。元のローカルファイルやダウンロード済みファイルは変更・削除しません。空状態からは別のファイルまたはサンプルを開けます。
+At startup, valid saved data restores the original source and type and supplies saved form values
+to `DocfillyView.initialValues`. The app announces that it restored the previous document. With
+no saved data, it shows the normal empty state.
 
-## 空状態とサンプル
+Every stored field is validated on read. Corrupt data, or an unknown schema version that cannot
+be migrated safely, is deleted and the app starts empty. If IndexedDB itself is unavailable, a
+notification is shown but document viewing remains available.
 
-初期表示ではファイルを開く操作を主役にした空状態を表示します。ローカルファイルがない場合も機能を確認できるよう、空状態の「サンプルを開く」からアプリ内のサンプルMarkdownを明示的に開けます。ヘルプからも同じサンプルを開けます。文書を閉じた後は空状態へ戻るため、別のファイルまたはサンプルを再び開けます。
+**Close document** cancels pending saves, returns to the empty state, and deletes restoration
+data so the closed document cannot be saved again. Original local and downloaded files remain
+unchanged.
 
-組み込みサンプルは、左のフォームと右の本文の対応を5分程度で試せるチュートリアルです。次の3種類の入力を実際に変更しながら、設定行、プレースホルダー、条件分岐の関係を確認できます。
+## Empty state and samples
 
-- テキスト入力
-- ドロップダウン
-- チェックボックス
+The empty state makes opening a file the primary action. **Open sample**, also available in
+Help, explicitly loads the built-in Markdown tutorial. Closing a document returns to this state.
 
-テキスト入力は`[[変数名]]`による差し込み、ドロップダウンは選択値に応じた案内、チェックボックスは`[[#if ...]]`と`[[#else]]`によるチーム作業／個人作業のサンプル手順の切り替えに利用します。構文を説明するコードブロックでは、先頭の`[`をバックスラッシュでエスケープし、例そのものが置換や条件分岐として処理されないようにしています。
+The sample takes about five minutes and lets readers change three field types while observing
+the relationship between definitions, placeholders, and conditions:
 
-チュートリアルの最後では、ツールバーの「Docfilly形式で保存」でソースをダウンロードし、テキストエディターで編集して再度開く流れと、[ソースフォーマット仕様](./03-source-format.md)を案内します。
+- text input;
+- dropdown; and
+- checkbox.
 
-## 注意点の表示
+The text input demonstrates `[[variableName]]` substitution, the dropdown changes guidance by
+selected value, and the checkbox switches between team and individual instructions with
+`[[#if ...]]` and `[[#else]]`. Syntax shown in explanatory code blocks escapes the first `[`
+with a backslash so the example itself is not substituted or evaluated.
 
-次のような記述があっても、ライブラリは文書全体の表示を止めません。
+The tutorial ends by directing readers to **Save as Docfilly**, editing the downloaded source,
+opening it again, and consulting the [Source format](./03-source-format.md).
 
-- `#!docfilly`があるのに`---`区切り行が存在しない場合は、識別子より後を本文として表示
-- 設定行に`=`がない場合は、その行だけを読み飛ばす
-- 使用できない設定名は、その設定だけを読み飛ばす
-- 設定名が重複した場合は、最初の設定を使用
-- 空のドロップダウン選択肢は、空の項目だけを除外
+## Diagnostics
 
-Webビューアーは生成されたフォームと文書を表示したまま、ツールバーへ件数付きの「診断」ボタンを表示します。このボタンから全diagnosticのメッセージ、行番号、該当ソースを一覧で確認できます。diagnosticが更新されると、ボタンの件数と一覧も更新されます。
+These source problems do not stop the entire document:
 
-診断一覧は文書の記述に関する情報です。ファイル読込や書き出しの成否を伝えるアプリ通知とは、専用ボタンとダイアログ、色、説明文によって視覚的・意味的に区別しています。情報の取得を`title`属性だけに依存しません。
+- a marked document without `---` displays everything after the marker as body content;
+- a field line without `=` is skipped;
+- a definition with an invalid variable name is skipped;
+- the first of duplicate variable definitions is used; and
+- empty dropdown entries are discarded while valid entries remain.
 
-識別子がないファイルは問題のない通常文書として扱うため、注意点は表示しません。
+While the generated form and document remain visible, the toolbar displays a **Diagnostics**
+button with the current count. Its dialog lists every localized diagnostic message, line number,
+and relevant source line. The count and list update when diagnostics change.
 
-ファイル自体を読み込めなかった場合だけは、新しい文書へ切り替えず、もう一度選択するよう案内します。
+Diagnostics describe the opened document. They are visually and semantically distinct from app
+notifications about file reads or exports through a dedicated button and dialog, colors, and
+explanatory text. Information does not rely on the `title` attribute alone. An unmarked file is
+a valid ordinary document and has no marker diagnostic.
 
-## 表示結果の書き出し
+Only a failure to read the file prevents switching documents, in which case the app asks the
+reader to select it again.
 
-文書を開くと、ツールバーの「表示結果を書き出す」から現在表示している内容をローカルファイルとしてダウンロードできます。Docfilly文書では、その時点のフォーム値を反映した本文だけを書き出します。`#!docfilly` Header、変数定義、処理済みの条件ディレクティブは含まれません。通常のMarkdownやテキスト文書では、内容を変更せずに書き出します。
+## Exporting rendered output
 
-出力ファイル名は元のファイル名を基に、Markdownなら`元の名前-output.md`、プレーンテキストなら`元の名前-output.txt`となります。出力のMIME typeはそれぞれ`text/markdown;charset=utf-8`、`text/plain;charset=utf-8`です。ダウンロードにはブラウザー標準のBlobとオブジェクトURLを利用します。
+With a document open, **Export output** downloads the currently displayed content. For a
+Docfilly document, it exports only the body after applying current form values. It omits the
+`#!docfilly` header, field definitions, and processed conditional directives. Ordinary
+Markdown and text are exported unchanged.
 
-この操作は表示結果を別ファイルとして取得するもので、元のローカルファイルを上書きしません。また、Docfilly Headerやフォームの初期値を保持する「Docfilly形式で保存」とは異なります。書き出しに失敗した場合も、現在の文書とフォーム値は画面に維持されます。
+The original filename becomes `<name>-output.md` for Markdown or `<name>-output.txt` for text.
+The respective MIME types are `text/markdown;charset=utf-8` and
+`text/plain;charset=utf-8`. Downloads use browser `Blob` and object URLs.
 
-## Docfilly形式での保存
+Export creates a separate file and never overwrites the original. It differs from **Save as
+Docfilly**, which retains the header and saves form defaults. A failed export leaves the current
+document and values on screen.
 
-Docfilly文書では、ツールバーの「Docfilly形式で保存」から現在のフォーム値を初期値として反映したソースをダウンロードできます。Headerのコメント、ラベル、変数順、本文のプレースホルダー、条件ディレクティブは維持されるため、保存した文書を再度開くとフォーム付きの文書として利用できます。通常のMarkdown／テキスト文書では、この操作は無効です。
+## Saving Docfilly source
 
-ファイル名と`.md`、`.markdown`、`.txt`の拡張子は元の文書から維持します。保存にはブラウザー標準のBlobとダウンロード機能を使用し、元のローカルファイルを直接上書きしません。同名ファイルの扱いはブラウザーのダウンロード設定に従います。生成またはダウンロードの開始に失敗した場合も、表示中の文書とフォーム値は維持されます。
+For a Docfilly document, **Save as Docfilly** downloads source with the current form values as
+new defaults. Header comments, labels, variable order, body placeholders, and conditional
+directives remain, so reopening the result creates another form. The action is disabled for
+ordinary Markdown and text.
 
-## UIのカスタマイズ
+The original filename and its `.md`, `.markdown`, or `.txt` extension are retained. The
+browser's Blob download does not overwrite the original local file; handling of a duplicate
+download name follows browser settings. Generation or download failure leaves the visible
+document and values intact.
 
-Webデモは`docfilly/styles.css`の公式オプトインCSSを読み込み、`data-docfilly-theme`で配色を選択します。アプリ側のCSSではツールバー高に合わせた`--docfilly-sticky-top`と`--docfilly-form-max-height`だけを上書きします。横並びでは短い追従フォームの下までフォーム列の背景色と仕切り線を表示します。フォーム、入力欄、本文、Markdown、ライト／ダーク配色はCoreと同じスタイルを再利用するため、公開CSSとデモ表示が乖離しない構成です。
+## Interface and theming
 
-上部ツールバーにはアプリ名、現在のファイル名、ファイルを開く操作、Docfilly形式での保存、表示結果の書き出し、文書を閉じる操作、診断、設定、ヘルプがあります。文書を閉じる操作は文書がない場合は無効です。狭い画面では設定を含む優先度の低い操作を、アクセシブルネーム付きの縦三点メニューへまとめます。メニューは項目の実行、外側のクリック／タップ、Escapeキーで閉じ、Escapeキーで閉じた場合は縦三点ボタンへフォーカスを戻します。文書はviewportではなく`.docfilly`自身のコンテナ幅が47.5rem以上ならフォームと出力を左右へ、それ未満なら上下へ並べます。
+The web app imports the opt-in `docfilly/styles.css` stylesheet and selects its palette with
+`data-docfilly-theme`. App CSS overrides only `--docfilly-sticky-top` and
+`--docfilly-form-max-height` for the toolbar. In a side-by-side layout, the form column's
+background and divider continue below a short sticky form. Reusing core styles for the form,
+controls, body, Markdown, and palettes prevents the demo and public CSS from diverging.
 
-## 表示言語
+The toolbar contains the app name, filename, open, save-as-Docfilly, export, close, diagnostics,
+settings, and help actions. Close is disabled without a document. On narrow screens, lower
+priority actions including Settings move into an accessible, named vertical-ellipsis menu. The
+menu closes after an action, an outside click or tap, or Escape. Escape returns focus to the
+ellipsis button. The form and output appear side by side when the `.docfilly` container—not the
+viewport—is at least 47.5rem wide, and stack below that width.
 
-Webビューアー固有のUI、通知、ヘルプ、ARIAラベル、組み込みサンプルは英語（`en`）と日本語（`ja`）に対応します。初期localeは`navigator.languages`を先頭から確認し、次に`navigator.language`を確認して決定します。`en-US`や`ja-JP`は基本言語へ正規化し、対応するlocaleがなければ英語へフォールバックします。
+## Display language
 
-ツールバーから開く名前付きの設定ダイアログでは、「表示」「文書」「データとプライバシー」の各セクションを提供します。「表示」では「ブラウザーの設定に従う」「日本語」「English」を選択できます。選択はバージョン付きのユーザー設定として現在のブラウザープロファイルへ永続化します。保存値がない場合と「ブラウザーの設定に従う」の場合は、上記のlocale解決を利用します。切り替えると`<html lang>`とWeb UIが更新され、Coreへもlocaleを明示的に渡すためdiagnosticの言語が切り替わります。すでに開いている文書は組み込みサンプルを含めてソースと現在のフォーム値を維持し、その後サンプルを開く操作を行ったときに現在localeのサンプルを選びます。利用者が開いた文書の本文、フォームラベル、選択肢、入力値は翻訳しません。
+App UI, notifications, Help, ARIA labels, and built-in samples support English (`en`) and
+Japanese (`ja`). With no saved preference, the initial locale is the first supported entry in
+`navigator.languages`, then `navigator.language`, and finally English. Tags such as `en-US`
+and `ja-JP` normalize to their base language; unsupported tags fall back to English.
 
-同じ「表示」セクションでは、テーマを「システム設定に従う」「ライト」「ダーク」から選択できます。初期値はシステム設定で、`prefers-color-scheme`の変更にも追従します。明示的な選択は言語と同じユーザー設定へ保存します。head内の早期スクリプトがReactの起動前に保存値またはシステム設定からテーマを解決し、`data-theme`、`color-scheme`、ページの`theme-color`メタデータへ反映することで再読み込み時の明滅を抑えます。Web App Manifestの`theme_color`と`background_color`は実行時の設定へ追従できないため、インストール済みPWAの起動時フォールバックとしてライトテーマ向けの固定値を維持し、ページ読み込み後は動的なメタデータを使用します。
+The named Settings dialog has **Display**, **Document**, and **Data and privacy** sections. Under
+Display, readers can choose **Use browser settings**, **日本語**, or **English**. The choice is
+persisted in versioned user preferences for the current browser profile. With no saved choice,
+or with browser settings selected, the browser resolution above applies.
 
-UIリソースは`apps/web/src/locale.ts`の共通TypeScript型でキーと補間値を検査します。サンプルは`apps/web/src/samples/en.md`と`ja.md`をViteのraw importで静的に同梱し、実行時の外部取得には依存しません。英語での実装・言語追加手順は[`apps/web/README.md`](../apps/web/README.md)に記載しています。
+Changing the locale updates `<html lang>`, all app UI, and the explicit locale passed to core,
+so diagnostics switch language too. An already-open document—including a built-in sample—keeps
+its source and current form values. Opening a sample afterward selects the current locale's
+sample. User-provided document bodies, labels, options, and values are never translated.
 
-## ヘルプとキーボード操作
+Display also offers **Use system settings**, **Light**, and **Dark** themes. The system setting is
+the default and follows changes to `prefers-color-scheme`; explicit selections are stored with
+the language preference. An early script in `<head>` resolves the saved or system theme before
+React starts and applies `data-theme`, `color-scheme`, and the page's `theme-color` metadata
+to avoid a reload flash. A web app manifest cannot follow runtime preferences, so its
+`theme_color` and `background_color` retain fixed light-theme fallbacks. Dynamic page
+metadata takes over after loading.
 
-ツールバーの「ヘルプ」は「Docfillyとは？」から始まり、手順書を読む人が頭の中で行う「自分の環境への読み替え」を、最初のフォーム入力に変えるというDocfillyの目的を説明します。書き手があらかじめDocfilly形式に沿って入力項目や条件分岐を文書へ記述し、読み手にはその設定に基づくフォームと自分向けの本文が表示される流れを確認できます。通常のMarkdown／テキスト文書もそのまま表示できます。
+`apps/web/src/locale.ts` uses a shared TypeScript type to verify UI resource keys and
+interpolation values. `apps/web/src/samples/en.md` and `ja.md` are bundled through Vite raw
+imports and require no runtime fetch. See [the web app README](../apps/web/README.md) for English
+implementation and language-extension instructions.
 
-続いて、ファイル選択とドラッグ＆ドロップ、文書内の定義から生成されるフォーム、2種類の保存、端末内保存とプライバシーを案内します。開いた文書とフォームへの入力内容はブラウザー内で処理され、外部サーバーへ送信されないこと、ブラウザーからインストールしてオフライン利用できることをプライバシーの節で説明します。ヘルプには[ソースフォーマット仕様](./03-source-format.md)へのリンクと、サンプル文書を開く操作があります。保存内容の詳細と削除操作は設定の「データとプライバシー」へ配置します。
+## Help and keyboard behavior
 
-設定、ヘルプ、診断一覧は名前付きのモーダルダイアログです。開くと見出しへフォーカスが移動し、Tabキーのフォーカスはダイアログ内を循環します。保存データ削除の確認では安全な「キャンセル」へ最初にフォーカスします。Escapeキー、キャンセル、または閉じるボタンで閉じると、ダイアログを開いた操作へフォーカスが戻ります。
+Help begins with **What is Docfilly?** and explains how Docfilly replaces repeated mental
+substitution with one initial form. Authors put fields and conditional content in the source;
+readers see that form and their customized body. Ordinary Markdown and text remain supported.
 
-## コンポーネント構成
+It then covers file selection and drag and drop, generated forms, the two save operations, local
+storage, and privacy. The privacy section explains that open files and entered values stay in
+the browser, and that the app can be installed for offline use. Help links to the
+[Source format](./03-source-format.md) and can open the sample. Detailed storage and deletion
+controls live under **Data and privacy** in Settings.
 
-- `App`: 現在の文書、ファイル名、読み込み結果とステータスを管理
-- `FileDropZone`: キーボード操作可能なファイル選択、ウィンドウ全体のドラッグ＆ドロップ、複数ファイルの検証を担当
-- `DocumentViewer`: `DocfillyView`とアプリ固有のステータス表示を接続
-- `AppDialog`: 設定、ヘルプ、診断一覧に共通するフォーカス管理とキーボード操作を担当
-- `document-format`: 対応拡張子、標準の出力拡張子、MIME typeの型付き定義を担当
-- `document-file`: 拡張子による形式判定とFile APIによる読み込みを担当
-- `document-export`: Docfilly形式と表示結果のBlob、MIME type、出力ファイル名とブラウザーダウンロードを担当
-- `document-session`: IndexedDBへの最新文書の保存、検証、復元、削除を担当
-- `PwaUpdatePrompt`: Service Workerの更新検出と、更新を適用する再読み込み操作を担当
+Settings, Help, and Diagnostics are named modal dialogs. Opening one moves focus to its heading,
+and Tab cycles within it. A data-deletion confirmation initially focuses the safe **Cancel**
+action. Escape, Cancel, or Close returns focus to the control that opened the dialog.
+
+## Components
+
+- `App`: owns the current document, filename, read result, and status.
+- `FileDropZone`: handles keyboard-accessible selection, window-wide drop behavior, and
+  multiple-file validation.
+- `DocumentViewer`: connects `DocfillyView` to app-specific status.
+- `AppDialog`: provides shared focus and keyboard behavior for Settings, Help, and Diagnostics.
+- `document-format`: typed definitions for accepted extensions, output extensions, and MIME
+  types.
+- `document-file`: extension-based type detection and File API reading.
+- `document-export`: Docfilly source and output Blobs, MIME types, filenames, and browser
+  downloads.
+- `document-session`: IndexedDB persistence, validation, restoration, and deletion.
+- `PwaUpdatePrompt`: service-worker update detection and reload-to-update behavior.

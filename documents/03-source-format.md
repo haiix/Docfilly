@@ -1,66 +1,82 @@
-# ソースフォーマット仕様
+# Source format
 
-このフォーマットは、執筆者が読者向けの入力項目と説明文を定義するためのものです。読者には設定エリアや参照記法ではなく、生成されたフォームと入力値を反映した本文を提示します。
+The Docfilly format lets authors define reader-facing fields and explanatory content. Readers
+see the generated form and a body customized with their values, not the field definitions or
+reference syntax.
 
-構文は、通常のMarkdown／テキストを直接開いた場合にも内容を追いやすく、執筆者が少ない学習コストで扱えることを優先しています。
+The syntax is deliberately small and keeps ordinary Markdown and text understandable when the
+source is opened directly.
 
-## 基本構造
+## Document structure
 
-Docfilly文書は、先頭の「識別子」、「入力項目エリア」、「本文エリア」で構成します。入力項目と本文は、半角ハイフン3文字の行で区切ります。
+A Docfilly document consists of a marker, a field area, and a body. A line containing three
+ASCII hyphens separates the fields from the body.
 
 ```text
 #!docfilly
-> 必要な項目を入力してください。
-設定名 | 読者向けラベル = 初期値
+> Complete the required fields.
+variableName | Reader-facing label = Default value
 
 ---
 
-本文中では [[設定名]] と記述します。
+Use [[variableName]] in the body.
 ```
 
-## 識別子
+## Marker
 
-ファイルの先頭行へ、次の識別子を記述します。
+Put this marker on the first line:
 
 ```text
 #!docfilly
 ```
 
-この行があるときだけ、Docfillyは区切り行より前を入力項目として解析します。通常は小文字で空白を付けず、上記のとおり記述してください。読み込み時は大文字・小文字を区別せず、前後の空白も許容します。UTF-8 BOMがあっても認識されます。
+Only a file with this marker is parsed as Docfilly. Write it in lowercase without spaces as
+shown. Recognition is case-insensitive, permits surrounding whitespace, and also works after a
+UTF-8 byte order mark (BOM).
 
-識別子がないファイルは、`---`や`[[...]]`が含まれていても通常のMarkdown／テキストとして全文表示します。これにより、普通の文書を誤ってDocfilly形式として解釈しません。
+Without the marker, the complete source is displayed as ordinary Markdown or text even if it
+contains `---` or `[[...]]`. This prevents accidental interpretation of ordinary documents.
+Add the marker to documents created before it was introduced; the unmarked legacy format is not
+detected because doing so could misinterpret regular Markdown.
 
-識別子導入前の形式で作成した文書は、先頭へ`#!docfilly`の1行を追加してください。識別子がない旧形式を自動判定すると通常のMarkdownを誤認する可能性があるため、互換解析は行いません。
+## Separator and blank lines
 
-## 区切り行と空行
+Whitespace around the separator is accepted, so a line such as `  ---  ` works. Prefer an
+unadorned `---` for clarity.
 
-区切り行そのものは、前後に空白を含む`  ---  `のような行でも認識されます。分かりやすさのため、通常は空白を付けず`---`だけの行を推奨します。
+For Markdown, leave a blank line before the separator. Without one, a regular Markdown viewer
+may interpret the preceding field and `---` as a Setext heading. A blank line after the
+separator also makes the source easier to read as Markdown.
 
-ここでいう区切り行上の空白とは別に、Markdown文書では区切り行の前に空行を入れることを推奨します。空行がない場合、通常のMarkdownビューアーで直接表示すると、直前の設定行と`---`がSetext形式の見出しとして解釈されることがあるためです。区切り行の直後にも、水平線と本文を読みやすく分けるため空行を入れることを推奨します。
+These blank lines are not required by Docfilly and their presence produces no different fields
+or diagnostics. Content after the separator is preserved as the body. Consequently, a blank
+line immediately after it is mostly invisible in Markdown but remains the first line of
+plain-text output.
 
-区切り行前後の空行はDocfilly構文上の必須条件ではなく、有無によって設定項目や区切り行の認識は変わりません。空行がなくても注意点は返しません。ただし、区切り行より後は本文としてそのまま扱うため、直後の空行はMarkdownでは表示上ほぼ影響しない一方、プレーンテキストでは本文先頭の空行として保持されます。プレーンテキストで区切り行直後に空行を置くかは任意です。
+If a marked document has no separator, Docfilly displays everything after the marker as the body
+and returns a diagnostic.
 
-`#!docfilly`があるのに区切り行がない場合も文書は表示できます。識別子より後の内容を本文にし、注意点を返します。
+## Common field rules
 
-## 入力項目の共通ルール
-
-- 1行につき1つの入力項目を記述します。
-- 空行は無視されます。
-- 前後の空白を除いた結果が`#`で始まる行はコメントです。
-- 引用符の外にある最初の`=`の左側が設定名とラベル、右側が初期値です。
-- 最初の`=`だけが区切りとして扱われるため、テキスト値には`=`を含められます。
-- 設定名には日本語を含む文字、数字、アンダースコアを使用できます。空白やハイフンは使用できません。
-- ラベルを省略すると、設定名がそのままフォームのラベルになります。
-- 同じ設定名を複数回書いた場合は、最初の設定を使用します。
-- LFとCRLFの改行コードに対応します。
-- 文書先頭のUTF-8 BOMは自動的に除去されます。
+- Define one field per line.
+- Blank lines are ignored.
+- A line whose trimmed content begins with `#` is an author-only comment.
+- The first `=` outside quotes separates the name and label on the left from the default value
+  on the right.
+- Only the first such `=` is a separator, so text values may contain `=`.
+- A variable name may contain letters from any language, including Japanese characters, digits,
+  and underscores. It cannot contain spaces or hyphens.
+- If the label is omitted, the variable name is used as the form label.
+- When a name is defined more than once, the first definition wins.
+- Both LF and CRLF line endings are supported.
+- A UTF-8 BOM at the beginning of the document is removed automatically.
 
 ```text
 #!docfilly
-# コメント
-project_name | プロジェクト名 = Docfilly
-author = 山田太郎
-タイトル = はじめての文書
+# Author-only comment
+project_name | Project name = Docfilly
+author = Alice
+タイトル = First document
 query = category=document
 
 ---
@@ -68,343 +84,381 @@ query = category=document
 ...
 ```
 
-## フォーム内の説明文
+## Form instructions
 
-入力条件、注意事項、操作案内などをフォーム内へ表示するには、行の先頭へ`>`を記述します。説明文と入力項目はソースに記述した順序で表示されます。連続する説明行も結合せず、1行ずつ別の要素として生成されます。
+Start a line with `>` to show requirements, warnings, or operating instructions inside the
+form. Instructions and fields appear in source order. Consecutive instruction lines remain
+separate elements rather than being joined.
 
 ```text
 #!docfilly
-> 必要な項目を入力してください。
-project_name | プロジェクト名 = Docfilly
-> 本番環境を選択する場合は、事前に承認が必要です。
-environment | 実行環境 = [development, *staging, production]
+> Complete the required fields.
+project_name | Project name = Docfilly
+> Production deployments require prior approval.
+environment | Environment = [development, *staging, production]
 
 ---
 
 ...
 ```
 
-行全体の前後の空白を除いた後、`>`の直後にある空白文字1文字を記法上の区切りとして除去します。`>`だけの行も空の説明文として扱います。
+After trimming the whole line, Docfilly removes one whitespace character immediately following
+`>` as syntax. A line containing only `>` creates an empty instruction.
 
-説明文はプレーンテキストです。HTMLやMarkdownを解釈せず、プレースホルダー、フィルター、ifディレクティブも評価しません。説明文は入力値を持たず、公開APIの`variables`と`values`には含まれません。説明文しかない文書でもフォーム領域は表示されます。
+Instructions are plain text. HTML and Markdown are not interpreted, and placeholders, filters,
+and `if` directives are not evaluated. Instructions have no value and do not appear in the
+public `variables` or `values` collections. The form area is present even when it contains
+instructions but no fields.
 
-`#`で始まる行は、従来どおり読者へ表示しない執筆者向けコメントです。`>`でも`#`でも始まらず、`=`がない行は`missing-equals`の注意点を返して読み飛ばします。
+Lines beginning with `#` remain hidden author comments. A line that begins with neither `>`
+nor `#` and has no `=` is skipped with a `missing-equals` diagnostic.
 
-## 引用とエスケープ
+## Quoting and escaping
 
-ラベル、テキストの初期値、ドロップダウンの各選択肢は、必要に応じて全体を半角の`"`で囲めます。引用内で値そのものに`"`を含める場合は、CSVと同じように`""`と記述します。
-
-```text
-message | "表示文 | 補足 = 詳細" = "彼は ""はい"" と言った"
-region | 地域 = ["東京, 日本", *"大阪, 日本", その他]
-```
-
-- 引用外にあるフィールド前後の空白は除去されます。
-- 引用内の先頭と末尾の空白は値として保持されます。
-- 引用は区切り文字を含まない値にも使用できます。
-- 変数名は引用できません。人が読む自由な表記にはラベルを使用してください。
-- 引用値は1行で閉じる必要があり、複数行の値には対応しません。
-- 不閉じの引用、閉じ引用の後に続く文字、引用されていない値の途中にある`"`は不正です。該当する設定行を読み飛ばし、`invalid-quoting`の注意点を返します。
-
-引用構文の導入前は、`title = "Docfilly"`の引用符も値の一部でした。現在はCSV風の引用として解釈され、初期値は`Docfilly`になります。引用符そのものを値の両端に含める場合は、`title = """Docfilly"""`と記述します。
-
-## テキスト入力
-
-角括弧で囲まれていない値はテキストとして扱います。
+A label, text default, or individual dropdown option may be enclosed in ASCII double quotes.
+Represent a literal double quote inside a quoted value as `""`, as in CSV.
 
 ```text
-project_name | プロジェクト名 = Docfilly
-author = 山田太郎
+message | "Display | details = more" = "She said ""yes"""
+region | Region = ["Tokyo, Japan", *"Osaka, Japan", Other]
 ```
 
-生成される要素は`<input type="text">`です。`name`属性には設定名、初期値には`=`の右側が設定されます。
+- Whitespace around an unquoted field is trimmed.
+- Leading and trailing whitespace inside quotes is preserved.
+- Values without delimiter characters may also be quoted.
+- Variable names cannot be quoted. Use a label for unrestricted reader-facing text.
+- A quoted value must close on the same line; multiline quoted values are unsupported.
+- An unclosed quote, characters after a closing quote, or a `"` in the middle of an unquoted
+  value makes the definition invalid. It is skipped with an `invalid-quoting` diagnostic.
 
-空文字も指定できます。
+Before quoting was introduced, the quotes in `title = "Docfilly"` were part of the value. They
+now delimit a CSV-style value, so the default is `Docfilly`. To include quotes around the
+value, write `title = """Docfilly"""`.
+
+## Text fields
+
+A value not enclosed in square brackets creates a text field.
 
 ```text
-memo | メモ =
+project_name | Project name = Docfilly
+author = Alice
 ```
 
-チェックボックスやドロップダウンに見える文字列をテキストとして使用する場合は、値全体を引用します。
+The generated element is `<input type="text">`. Its `name` attribute is the variable name,
+and its initial value is the text to the right of `=`.
+
+An empty value is valid:
+
+```text
+memo | Notes =
+```
+
+Quote a string that would otherwise look like a checkbox or dropdown:
 
 ```text
 checkbox_example = "[x]"
 list_example = "[one, two]"
 ```
 
-## ドロップダウン
+## Dropdowns
 
-角括弧内をカンマで区切ると、選択肢になります。
-
-```text
-environment | 実行環境 = [development, staging, production]
-```
-
-生成される要素は`<select>`です。初期選択は次の規則で決まります。
-
-- `*`付きの選択肢がある場合、その選択肢
-- `*`がない場合、最初の選択肢
+A comma-separated list inside square brackets creates dropdown options:
 
 ```text
-environment | 実行環境 = [development, *staging, production]
+environment | Environment = [development, staging, production]
 ```
 
-この例の初期値は`staging`です。`*`は実際の値には含まれません。
+The generated element is `<select>`. Its initial option is:
 
-選択肢にカンマや引用符を含める場合は、その選択肢全体を引用します。初期選択を示す`*`は引用符の外に置きます。引用内の先頭にある`*`は値の一部です。
+- the option marked with `*`, when present; otherwise
+- the first option.
 
 ```text
-region = ["東京, 日本", *"大阪, ""中央""", "*通常値"]
+environment | Environment = [development, *staging, production]
 ```
 
-空の選択肢が混ざっている場合は、その項目だけを読み飛ばして残りを使用します。すべて空の場合は、文書を止めずに通常のテキスト入力として表示します。
+The initial value above is `staging`; the `*` is not part of the value.
 
-## チェックボックス
+Quote a complete option when it contains a comma or quote. Put an initial-selection `*` outside
+the quotes. A `*` at the start of quoted text is part of the value.
 
 ```text
-enabled | 有効にする = [x]
-also_enabled | こちらも有効にする = [X]
-disabled | 無効の項目 = [ ]
+region = ["Tokyo, Japan", *"Osaka, ""Central""", "*regular value"]
 ```
 
-- `[x]`: 初期状態がON
-- `[X]`: 初期状態がON（チェックを示す`x`の大文字小文字は区別しません）
-- `[ ]`: 初期状態がOFF
+Empty options are skipped while valid options remain. If every option is empty, Docfilly
+recovers by displaying an ordinary text field.
 
-標準表記は`[x]`です。`[True]`と`[False]`はチェックボックスではなく、従来どおりそれぞれ`True`、`False`を選択肢に持つドロップダウンとして扱います。
+## Checkboxes
 
-本文へ置換される値は、ONなら`true`、OFFなら`false`です。
+```text
+enabled | Enable = [x]
+also_enabled | Enable this too = [X]
+disabled | Disabled option = [ ]
+```
 
-`"[x]"`のように値全体を引用すると、チェックボックスではなく`[x]`を初期値に持つテキスト入力になります。
+- `[x]`: initially on
+- `[X]`: initially on; the marker is case-insensitive
+- `[ ]`: initially off
 
-## 本文で入力値を参照する
+The canonical notation is `[x]`. `[True]` and `[False]` are not checkboxes; each is a
+single-option dropdown with the value `True` or `False`.
 
-読者の入力値を反映する箇所では、設定名を二重角括弧で囲みます。この参照記法は執筆用ソースにだけ記述し、Docfillyで表示した本文では現在の値に置き換わります。
+A checkbox substitutes `true` when on and `false` when off. Quoting the entire value, as in
+`"[x]"`, instead creates a text field whose default is `[x]`.
+
+## References in the body
+
+Enclose a variable name in double square brackets wherever the reader's value should appear.
+References exist only in authoring source; rendered output contains the current value.
 
 ```markdown
 # [[project_name]]
 
-作成者: [[author]]
-実行環境: [[environment]]
-有効: [[enabled]]
+Author: [[author]]
+Environment: [[environment]]
+Enabled: [[enabled]]
 ```
 
-プレースホルダーには日本語を含む文字、数字、アンダースコアを使用できます。定義されていないプレースホルダーは削除されず、そのまま残り、`diagnostics`へ注意点が追加されます。
+Placeholders accept the same non-ASCII letters, digits, and underscores as variable names. An
+undefined placeholder remains unchanged and adds a diagnostic. A variable may be referenced any
+number of times, including inside Markdown code blocks.
 
-同じ変数は本文中で何回でも使用できます。Markdownのコードブロック内も置換対象です。
+## String case filters
 
-## 文字列ケース変換フィルター
-
-プレースホルダー内で変数名に続けて`|`とフィルター名を書くと、値の文字列ケースを変換できます。パイプ前後の空白は任意です。
+Append `|` and a filter name inside a placeholder to transform the value's case. Whitespace
+around a pipe is optional.
 
 ```text
 [[project_name | upper]]
 [[project_name | snake | upper]]
 ```
 
-フィルターは左から右へ適用されます。利用できるフィルターは次の6種類です。
+Filters run from left to right. Six filters are available:
 
-- `upper`: 文字列全体を大文字へ変換
-- `lower`: 文字列全体を小文字へ変換
-- `snake`: 単語を小文字へ変換し、`_`で連結
-- `kebab`: 単語を小文字へ変換し、`-`で連結
-- `pascal`: 単語の先頭を大文字にして連結
-- `camel`: 先頭の単語を小文字、以降の単語の先頭を大文字にして連結
+- `upper`: convert the entire string to uppercase
+- `lower`: convert the entire string to lowercase
+- `snake`: lowercase words joined by `_`
+- `kebab`: lowercase words joined by `-`
+- `pascal`: capitalize each word and join them
+- `camel`: lowercase the first word, capitalize subsequent words, and join them
 
-`snake`、`kebab`、`pascal`、`camel`は、空白、`_`、`-`などの記号と大文字境界を単語区切りとして扱います。たとえば`Project APIClient-name`は`project_api_client_name`へ変換されます。
+`snake`, `kebab`, `pascal`, and `camel` split words at whitespace, symbols such as `_` and
+`-`, and uppercase boundaries. For example, `Project APIClient-name` becomes
+`project_api_client_name` with `snake`.
 
-未知のフィルター、未定義変数、空のフィルター、使用できない変数名を含むプレースホルダーは原文のまま保持され、`diagnostics`へ注意点が追加されます。フィルターへの引数、ユーザー定義フィルター、JavaScriptの実行には対応しません。
+A placeholder containing an unknown or empty filter, undefined variable, or invalid variable
+name remains unchanged and adds a diagnostic. Filter arguments, user-defined filters, and
+JavaScript execution are not supported.
 
-## ifブロック
+## Conditional blocks
 
-フォームの値に応じて本文を切り替える場合は、`#if`、`#else`、`#endif`ディレクティブでifブロックを記述します。`#else`は省略できます。
+Use the `#if`, `#else`, and `#endif` directives to vary body content by field value.
+`#else` is optional.
 
 ```text
 [[#if published]]
-この内容は公開時だけ表示されます。
+This content appears when published is on.
 [[#else]]
-この内容は非公開時に表示されます。
+This content appears when published is off.
 [[#endif]]
 ```
 
-`[[#if ...]]`などの各行を「ディレクティブ」、開始から終了までの全体を「ifブロック」と呼びます。
+Each `[[#...]]` line is a directive. The range from `#if` through `#endif` is a conditional
+block.
 
-### 構文設計の方針
+### Syntax rationale
 
-Docfillyでは、テンプレートエンジンやプログラミング言語の知識がなくても役割を推測でき、元のMarkdown／テキストを直接開いた場合にも内容を追いやすい構文を優先しています。
+The directives are intended to be understandable without programming or template-engine
+experience and to remain traceable in directly opened source.
 
-- すべてのディレクティブに`#`を付け、`[[else]]`などの変数参照と衝突させない
-- 終了にはタグ風の`/if`ではなく、意味を読み取りやすい`#endif`を使用する
-- 比較にはプログラミング言語でよく使われる`==`ではなく、Excelや設定項目にも近い`=`を使用する
-- ディレクティブを単独行に限定し、原文の可読性と不正構文からの復旧しやすさを保つ
-- 暗黙的な文字列の真偽判定を避け、テキストとドロップダウンでは比較対象を明記する
-- 複雑な式や任意コード評価を導入せず、文書の表示切り替えに必要な範囲へ機能を限定する
+- Every directive starts with `#`, avoiding collisions with references such as `[[else]]`.
+- `#endif` communicates its purpose more directly than a tag-like `/if`.
+- Comparisons use `=`, familiar from fields and spreadsheets, rather than `==`.
+- Directives occupy complete lines to preserve readability and reliable error recovery.
+- Text fields and dropdowns require an explicit comparison instead of implicit truthiness.
+- There are no complex expressions or arbitrary code evaluation.
 
-### ディレクティブ行
+### Directive lines
 
-ディレクティブは、それ以外の文字を含まない単独行に記述します。行の前後に空白があっても構いません。正式なキーワードは小文字の`if`、`else`、`endif`です。
+A directive must be the only non-whitespace content on its line. Leading and trailing whitespace
+is allowed. The canonical keywords `if`, `else`, and `endif` are lowercase.
 
 ```text
   [[#if published]]
-表示される本文
+Visible body content
   [[#endif]]
 ```
 
-文中に書かれたディレクティブ風の記法は制御構文として解釈せず、そのまま表示します。
+Directive-like syntax embedded in a sentence is displayed literally:
 
 ```text
-この文の [[#if published]] 一部だけを切り替える
+Switch only the [[#if published]] part of this sentence.
 ```
 
-Markdownとプレーンテキストの両方で使用でき、Markdownのコードブロック内も同じ規則で解釈します。
+These rules apply to Markdown and plain text, including Markdown code blocks.
 
-### チェックボックス条件
+### Checkbox conditions
 
-チェックボックスは変数名だけで判定します。ONが真、OFFが偽です。
+Test a checkbox by name. On is true and off is false.
 
 ```text
 [[#if published]]
-公開時だけ表示されます。
+Shown only when published is on.
 [[#endif]]
 ```
 
-チェックボックスを`= true`などで比較することはできません。
+Checkboxes cannot be compared with `= true` or another value.
 
-### テキスト／ドロップダウン条件
+### Text and dropdown conditions
 
-テキストとドロップダウンは、`=`または`!=`で文字列と比較します。
+Compare text fields and dropdowns with `=` or `!=`.
 
 ```text
 [[#if environment = production]]
-本番環境向けの手順です。
+Production instructions.
 [[#endif]]
 
 [[#if environment != production]]
-本番環境以外の手順です。
+Non-production instructions.
 [[#endif]]
 ```
 
-比較は完全一致で、大文字と小文字を区別します。左辺には単一の定義済み変数、右辺には文字列を指定します。右辺を別の変数として参照することはありません。
+Comparison is exact and case-sensitive. The left side is one defined variable; the right side is
+a string, never another variable.
 
-空白、カンマ、`=`、`!=`、引用符を含む値は、設定項目と同じCSV風の引用規則で記述します。引用外の前後の空白は除去され、引用内の空白は保持されます。
+Use the field syntax's CSV-style quoting for values containing whitespace, commas, `=`, `!=`,
+or quotes. Whitespace outside quotes is trimmed; whitespace inside quotes is preserved.
 
 ```text
 [[#if environment = "staging, preview"]]
-プレビュー環境向けの手順です。
+Preview instructions.
 [[#endif]]
 
-[[#if message = "彼は ""はい"" と言った"]]
-引用符を含む値です。
+[[#if message = "She said ""yes"""]]
+A value containing quotes.
 [[#endif]]
 
 [[#if memo = ""]]
-メモが空の場合です。
+Shown when memo is empty.
 [[#endif]]
 ```
 
-テキストとドロップダウンを変数名だけで判定することはできません。空文字との比較は`= ""`、空文字以外との比較は`!= ""`と明記します。
+A text field or dropdown cannot be tested by its name alone. Write `= ""` for an empty string
+or `!= ""` for a nonempty string.
 
-### ネスト
+### Nesting
 
-ifブロックはネストできます。論理演算を使わず、複数の条件を順に表せます。
+Conditional blocks may be nested to express successive conditions without logical operators:
 
 ```text
 [[#if published]]
 [[#if environment = production]]
-公開用の本番手順です。
+Published production instructions.
 [[#endif]]
 [[#endif]]
 ```
 
-最大深度は32階層です。これは異常に深い入力から処理を保護する安全上限であり、深いネストを推奨するものではありません。文書を直接読んでも条件を追えるよう、通常は少ない階層に留めてください。33階層目以降は原文を保持し、`if-nesting-too-deep`の注意点を返します。
+The maximum depth is 32. This is a safety limit against pathological input, not an authoring
+recommendation. Keep nesting shallow enough to follow in the raw document. At depth 33 and
+beyond, Docfilly preserves the block and returns an `if-nesting-too-deep` diagnostic.
 
-`elseif`／`elif`、`and`、`or`、`not`、大小比較、正規表現、変数同士の比較、フィルターを適用した値の比較には対応しません。否定条件には`!=`または`#else`を使用します。
+`elseif`/`elif`, `and`, `or`, `not`, ordered comparisons, regular expressions,
+variable-to-variable comparisons, and comparisons after applying filters are unsupported. Use
+`!=` or `#else` for negative conditions.
 
-### 本文の記法を文字どおり表示する
+### Display syntax literally
 
-プレースホルダーやディレクティブを文字どおり表示するには、先頭の`[`の前へバックスラッシュを付けます。
+Put a backslash before the first `[` to display a placeholder or directive literally:
 
 ```text
 \[[project_name]]
 \[[#if published]]
 ```
 
-出力ではバックスラッシュが除去され、`[[project_name]]`と`[[#if published]]`が表示されます。この規則はMarkdown、プレーンテキスト、コードブロック内で共通です。
+The backslash is removed in output, which displays `[[project_name]]` and
+`[[#if published]]`. This applies equally to Markdown, plain text, and code blocks.
 
-### 不正なifブロック
+### Invalid conditional blocks
 
-ifブロックの問題を単純に偽として内容ごと削除すると、重要な手順の欠落に気付きにくくなります。そのため、解析できない範囲は原文を保持し、行番号付きの注意点を返します。
+Treating an invalid condition as false and dropping its content could hide critical
+instructions. Docfilly therefore preserves source it cannot interpret and returns diagnostics
+with line numbers.
 
-- 条件の変数が未定義、条件と変数の型が不一致、比較値が不正: 該当するifブロック全体を保持
-- `#endif`がない: `#if`から文末までを保持
-- 対応する`#if`がない`#else`／`#endif`: そのディレクティブ行を保持
-- 同じifブロック内で`#else`が重複: 該当するifブロック全体を保持
-- ネスト上限を超えた: 上限を超えたifブロックを保持
+- Undefined condition variable, incompatible field type, or invalid comparison value: preserve
+  the entire block
+- Missing `#endif`: preserve from `#if` through the end of the document
+- `#else` or `#endif` without a matching `#if`: preserve that directive line
+- Repeated `#else` in one block: preserve the entire block
+- Nesting past the limit: preserve the block beyond the limit
 
-問題のない周囲の本文とifブロックは通常どおり処理します。原文保持された不正ブロック内のプレースホルダーは置換しません。
+Valid surrounding content and blocks are still evaluated. Placeholders inside a preserved
+invalid block are not substituted.
 
-## 完全な例
+## Complete example
 
 ````text
 #!docfilly
-# プロジェクト情報
-> 対象プロジェクトの情報を入力してください。
-project_name | プロジェクト名 = AppService
-environment | 実行環境 = [development, *staging, production]
-port | ポート番号 = 8080
-> 公開設定を確認してください。
-use_docker | Dockerを使用する = [x]
-published | 公開する = [x]
+# Project information
+> Enter the target project's details.
+project_name | Project name = AppService
+environment | Environment = [development, *staging, production]
+port | Port = 8080
+> Review the publication settings.
+use_docker | Use Docker = [x]
+published | Publish = [x]
 
 ---
 
-# [[project_name]] 構築マニュアル
+# [[project_name]] build guide
 
-対象環境は **[[environment]]** です。
+Target environment: **[[environment]]**
 
 ```sh
 npm run start -- --port=[[port]] --env=[[environment]]
 ```
 
-Docker使用フラグ: `[[use_docker]]`
+Docker enabled: `[[use_docker]]`
 
 [[#if published]]
 [[#if environment = production]]
-この手順は公開用の本番環境を対象とします。
+These instructions target a published production deployment.
 [[#endif]]
 [[#endif]]
 ````
 
-## 記述に問題がある場合
+## Error recovery
 
-Docfillyは、文書の一部に問題があっても読者の閲覧をできるだけ妨げません。読み取れる入力項目と本文を使って表示を続け、執筆者が修正できるよう`diagnostics`へ日本語の注意点を追加します。
+Docfilly keeps a document readable when part of its source is invalid. It uses valid fields and
+body content and adds English diagnostics by default so the author can fix the problem. Pass a
+supported locale explicitly to request another diagnostic language.
 
-### 区切り行がない
+### Missing separator
 
-識別子より後の内容を本文として表示します。設定フォームは生成されません。
+Everything after the marker is displayed as body content, and no form fields are generated.
 
 ```text
 #!docfilly
-# 本文として表示されるMarkdown
+# Markdown displayed as body content
 
-区切りがなくても、この内容は表示されます。
+This remains visible without a separator.
 ```
 
-### 識別子がない
+### Missing marker
 
-Docfilly形式として解析せず、ファイル全体を通常文書として表示します。これは注意点ではなく、通常の動作です。
+The entire file is displayed as an ordinary document. This is normal behavior, not a diagnostic.
 
 ```markdown
-# 普通のMarkdown文書
+# Ordinary Markdown
 
 ---
 
-この区切りもMarkdownの一部として表示されます。
+This separator remains part of the Markdown.
 ```
 
-### `=`がない
+### Missing `=`
 
-該当する行だけを設定項目として読み飛ばし、ほかの設定と本文を表示します。
+Only that field line is skipped; other fields and body content remain.
 
 ```text
 #!docfilly
@@ -414,21 +468,21 @@ title = Docfilly
 [[title]]
 ```
 
-### 使用できない設定名
+### Invalid variable name
 
-空白やハイフンを含む設定名は読み飛ばします。日本語の設定名は使用できます。
+Names containing spaces or hyphens are skipped. Non-ASCII names remain valid.
 
 ```text
 #!docfilly
 project-name = Docfilly
-タイトル = はじめての文書
+タイトル = First document
 ---
 [[タイトル]]
 ```
 
-### 設定名の重複
+### Duplicate name
 
-最初の設定を使用し、後から書かれた同名の設定を読み飛ばします。
+The first definition wins and later definitions with the same name are skipped.
 
 ```text
 #!docfilly
@@ -438,9 +492,9 @@ name = Bob
 Hello
 ```
 
-### 空の選択肢
+### Empty dropdown option
 
-空の項目だけを除き、`development`と`production`でドロップダウンを生成します。
+Only empty options are removed, producing a dropdown with `development` and `production`.
 
 ```text
 #!docfilly
@@ -449,21 +503,22 @@ environment = [development, , production]
 [[environment]]
 ```
 
-### 不正な引用
+### Invalid quoting
 
-引用が閉じていない行などは設定項目として読み飛ばし、ほかの設定と本文を表示します。
+A field with an unclosed quote or another quoting error is skipped while valid fields and the
+body remain visible.
 
 ```text
 #!docfilly
-broken = "閉じていない値
+broken = "unclosed value
 title = Docfilly
 ---
 [[title]]
 ```
 
-## 注意点を確認する
+## Inspect diagnostics
 
-ライブラリ利用時は、解析結果または表示インスタンスの`diagnostics`から確認できます。
+Read `diagnostics` from either a parse result or rendering instance:
 
 ```ts
 const view = createDocfilly(source, "md");
@@ -473,4 +528,4 @@ for (const diagnostic of view.diagnostics) {
 }
 ```
 
-注意点があっても`view.element`と`view.output`は生成されます。
+`view.element` and `view.output` are still created when diagnostics are present.

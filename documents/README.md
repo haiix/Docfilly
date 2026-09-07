@@ -1,35 +1,53 @@
-# Docfilly ドキュメント
+# Docfilly documentation
 
-Docfillyは、手順書にある「この値は自分の環境に合わせて読み替えてください」という作業を、読者の頭の中からフォームへ移します。読者が必要な値を最初に入力すると、その人向けにカスタマイズされたMarkdown／プレーンテキストが表示されます。
+Docfilly moves the instruction “replace this value for your environment” out of a reader's head
+and into a form. After readers provide the required values, Docfilly displays customized
+Markdown or plain text.
 
-執筆者は、通常の文書へ最小限の入力項目と`[[設定名]]`を加えるだけです。読者はこの構文を覚える必要がなく、フォームとカスタマイズ後の文書だけを使います。
+Authors add a small set of fields and `[[variableName]]` references to an ordinary document.
+Readers do not need to learn that syntax; they interact only with the form and customized
+content.
 
-## 立場別の読み方
+English is the canonical and only maintained language for project documentation. Older versions
+in other languages remain available in Git history.
 
-- **まず考え方を知りたい方** — [概要](./01-overview.md)
-- **文書を作る執筆者** — [はじめに](./02-getting-started.md)、[ソースフォーマット仕様](./03-source-format.md)
-- **Docfillyを組み込む開発者** — [APIリファレンス](./04-api-reference.md)、[セキュリティと制約](./07-security-and-limitations.md)、[Diagnostic localization](./08-diagnostic-localization.md)
-- **このリポジトリを開発する方** — [Webデモ](./05-web-demo.md)、[開発とテスト](./06-development-and-testing.md)、[npm公開計画](./09-npm-publication-plan.md)
+## Choose a path
 
-## ドキュメント一覧
+- **Understand the idea** — [Overview](./01-overview.md)
+- **Author a document** — [Getting started](./02-getting-started.md) and
+  [Source format](./03-source-format.md)
+- **Embed Docfilly** — [API reference](./04-api-reference.md),
+  [Security and limitations](./07-security-and-limitations.md), and
+  [Diagnostic localization](./08-diagnostic-localization.md)
+- **Develop this repository** — [Web app](./05-web-demo.md),
+  [Development and testing](./06-development-and-testing.md), and
+  [npm publication plan](./09-npm-publication-plan.md)
 
-1. [概要](./01-overview.md) — 解決する問題、執筆者と読者、設計原則
-2. [はじめに](./02-getting-started.md) — 最初のDocfilly文書とライブラリへの組み込み
-3. [ソースフォーマット仕様](./03-source-format.md) — 入力項目、参照記法、記述ミスからの復旧
-4. [APIリファレンス](./04-api-reference.md) — 関数、クラス、型、イベント
-5. [Webデモ](./05-web-demo.md) — 読者向けビューアーの仕様と実装
-6. [開発とテスト](./06-development-and-testing.md) — コマンド、ビルド、Vitest、Playwright、CI
-7. [セキュリティと制約](./07-security-and-limitations.md) — サニタイズ、対応環境、既知の制約
-8. [Diagnostic localization](./08-diagnostic-localization.md) — locale API, resolution order, and adding a language
-9. [npm公開計画](./09-npm-publication-plan.md) — 将来の公開判断、認証、検証、公開順序
+## Documentation index
 
-## まず試す
+1. [Overview](./01-overview.md) — the problem, authors and readers, and design principles
+2. [Getting started](./02-getting-started.md) — your first Docfilly document and library setup
+3. [Source format](./03-source-format.md) — fields, references, directives, and error recovery
+4. [API reference](./04-api-reference.md) — functions, classes, types, and events
+5. [Web app](./05-web-demo.md) — reader-facing viewer behavior and implementation
+6. [Development and testing](./06-development-and-testing.md) — commands, builds, tests, and CI
+7. [Security and limitations](./07-security-and-limitations.md) — sanitization, supported
+   environments, and known limits
+8. [Diagnostic localization](./08-diagnostic-localization.md) — locale APIs, resolution, and
+   adding a language
+9. [npm publication plan](./09-npm-publication-plan.md) — future publication decisions,
+   authentication, validation, and ordering
+
+## Try the web app locally
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-開発サーバーのURLをブラウザで開き、空状態から`.md`、`.markdown`、または`.txt`ファイルを選択します。ローカルファイルがない場合は「サンプルを開く」を選ぶと、5分程度の組み込みチュートリアルでテキスト、ドロップダウン、チェックボックスと本文の対応を確認できます。チュートリアルからDocfilly形式のソースを保存し、編集して再度開くこともできます。
+Open the development server and select or drop a `.md`, `.markdown`, or `.txt` file in the empty
+state. If you do not have a local file, choose **Open sample** to explore text fields, dropdowns,
+checkboxes, and body substitution in a five-minute built-in tutorial. You can save the tutorial
+as Docfilly source, edit it, and open it again.
 
-Docfilly文書を書き始める場合は、[はじめに](./02-getting-started.md)へ進んでください。
+To create a document of your own, continue with [Getting started](./02-getting-started.md).
