@@ -67,11 +67,34 @@ test.describe("デスクトップの追従フォーム", () => {
     });
 
     const toolbar = page.locator(".toolbar");
+    const viewer = page.locator(".docfilly");
     const form = page.locator(".docfilly__form");
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+    const output = page.locator(".docfilly__output");
+    const columnLayout = await page.evaluate(() => {
+      const viewerElement = document.querySelector<HTMLElement>(".docfilly");
+      const formElement = document.querySelector<HTMLElement>(".docfilly__form");
+      const outputElement = document.querySelector<HTMLElement>(".docfilly__output");
+      if (viewerElement === null || formElement === null || outputElement === null) {
+        throw new Error("The document viewer was not rendered.");
+      }
+      return {
+        viewerBackground: getComputedStyle(viewerElement).backgroundColor,
+        formBackground: getComputedStyle(formElement).backgroundColor,
+        viewerHeight: viewerElement.getBoundingClientRect().height,
+        formHeight: formElement.getBoundingClientRect().height,
+        outputHeight: outputElement.getBoundingClientRect().height,
+      };
+    });
 
-    await expect(form).toHaveCSS("border-right-width", "1px");
-    await expect(form).toHaveCSS("border-right-style", "solid");
+    expect(columnLayout.viewerBackground).toBe(columnLayout.formBackground);
+    expect(columnLayout.viewerHeight).toBeGreaterThan(columnLayout.formHeight);
+    expect(columnLayout.outputHeight).toBe(columnLayout.viewerHeight - 2);
+    await expect(viewer).toHaveCSS("background-color", "rgb(250, 251, 252)");
+    await expect(form).toHaveCSS("border-right-width", "0px");
+    await expect(output).toHaveCSS("border-left-width", "1px");
+    await expect(output).toHaveCSS("border-left-style", "solid");
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
     await expect
       .poll(async () => {
         const toolbarBox = await toolbar.boundingBox();
