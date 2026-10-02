@@ -8,6 +8,13 @@ updates:
     labels:
       - dependencies
 
+    ignore:
+      # Re-enable TypeScript 7 updates once typescript-eslint and other tooling
+      # officially support it. See PR #24.
+      - dependency-name: typescript
+        versions:
+          - ">=7.0.0 <8.0.0"
+
     groups:
       production-dependencies:
         dependency-type: production
