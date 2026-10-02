@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const port = 4173;
 const host = "127.0.0.1";
+const base = process.env.DOCFILLY_CHANNEL === "release" ? "/Docfilly/stable/" : "/Docfilly/dev/";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -14,7 +15,7 @@ export default defineConfig({
     ? [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]]
     : "list",
   use: {
-    baseURL: `http://${host}:${port}/Docfilly/`,
+    baseURL: `http://${host}:${port}${base}`,
     locale: "ja-JP",
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
@@ -27,7 +28,7 @@ export default defineConfig({
   ],
   webServer: {
     command: `node node_modules/vite/bin/vite.js preview --host ${host} --port ${port}`,
-    url: `http://${host}:${port}/Docfilly/`,
+    url: `http://${host}:${port}${base}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -94,7 +94,7 @@ from the IndexedDB restoration record.
   restoration to its enabled default;
 - closes the displayed document and deletes its IndexedDB restoration record;
 - deletes Docfilly-owned Workbox caches; and
-- unregisters the service worker whose scope is exactly `/Docfilly/`.
+- unregisters the service worker whose scope matches the current app's base path.
 
 It does not delete caches belonging to other apps on the same origin. The confirmation explains
 that the next use requires a network connection, that the installed app itself is not
@@ -273,6 +273,20 @@ storage, and privacy. The privacy section explains that open files and entered v
 the browser, and that the app can be installed for offline use. Help links to the
 [Source format](./03-source-format.md) and can open the sample. Detailed storage and deletion
 controls live under **Data and privacy** in Settings.
+
+Help also shows the running app's version, build channel, and a short commit link. The released
+app is available at `/Docfilly/stable/`; the latest verified main build is at `/Docfilly/dev/`.
+Development builds can share a package version with a release while containing newer changes,
+so the channel and commit identify the actual build. Settings and recovery data are separate
+between the released, main, and local builds. Older release tags gain the version display only
+when a subsequent release includes this feature.
+
+Existing installations at `/Docfilly/` migrate to the released app on their next online worker
+update, preserving saved documents and preferences. The old root worker and its caches are
+retired. Reinstall from `/Docfilly/stable/` to use the new start URL for offline launches; a
+previous installation that still starts at the root needs a network connection to redirect.
+
+![Version information in a release-channel build, shown in Japanese](./images/app-version.png)
 
 Settings, Help, and Diagnostics are named modal dialogs. Opening one moves focus to its heading,
 and Tab cycles within it. A data-deletion confirmation initially focuses the safe **Cancel**

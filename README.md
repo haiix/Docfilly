@@ -18,7 +18,8 @@ Docfilly serves two groups:
 Docfilly is not intended to be a general-purpose template engine. Its purpose is to make
 **human-readable documentation easier for each reader to follow**.
 
-Try it in the [Docfilly web app](https://haiix.github.io/Docfilly/).
+Try the [released Docfilly web app](https://haiix.github.io/Docfilly/stable/), or the
+[latest verified development app](https://haiix.github.io/Docfilly/dev/).
 
 ## How it works
 

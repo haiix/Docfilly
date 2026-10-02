@@ -1,3 +1,4 @@
+import { buildInfo } from "../src/build-info";
 import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
@@ -109,7 +110,15 @@ describe("App menus and dialogs", () => {
       "Docfilly形式で保存",
       "表示結果を書き出す",
       "プライバシーと端末内の保存",
+      "アプリのバージョン",
     ]);
+    expect(dialog.textContent).toContain(`v${buildInfo.version}`);
+    expect(dialog.textContent).toContain("ローカル");
+    expect(
+      within(dialog)
+        .getByRole("link", { name: buildInfo.commit.slice(0, 7) })
+        .getAttribute("href"),
+    ).toBe(`https://github.com/haiix/Docfilly/commit/${buildInfo.commit}`);
     const introduction = screen.getByRole("heading", { name: "Docfillyとは？" }).parentElement!;
     const form = screen.getByRole("heading", { name: "フォームと表示内容" }).parentElement!;
     const save = screen.getByRole("heading", { name: "Docfilly形式で保存" }).parentElement!;
@@ -160,7 +169,7 @@ describe("App menus and dialogs", () => {
     await user.click(screen.getAllByRole("button", { name: "ヘルプ" })[0]);
     await user.keyboard("{Shift>}{Tab}{/Shift}");
     expect(document.activeElement).toBe(
-      screen.getByRole("link", { name: "詳細なDocfillyフォーマット仕様" }),
+      screen.getByRole("link", { name: buildInfo.commit.slice(0, 7) }),
     );
     await user.keyboard("{Tab}");
     expect(document.activeElement).toBe(

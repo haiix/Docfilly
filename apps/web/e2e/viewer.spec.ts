@@ -1,5 +1,41 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const channel = process.env.DOCFILLY_CHANNEL ?? "local";
+const storageSuffix = channel === "release" ? "" : `-${channel}`;
+const databaseName = `docfilly-web${storageSuffix}`;
+const preferencesKey = `docfilly-web-preferences${storageSuffix}`;
+const base = channel === "release" ? "/Docfilly/stable/" : "/Docfilly/dev/";
+
+test("Reactの起動前から配布区分ごとの保存テーマを適用する", async ({ page }) => {
+  await page.addInitScript((key) => {
+    const otherKey =
+      key === "docfilly-web-preferences"
+        ? "docfilly-web-preferences-main"
+        : "docfilly-web-preferences";
+    localStorage.setItem(otherKey, JSON.stringify({ version: 1, theme: "light" }));
+    localStorage.setItem(key, JSON.stringify({ version: 1, theme: "dark" }));
+  }, preferencesKey);
+  // Prevent React from applying its own theme so this verifies only the early head script.
+  await page.route("**/assets/*.js", (route) => route.abort());
+  await page.goto("./");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#111827");
+});
+
+test("ヘルプに実行中のバージョン・配布区分・コミットを表示する", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "ヘルプ", exact: true }).first().click();
+  const section = page.getByRole("heading", { name: "アプリのバージョン" }).locator("..");
+  await expect(section).toContainText(/v\d+\.\d+\.\d+/);
+  await expect(section).toContainText(
+    channel === "release" ? "正式版" : channel === "main" ? "main（開発版）" : "ローカル",
+  );
+  await expect(section.getByRole("link")).toHaveAttribute(
+    "href",
+    /^https:\/\/github\.com\/haiix\/Docfilly\/commit\/[a-f0-9]{40}$/,
+  );
+});
+
 async function openSample(page: Page): Promise<void> {
   await page.goto("./");
   await page.getByRole("button", { name: "サンプルを開く" }).click();
@@ -8,9 +44,9 @@ async function openSample(page: Page): Promise<void> {
 
 async function hasSavedValue(page: Page, key: string, expected: string): Promise<boolean> {
   return page.evaluate(
-    ([valueKey, expectedValue]) =>
+    ([valueKey, expectedValue, databaseName]) =>
       new Promise<boolean>((resolve, reject) => {
-        const request = indexedDB.open("docfilly-web");
+        const request = indexedDB.open(databaseName);
         request.onerror = () =>
           reject(request.error ?? new Error("The IndexedDB database failed to open."));
         request.onsuccess = () => {
@@ -36,7 +72,7 @@ async function hasSavedValue(page: Page, key: string, expected: string): Promise
           };
         };
       }),
-    [key, expected],
+    [key, expected, databaseName],
   );
 }
 
@@ -221,7 +257,7 @@ test("PWAをインストール可能な構成で配信し、オフラインで�
   };
   expect(manifest.display).toBe("standalone");
   expect(manifest.start_url).toBe(".");
-  expect(manifest.scope).toBe(".");
+  expect(manifest.scope).toBe(base);
   expect(manifest.theme_color).toBe("#172033");
   expect(manifest.background_color).toBe("#f3f5f8");
   expect(manifest.icons?.map(({ sizes }) => sizes)).toEqual(["192x192", "512x512"]);
@@ -232,7 +268,7 @@ test("PWAをインストール可能な構成で配信し、オフラインで�
   await page.reload();
   await expect
     .poll(() => page.evaluate(() => navigator.serviceWorker.controller?.scriptURL ?? null))
-    .toContain("/Docfilly/sw.js");
+    .toContain(`${base}sw.js`);
 
   await context.setOffline(true);
   await page.reload();
@@ -371,7 +407,7 @@ test("アプリデータのリセットで文書、復元データ、Docfillyの
   );
   await expect(page.getByRole("dialog", { name: "Docfillyの使い方" })).toHaveCount(0);
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
-  expect(await page.evaluate(() => localStorage.getItem("docfilly-web-preferences"))).toBeNull();
+  expect(await page.evaluate((key) => localStorage.getItem(key), preferencesKey)).toBeNull();
   await expect.poll(() => hasSavedValue(page, "author", "山田太郎")).toBe(false);
   await expect
     .poll(() =>

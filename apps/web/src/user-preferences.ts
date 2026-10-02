@@ -1,4 +1,5 @@
 import { resolveWebLocale, type WebLocale } from "./locale";
+import { preferencesStorageKey as storageKey } from "./build-info";
 
 export type LanguagePreference = "browser" | WebLocale;
 export type ThemePreference = "system" | "light" | "dark";
@@ -9,7 +10,6 @@ export interface UserPreferences {
   restoreDocument: boolean;
 }
 
-const storageKey = "docfilly-web-preferences";
 const currentVersion = 1;
 const defaultPreferences: UserPreferences = {
   language: "browser",

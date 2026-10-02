@@ -1,3 +1,4 @@
+import { preferencesStorageKey } from "../src/build-info";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -67,7 +68,7 @@ describe("App persistence", () => {
 
   it("saves the displayed document and current values when restoration is turned on again", async () => {
     window.localStorage.setItem(
-      "docfilly-web-preferences",
+      preferencesStorageKey,
       JSON.stringify({
         version: 1,
         language: "browser",
@@ -191,7 +192,7 @@ describe("App persistence", () => {
     await user.selectOptions(screen.getByLabelText("言語"), "ja");
     await user.selectOptions(screen.getByLabelText("テーマ"), "dark");
     expect(document.documentElement.dataset.theme).toBe("dark");
-    expect(window.localStorage.getItem("docfilly-web-preferences")).not.toBeNull();
+    expect(window.localStorage.getItem(preferencesStorageKey)).not.toBeNull();
 
     const resetDataButton = screen.getByRole<HTMLButtonElement>("button", {
       name: "アプリデータをリセット",
@@ -221,7 +222,7 @@ describe("App persistence", () => {
       expect(screen.getByRole("status").textContent).toContain("アプリデータをリセット"),
     );
     expect(screen.queryByRole("dialog", { name: "設定" })).toBeNull();
-    expect(window.localStorage.getItem("docfilly-web-preferences")).toBeNull();
+    expect(window.localStorage.getItem(preferencesStorageKey)).toBeNull();
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(screen.getByRole("heading", { name: "Docfilly文書を開く" })).toBeTruthy();
     await user.click(screen.getAllByRole("button", { name: "設定" })[0]);

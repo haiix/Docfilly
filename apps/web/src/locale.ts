@@ -8,6 +8,8 @@ interface HelpSection {
 }
 
 export interface WebMessages {
+  appVersion: string;
+  buildChannels: Record<"local" | "main" | "release", string>;
   language: string;
   browserLanguage: string;
   english: string;
@@ -95,6 +97,8 @@ export interface WebMessages {
 }
 
 const en: WebMessages = {
+  appVersion: "App version",
+  buildChannels: { local: "Local", main: "main (development)", release: "Release" },
   language: "Language",
   browserLanguage: "Follow browser settings",
   english: "English",
@@ -215,6 +219,8 @@ const en: WebMessages = {
 };
 
 const ja: WebMessages = {
+  appVersion: "アプリのバージョン",
+  buildChannels: { local: "ローカル", main: "main（開発版）", release: "正式版" },
   language: "言語",
   browserLanguage: "ブラウザーの設定に従う",
   english: "English",
