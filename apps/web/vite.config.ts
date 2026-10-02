@@ -1,6 +1,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+const channel = process.env.DOCFILLY_CHANNEL ?? "local";
+if (!["local", "main", "release"].includes(channel)) {
+  throw new Error(`Unknown Docfilly build channel: ${channel}`);
+}
+const base = channel === "release" ? "/Docfilly/stable/" : "/Docfilly/dev/";
+const preferencesKey = `docfilly-web-preferences${channel === "release" ? "" : `-${channel}`}`;
+const { version } = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+) as { version: string };
+const commit =
+  process.env.DOCFILLY_COMMIT ??
+  execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: new URL(".", import.meta.url),
+    encoding: "utf8",
+  }).trim();
 
 const docfillyEntry = decodeURIComponent(
   new URL("../../packages/docfilly/src/index.ts", import.meta.url).pathname,
@@ -13,20 +31,29 @@ const docfillyReactEntry = decodeURIComponent(
 ).replace(/^\/([A-Za-z]:\/)/, "$1");
 
 export default defineConfig({
-  // GitHub Pages serves this project at https://haiix.github.io/Docfilly/.
-  base: "/Docfilly/",
+  base,
+  define: {
+    __DOCFILLY_BUILD__: JSON.stringify({ version, channel, commit }),
+  },
   plugins: [
+    {
+      name: "docfilly-preferences-key",
+      transformIndexHtml: {
+        order: "pre",
+        handler: (html) => html.replaceAll("__DOCFILLY_PREFERENCES_KEY__", preferencesKey),
+      },
+    },
     react(),
     VitePWA({
       injectRegister: null,
       registerType: "prompt",
       manifest: {
-        id: "/Docfilly/",
-        name: "Docfilly",
-        short_name: "Docfilly",
+        id: base,
+        name: channel === "release" ? "Docfilly" : "Docfilly Dev",
+        short_name: channel === "release" ? "Docfilly" : "Docfilly Dev",
         description: "Open and customize local Docfilly documents in your browser.",
         start_url: ".",
-        scope: ".",
+        scope: base,
         display: "standalone",
         theme_color: "#172033",
         background_color: "#f3f5f8",

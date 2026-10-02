@@ -1,7 +1,7 @@
 import type { DocfillySourceType } from "docfilly";
 import type { LoadedDocument } from "./document-file";
+import { documentDatabaseName as databaseName } from "./build-info";
 
-const databaseName = "docfilly-web";
 const databaseVersion = 1;
 const storeName = "document-session";
 const sessionKey = "latest";

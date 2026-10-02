@@ -1,3 +1,4 @@
+import { preferencesStorageKey } from "../src/build-info";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -55,7 +56,7 @@ describe("App theme", () => {
 
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(document.documentElement.dataset.docfillyTheme).toBe("light");
-    expect(JSON.parse(localStorage.getItem("docfilly-web-preferences")!)).toMatchObject({
+    expect(JSON.parse(localStorage.getItem(preferencesStorageKey)!)).toMatchObject({
       theme: "light",
     });
     changeColorScheme(false);

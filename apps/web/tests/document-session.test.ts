@@ -1,3 +1,4 @@
+import { documentDatabaseName } from "../src/build-info";
 import { IDBFactory as FDBFactory } from "fake-indexeddb";
 import { describe, expect, it } from "vitest";
 import {
@@ -52,7 +53,7 @@ describe("document session storage", () => {
   ])("ignores and removes %s", async (_description, invalidRecord) => {
     const database = new FDBFactory();
     await saveDocumentSession(document, new Map(), database);
-    const openRequest = database.open("docfilly-web", 1);
+    const openRequest = database.open(documentDatabaseName, 1);
     const connection = await new Promise<IDBDatabase>((resolve, reject) => {
       openRequest.onsuccess = () => resolve(openRequest.result);
       openRequest.onerror = () =>

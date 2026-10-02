@@ -117,8 +117,9 @@ jsdom verifies form elements, events, and Markdown output without launching a br
 
 ## Browser end-to-end tests
 
-Playwright starts the `apps/web` Vite server with the same `/Docfilly/` base path as GitHub
-Pages. It reuses an existing server locally and uses one worker in CI. Failed-run screenshots
+Playwright starts the `apps/web` Vite server with the `/Docfilly/dev/` base path. Local builds
+use the `local` channel and separate storage from deployed apps. It reuses an existing server
+locally and uses one worker in CI. Failed-run screenshots
 and traces go to `apps/web/test-results`; the HTML report goes to
 `apps/web/playwright-report`.
 
@@ -227,8 +228,18 @@ A separate E2E job installs Chromium and runs `pnpm test:e2e`. On failure, repor
 artifacts are uploaded to GitHub Actions.
 
 On `main`, CI calls the reusable `.github/workflows/deploy-pages.yml` workflow only after the
-regular and E2E jobs both succeed. Pages cannot be dispatched directly; manual redeployment also
-runs through CI.
+regular and E2E jobs both succeed. Release Please also calls it after creating a release. Manual
+redeployment runs through CI. The reusable workflow builds the latest published release at
+`/Docfilly/stable/` and the latest verified main commit at `/Docfilly/dev/`, then publishes both
+directories as one artifact. The root redirects to `stable/` and retires the old root service
+worker. Run `node --test scripts/assemble-pages.test.mjs` to verify assembly and root PWA cleanup.
+
+`DOCFILLY_CHANNEL=main` selects the deployed development channel; `DOCFILLY_CHANNEL=release`
+selects the released channel and `/Docfilly/stable/` base. The default is `local`, using the
+development path. Vite embeds the checkout's package version and full commit SHA at build time.
+For a source archive without Git metadata, set `DOCFILLY_COMMIT` to its full commit SHA.
+The help dialog displays the version, channel, and a short commit link. Release builds retain
+legacy storage names, main builds use a `-main` suffix, and local builds use `-local`.
 
 Third-party GitHub Actions are pinned to complete commit SHAs, with the matching release tag in
 a trailing comment. Dependabot pull requests update Actions. To update a tag target manually,

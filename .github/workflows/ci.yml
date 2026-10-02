@@ -43,6 +43,9 @@ jobs:
       - name: Check synchronized versions
         run: pnpm version:check
 
+      - name: Test Pages assembly
+        run: node --test scripts/assemble-pages.test.mjs
+
       - name: Test
         run: pnpm test
 
@@ -95,7 +98,10 @@ jobs:
       - verify
       - e2e
     permissions:
+      actions: read
       contents: read
       pages: write
       id-token: write
     uses: ./.github/workflows/deploy-pages.yml
+    with:
+      verified-sha: ${{ github.sha }}

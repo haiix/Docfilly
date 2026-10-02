@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default defineConfig(
   {
-    ignores: ["**/dist/**", "**/node_modules/**", ".pnpm-store/**", "coverage/**"],
+    ignores: ["**/dist/**", "**/node_modules/**", ".pnpm-store/**", "coverage/**", "pages-dist/**"],
   },
   {
     files: ["**/*.{js,mjs,cjs}"],

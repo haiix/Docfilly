@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppDialog } from "./AppDialog";
 import { resetOfflineAppData } from "./app-data-reset";
+import { buildInfo } from "./build-info";
 import {
   readDocumentFile,
   UnsupportedDocumentFileError,
@@ -712,6 +713,19 @@ export function App() {
           <section>
             <h3>{messages.helpPrivacy.heading}</h3>
             <p>{messages.helpPrivacy.body}</p>
+          </section>
+          <section>
+            <h3>{messages.appVersion}</h3>
+            <p>
+              v{buildInfo.version} · {messages.buildChannels[buildInfo.channel]} ·{" "}
+              <a
+                href={`https://github.com/haiix/Docfilly/commit/${buildInfo.commit}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {buildInfo.commit.slice(0, 7)}
+              </a>
+            </p>
           </section>
         </AppDialog>
       )}

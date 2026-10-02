@@ -1,3 +1,4 @@
+import { preferencesStorageKey } from "../src/build-info";
 import { describe, expect, it } from "vitest";
 import {
   clearUserPreferences,
@@ -19,7 +20,7 @@ describe("user preferences", () => {
     expect(
       writeUserPreferences({ language: "ja", theme: "dark", restoreDocument: false }, storage),
     ).toBe(true);
-    expect(JSON.parse(storage.getItem("docfilly-web-preferences")!)).toEqual({
+    expect(JSON.parse(storage.getItem(preferencesStorageKey)!)).toEqual({
       version: 1,
       language: "ja",
       theme: "dark",
@@ -39,7 +40,7 @@ describe("user preferences", () => {
       JSON.stringify({ version: 2, language: "ja" }),
       JSON.stringify({ version: 1, language: "fr" }),
     ]) {
-      storage.setItem("docfilly-web-preferences", value);
+      storage.setItem(preferencesStorageKey, value);
       expect(readUserPreferences(storage)).toEqual({
         language: "browser",
         theme: "system",
@@ -50,7 +51,7 @@ describe("user preferences", () => {
 
   it("defaults legacy preferences to the system theme and rejects unsupported themes", () => {
     const storage = window.localStorage;
-    storage.setItem("docfilly-web-preferences", JSON.stringify({ version: 1, language: "ja" }));
+    storage.setItem(preferencesStorageKey, JSON.stringify({ version: 1, language: "ja" }));
     expect(readUserPreferences(storage)).toEqual({
       language: "ja",
       theme: "system",
@@ -58,7 +59,7 @@ describe("user preferences", () => {
     });
 
     storage.setItem(
-      "docfilly-web-preferences",
+      preferencesStorageKey,
       JSON.stringify({ version: 1, language: "ja", theme: "sepia" }),
     );
     expect(readUserPreferences(storage)).toEqual({
@@ -68,7 +69,7 @@ describe("user preferences", () => {
     });
 
     storage.setItem(
-      "docfilly-web-preferences",
+      preferencesStorageKey,
       JSON.stringify({ version: 1, language: "ja", theme: "dark", restoreDocument: "no" }),
     );
     expect(readUserPreferences(storage)).toEqual({

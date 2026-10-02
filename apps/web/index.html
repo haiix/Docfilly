@@ -9,7 +9,7 @@
       (() => {
         let preference = "system";
         try {
-          const stored = JSON.parse(localStorage.getItem("docfilly-web-preferences") ?? "null");
+          const stored = JSON.parse(localStorage.getItem("__DOCFILLY_PREFERENCES_KEY__") ?? "null");
           if (stored?.version === 1 && (stored.theme === "light" || stored.theme === "dark")) {
             preference = stored.theme;
           }
