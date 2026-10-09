@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/haiix/Docfilly/compare/v0.3.0...v0.4.0) (2026-10-09)
+
+
+### Added
+
+* **web:** separate release and development deployments ([#154](https://github.com/haiix/Docfilly/issues/154)) ([b23e33f](https://github.com/haiix/Docfilly/commit/b23e33f65646923c3dff20851246dd58666b9c2e))
+
 ## [0.3.0](https://github.com/haiix/Docfilly/compare/v0.2.0...v0.3.0) (2026-09-07)
 
 
